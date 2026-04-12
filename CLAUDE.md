@@ -58,16 +58,43 @@ Al editar módulos, respeta la convención `puedeEditar` vs `userRol==="admin"`.
 
 `FlujoModule` maneja solicitudes de compra, órdenes, solicitudes de gasto, recomendaciones. Tiene lógica multi-rol propia (`PUEDE_APROBAR = ["admin","socio"]`) que **no** usa el sistema de permisos granulares. Los checks de rol ahí son parte del workflow de negocio, no de permisos de UI.
 
+## Ramas y flujo de trabajo
+
+El repo tiene dos ramas principales:
+
+- **`dev`** — staging. Aquí van los cambios experimentales, features en progreso, prototipos que todavía no están listos para usuarios finales. Cada push a `dev` dispara una preview deployment automática de Vercel (ambiente de staging).
+- **`main`** — producción. Aquí solo llegan cambios ya aprobados y probados. Los push a `main` disparan deploy automático a https://agro-charay.vercel.app, pero el deploy "oficial" a producción se hace explícitamente con `vercel@latest --prod`.
+
+**Regla general:** los cambios experimentales o en desarrollo se commitean y pushean a `dev` primero. Cuando el feature está validado, se mergea a `main`. Nunca trabajar directamente sobre `main` para features nuevas.
+
+```bash
+# Feature nueva o cambio experimental → dev
+git checkout dev
+# ...hacer cambios...
+git add . && git commit -m "..."
+git push origin dev      # deploy automático a staging (preview)
+
+# Merge a main cuando esté aprobado
+git checkout main
+git merge dev
+git push origin main
+```
+
 ## Build y deploy
 
 ```bash
-npm run build        # vite build → dist/
-npx vercel --prod    # deploy a producción
+npm run build                                 # vite build → dist/ (verificación local)
+
+# Deploy a STAGING (preview desde dev)
+cd ~/Desktop/agro-charay && git push origin dev
+
+# Deploy a PRODUCCIÓN
+cd ~/Desktop/agro-charay && npm run build && npx vercel@latest --prod
 ```
 
-El bundle minificado pasa de 500KB (warning de Vite que ignoramos). El build local siempre debe pasar antes de intentar deploy.
+El bundle minificado pasa de 500KB (warning de Vite que ignoramos). El build local siempre debe pasar antes de intentar deploy a producción.
 
-**Nota de deploy:** si `vercel --prod` falla con `deploy_failed` y mensaje vacío y build de 0ms, es un problema del lado de Vercel (rate limit, integración rota, platform outage), no del código. Revisa el dashboard web directamente.
+**Nota de deploy:** si `vercel --prod` falla con `deploy_failed` y mensaje vacío y build de 0ms, es un problema del lado de Vercel (rate limit, integración rota, platform outage), no del código. Revisa el dashboard web directamente. Importante: usar `vercel@latest`, no `vercel` — versiones viejas del CLI tienen interferencia con plugins.
 
 ## Archivos del repo
 
