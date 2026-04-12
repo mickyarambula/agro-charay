@@ -1797,10 +1797,14 @@ const initState = {
     campo: ["bitacora","lotes"],
   },
 
-  // ── PERMISOS GRANULARES POR USUARIO ──
+  // ── PERMISOS GRANULARES POR USUARIO (override opcional) ──
   // { [userId]: { [moduleId]: "ver" | "editar" } }
-  // Si no existe entrada, se calcula fallback desde ACCESO[rol] con nivel "ver"
   permisosGranulares: {},
+
+  // ── ROLES PERSONALIZADOS (overrides a roles base + roles custom) ──
+  // { [rolId]: { id, nombre, icon, color, permisos: { [modId]: "ver"|"editar" } } }
+  // Admin NO entra aquí — siempre hardcoded a acceso total
+  rolesPersonalizados: {},
 
   precioVentaMXN: 4800,        // precio global legacy (fallback)
   rendimientoEsperado: 10,    // rendimiento global legacy (fallback)
@@ -2317,6 +2321,9 @@ function reducer(s, a) {
     case "SET_IA_HISTORIAL": return { ...s, iaHistorial: a.payload };
     case "UPD_PERMISOS_ROL": return { ...s, permisosUsuario: { ...s.permisosUsuario, [a.payload.rol]: a.payload.modulos } };
     case "SET_PERMISOS_USUARIO": return { ...s, permisosGranulares: { ...s.permisosGranulares, [a.payload.userId]: a.payload.permisos } };
+    case "CLEAR_PERMISOS_USUARIO": { const n={...(s.permisosGranulares||{})}; delete n[a.payload]; return {...s, permisosGranulares:n}; }
+    case "SET_ROL": return { ...s, rolesPersonalizados: { ...(s.rolesPersonalizados||{}), [a.payload.id]: a.payload } };
+    case "DEL_ROL": { const n={...(s.rolesPersonalizados||{})}; delete n[a.payload]; return {...s, rolesPersonalizados:n}; }
     case "SET_CICLO_ACTIVO_ID": return { ...s, cicloActivoId: a.payload,
       cicloActual: (s.ciclos||[]).find(c=>c.id===a.payload)?.nombre || s.cicloActual,
       cultivoActivo: null };
@@ -2332,20 +2339,63 @@ function reducer(s, a) {
 
 function useData() { return useContext(Ctx); }
 
-// ─── PERMISOS GRANULARES — resolver nivel por usuario + módulo ───────────────
+// ─── ROLES — resolver permisos por rol (incluyendo personalizados) ──────────
+function getRolPermisos(state, rolId) {
+  if (rolId === "admin") {
+    const r = {};
+    (ACCESO.admin || []).forEach(m => { r[m] = "editar"; });
+    return r;
+  }
+  // Si el rol tiene override personalizado (base o custom) úsalo
+  const custom = state.rolesPersonalizados?.[rolId];
+  if (custom?.permisos) return { ...custom.permisos };
+  // Fallback a ACCESO[rol] con nivel "ver"
+  const modulos = ACCESO[rolId] || [];
+  const r = {};
+  modulos.forEach(m => { r[m] = "ver"; });
+  return r;
+}
+
+// ─── ROLES DISPONIBLES — base (con overrides) + custom ──────────────────────
+function getRolesDisponibles(state) {
+  const baseIds = Object.keys(ROLES);
+  const custom = state.rolesPersonalizados || {};
+  const baseRoles = baseIds.map(id => {
+    const info = ROLES[id];
+    const ovr = custom[id];
+    return {
+      id,
+      nombre: ovr?.nombre || info.label,
+      icon:   ovr?.icon   || info.icon,
+      color:  ovr?.color  || info.color,
+      esBase: true,
+    };
+  });
+  const customRoles = Object.values(custom)
+    .filter(r => !baseIds.includes(r.id))
+    .map(r => ({ id:r.id, nombre:r.nombre, icon:r.icon, color:r.color, esBase:false }));
+  return [...baseRoles, ...customRoles];
+}
+
+// ─── INFO DE UN ROL (base o custom) ────────────────────────────────────────
+function getRolInfo(state, rolId) {
+  const disp = getRolesDisponibles(state).find(r => r.id === rolId);
+  if (disp) return { label: disp.nombre, icon: disp.icon, color: disp.color, esBase: disp.esBase };
+  return { label: rolId, icon: "?", color: "#888", esBase: false };
+}
+
+// ─── PERMISOS EFECTIVOS POR USUARIO ─────────────────────────────────────────
 function getPermisosUsuario(state, userId, rol) {
   if (rol === "admin") {
     const r = {};
     (ACCESO.admin || []).forEach(m => { r[m] = "editar"; });
     return r;
   }
+  // Override por usuario (si existe)
   const granulares = state.permisosGranulares?.[userId];
   if (granulares && Object.keys(granulares).length > 0) return granulares;
-  // Fallback: derivar de ACCESO[rol] con nivel "ver"
-  const modulos = state.permisosUsuario?.[rol] || ACCESO[rol] || [];
-  const r = {};
-  modulos.forEach(m => { r[m] = "ver"; });
-  return r;
+  // Por defecto: permisos del rol
+  return getRolPermisos(state, rol);
 }
 
 // ─── FILTRAR ESTADO POR PRODUCTOR ─────────────────────────────────────────────
@@ -15536,7 +15586,7 @@ const ROLES_EDITABLES = [
 
 function ConfiguracionModule({ userRol }) {
   const { state, dispatch } = useData();
-  const [tabActiva, setTabActiva]   = useState("permisos");
+  const [tabActiva, setTabActiva]   = useState("roles");
   const fileImportRef = useRef(null);
   // Delegaciones — hooks al nivel del componente (regla de hooks)
   const hoyDelStr = new Date().toISOString().split("T")[0];
@@ -15556,10 +15606,6 @@ function ConfiguracionModule({ userRol }) {
   const [modalUsuario, setModalUsuario] = useState(false);
   const [editUsuario, setEditUsuario]   = useState(null); // null=nuevo, obj=editar
 
-  // ── Permisos granulares por usuario ──
-  const [userPermSel, setUserPermSel] = useState(null);       // userId seleccionado
-  const [tempGranular, setTempGranular] = useState({});        // { moduleId: "none"|"ver"|"editar" }
-
   // Usuarios: base hardcoded + extras del state
   const usuariosExtra  = state.usuariosExtra || [];
   const baseOverrides  = state.usuariosBaseEdit || {};
@@ -15568,41 +15614,90 @@ function ConfiguracionModule({ userRol }) {
     ...usuariosExtra
   ];
 
-  const seleccionarUsuarioPerm = (u) => {
-    setUserPermSel(u.id);
+  const esUsuarioBase = (uid) => USUARIOS.some(u => u.id === uid);
+
+  // ── Gestión de roles ──
+  const rolesDisponibles = getRolesDisponibles(state);
+  const [rolSel, setRolSel] = useState("socio");
+  const [tempRol, setTempRol] = useState(null); // { id, nombre, icon, color, permisos }
+  const [modalNewRol, setModalNewRol] = useState(false);
+  const [formNewRol, setFormNewRol] = useState({ nombre:"", icon:"👥", color:"#1a6ea8" });
+
+  const cargarRol = (rolId) => {
+    setRolSel(rolId);
     setGuardado(false);
-    // Cargar permisos actuales o fallback del rol
-    const actual = getPermisosUsuario(state, u.id, u.rol);
-    setTempGranular({...actual});
+    if (rolId === "admin") { setTempRol(null); return; }
+    const info = getRolInfo(state, rolId);
+    const perms = getRolPermisos(state, rolId);
+    setTempRol({ id: rolId, nombre: info.label, icon: info.icon, color: info.color, permisos: perms });
   };
 
-  const setNivelModulo = (modId, nivel) => {
+  // Cargar rol seleccionado al montar / cuando cambia el state
+  React.useEffect(() => {
+    if (rolSel && rolSel !== "admin" && !tempRol) cargarRol(rolSel);
+    // eslint-disable-next-line
+  }, [rolSel]);
+
+  const setNivelRolModulo = (modId, nivel) => {
     setGuardado(false);
-    setTempGranular(prev => {
-      const next = {...prev};
-      if (nivel === "none") { delete next[modId]; }
-      else { next[modId] = nivel; }
-      return next;
+    setTempRol(prev => {
+      if (!prev) return prev;
+      const perms = { ...prev.permisos };
+      if (nivel === "none") delete perms[modId];
+      else perms[modId] = nivel;
+      return { ...prev, permisos: perms };
     });
   };
 
-  const guardarPermisosGranulares = () => {
-    if (!userPermSel) return;
-    dispatch({ type:"SET_PERMISOS_USUARIO", payload:{ userId: userPermSel, permisos: tempGranular } });
+  const guardarRol = () => {
+    if (!tempRol || tempRol.id === "admin") return;
+    dispatch({ type:"SET_ROL", payload: tempRol });
     setGuardado(true);
     setTimeout(()=>setGuardado(false), 2500);
   };
 
-  const resetPermisosGranulares = () => {
-    if (!userPermSel) return;
-    const u = todosUsuarios.find(x => x.id === userPermSel);
-    if (!u) return;
-    // Reset a defaults del rol
-    const modulos = ACCESO[u.rol] || [];
-    const r = {};
-    modulos.forEach(m => { r[m] = "ver"; });
-    setTempGranular(r);
-    setGuardado(false);
+  const abrirNuevoRol = () => {
+    setFormNewRol({ nombre:"", icon:"👥", color:"#1a6ea8" });
+    setModalNewRol(true);
+  };
+
+  const crearNuevoRol = () => {
+    if (!formNewRol.nombre.trim()) return;
+    const id = "custom_" + Date.now();
+    const payload = { id, nombre: formNewRol.nombre.trim(), icon: formNewRol.icon, color: formNewRol.color, permisos: {} };
+    dispatch({ type:"SET_ROL", payload });
+    setModalNewRol(false);
+    setRolSel(id);
+    setTempRol(payload);
+  };
+
+  const eliminarRol = () => {
+    if (!tempRol || tempRol.id === "admin") return;
+    const usuariosConRol = todosUsuarios.filter(u => u.rol === tempRol.id);
+    // Rol destino: el rol con menos módulos disponibles (excluyendo admin y el que se borra)
+    let fallback = null;
+    if (usuariosConRol.length > 0) {
+      const candidates = rolesDisponibles
+        .filter(r => r.id !== "admin" && r.id !== tempRol.id)
+        .map(r => ({ ...r, nMods: Object.keys(getRolPermisos(state, r.id)).length }))
+        .sort((a,b) => a.nMods - b.nMods);
+      fallback = candidates[0];
+      if (!fallback) { alert("No hay otro rol disponible para migrar los usuarios."); return; }
+    }
+    const msg = usuariosConRol.length > 0
+      ? `El rol "${tempRol.nombre}" tiene ${usuariosConRol.length} usuario(s) asignado(s). Serán migrados al rol "${fallback.nombre}". ¿Continuar?`
+      : `¿Eliminar el rol "${tempRol.nombre}"?`;
+    if (!window.confirm(msg)) return;
+    // Migrar usuarios
+    usuariosConRol.forEach(u => {
+      const payload = { ...u, rol: fallback.id };
+      if (esUsuarioBase(u.id)) dispatch({ type:"UPD_USUARIO_BASE", payload });
+      else dispatch({ type:"UPD_USUARIO_EXTRA", payload });
+      dispatch({ type:"CLEAR_PERMISOS_USUARIO", payload: u.id });
+    });
+    dispatch({ type:"DEL_ROL", payload: tempRol.id });
+    setTempRol(null);
+    setRolSel("socio");
   };
 
   const emptyUser = { nombre:"", usuario:"", password:"", rol:"campo", activo:true };
@@ -15626,8 +15721,11 @@ function ConfiguracionModule({ userRol }) {
     if (existe) return;
     if (editUsuario) {
       const payload = { ...editUsuario, ...formUser, usuario: formUser.usuario.trim().toLowerCase() };
-      if (editUsuario.id <= 3) {
-        // Usuario base — guardar override en state
+      // Si cambió el rol, limpiar overrides granulares para que caiga en defaults del nuevo rol
+      if (editUsuario.rol !== formUser.rol) {
+        dispatch({ type:"CLEAR_PERMISOS_USUARIO", payload: editUsuario.id });
+      }
+      if (esUsuarioBase(editUsuario.id)) {
         dispatch({ type:"UPD_USUARIO_BASE", payload });
       } else {
         dispatch({ type:"UPD_USUARIO_EXTRA", payload });
@@ -15639,10 +15737,23 @@ function ConfiguracionModule({ userRol }) {
   };
 
   const toggleActivoUsuario = (u) => {
-    if (u.id <= 3) {
+    if (esUsuarioBase(u.id)) {
       dispatch({ type:"UPD_USUARIO_BASE", payload:{ ...u, activo: !u.activo } });
     } else {
       dispatch({ type:"UPD_USUARIO_EXTRA", payload:{ ...u, activo: !u.activo } });
+    }
+  };
+
+  const eliminarUsuario = (u) => {
+    if (u.rol === "admin") { alert("No se puede eliminar un usuario administrador."); return; }
+    if (!window.confirm(`¿Eliminar al usuario "${u.nombre}"? Esta acción no se puede deshacer.`)) return;
+    if (esUsuarioBase(u.id)) {
+      // Los usuarios base no se pueden eliminar del código, solo desactivar permanentemente
+      dispatch({ type:"UPD_USUARIO_BASE", payload:{ ...u, activo: false } });
+      alert("Usuario base: desactivado (no puede eliminarse permanentemente).");
+    } else {
+      dispatch({ type:"DEL_USUARIO_EXTRA", payload: u.id });
+      dispatch({ type:"CLEAR_PERMISOS_USUARIO", payload: u.id });
     }
   };
 
@@ -15651,7 +15762,7 @@ function ConfiguracionModule({ userRol }) {
   return (
     <div>
       <div className="tabs" style={{marginBottom:20}}>
-        <div className={`tab ${tabActiva==="permisos"?"active":""}`}  onClick={()=>setTabActiva("permisos")}>🔐 Permisos de Acceso</div>
+        <div className={`tab ${tabActiva==="roles"?"active":""}`}     onClick={()=>setTabActiva("roles")}>🛡️ Roles y Permisos</div>
         <div className={`tab ${tabActiva==="usuarios"?"active":""}`}  onClick={()=>setTabActiva("usuarios")}>👥 Usuarios del Sistema</div>
         <div className={`tab ${tabActiva==="alertas"?"active":""}`}   onClick={()=>setTabActiva("alertas")}>🔔 Alertas</div>
         <div className={`tab ${tabActiva==="delegaciones"?"active":""}`} onClick={()=>setTabActiva("delegaciones")}>🔁 Delegaciones</div>
@@ -15659,87 +15770,116 @@ function ConfiguracionModule({ userRol }) {
       </div>
 
       {/* ── TAB PERMISOS GRANULARES POR USUARIO ── */}
-      {tabActiva==="permisos" && (
-        <div>
-          <div style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:20}}>
-            {/* Panel izquierdo: lista de usuarios */}
-            <div className="card" style={{alignSelf:"start"}}>
-              <div className="card-header"><div className="card-title">Usuarios</div></div>
-              <div className="card-body" style={{padding:0}}>
-                {todosUsuarios.filter(u=>u.activo!==false&&u.rol!=="admin").map(u=>{
-                  const rolInf = ROLES[u.rol];
-                  const sel = userPermSel===u.id;
-                  const perms = getPermisosUsuario(state, u.id, u.rol);
-                  const nMods = Object.keys(perms).length;
-                  const nEdit = Object.values(perms).filter(v=>v==="editar").length;
-                  return (
-                    <div key={u.id} onClick={()=>seleccionarUsuarioPerm(u)}
-                      style={{padding:"12px 16px",cursor:"pointer",borderBottom:"1px solid #f0ece4",
-                        background:sel?"#f0f8e8":"white",transition:"background 0.15s"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        <span style={{fontSize:16}}>{rolInf?.icon}</span>
-                        <div style={{flex:1}}>
-                          <div style={{fontWeight:700,fontSize:13,color:sel?"#2d5a1b":"#3d3525"}}>{u.nombre}</div>
-                          <div style={{fontSize:11,color:"#8a8070"}}>
-                            @{u.usuario} · <span style={{color:rolInf?.color}}>{rolInf?.label}</span>
+      {tabActiva==="roles" && (()=>{
+        const NIVELES = [
+          { id:"none",   label:"Sin acceso",  icon:"🚫", color:"#c0392b", bg:"#fdf0ef" },
+          { id:"ver",    label:"Solo ver",    icon:"👁",  color:"#1a6ea8", bg:"#edf4fb" },
+          { id:"editar", label:"Ver y editar",icon:"✏️", color:"#2d5a1b", bg:"#f0f8e8" },
+        ];
+        const usuariosConRolSel = todosUsuarios.filter(u => u.rol === rolSel);
+        return (
+          <div>
+            <div style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:20}}>
+              {/* Panel izquierdo: lista de roles */}
+              <div className="card" style={{alignSelf:"start"}}>
+                <div className="card-header">
+                  <div className="card-title">Roles</div>
+                </div>
+                <div className="card-body" style={{padding:0}}>
+                  {rolesDisponibles.map(r => {
+                    const sel = rolSel === r.id;
+                    const nUsers = todosUsuarios.filter(u => u.rol === r.id).length;
+                    const nMods = r.id === "admin" ? TODOS_MODULOS.length : Object.keys(getRolPermisos(state, r.id)).length;
+                    return (
+                      <div key={r.id} onClick={()=>cargarRol(r.id)}
+                        style={{padding:"12px 16px",cursor:"pointer",borderBottom:"1px solid #f0ece4",
+                          background:sel?`${r.color}15`:"white",transition:"background 0.15s",
+                          borderLeft:sel?`4px solid ${r.color}`:"4px solid transparent"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <span style={{fontSize:18}}>{r.icon}</span>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontWeight:700,fontSize:13,color:sel?r.color:"#3d3525",
+                              display:"flex",alignItems:"center",gap:6}}>
+                              {r.nombre}
+                              {r.id === "admin" && <span style={{fontSize:12}} title="Rol bloqueado">🔒</span>}
+                              {!r.esBase && <span style={{fontSize:9,padding:"1px 6px",borderRadius:8,
+                                background:"#e8e0d0",color:"#5a5040",fontWeight:600}}>CUSTOM</span>}
+                            </div>
+                            <div style={{fontSize:11,color:"#8a8070",marginTop:2}}>
+                              {nUsers} usuario{nUsers===1?"":"s"} · {nMods} módulo{nMods===1?"":"s"}
+                            </div>
                           </div>
                         </div>
                       </div>
-                      <div style={{fontSize:10,color:"#8a8070",marginTop:4}}>
-                        {nMods} módulos · {nEdit} con edición
-                      </div>
-                    </div>
-                  );
-                })}
-                <div style={{padding:"10px 16px",fontSize:11,color:"#8a8070",background:"#faf8f3",fontStyle:"italic"}}>
-                  Los administradores siempre tienen acceso total.
+                    );
+                  })}
+                </div>
+                <div style={{padding:12,borderTop:"1px solid #f0ece4",background:"#faf8f3"}}>
+                  <button className="btn btn-primary btn-sm" onClick={abrirNuevoRol} style={{width:"100%"}}>
+                    ＋ Nuevo rol
+                  </button>
                 </div>
               </div>
-            </div>
 
-            {/* Panel derecho: permisos del usuario seleccionado */}
-            <div>
-              {!userPermSel ? (
-                <div className="card">
-                  <div className="card-body" style={{textAlign:"center",padding:"60px 20px",color:"#8a8070"}}>
-                    <div style={{fontSize:36,marginBottom:12}}>👈</div>
-                    <div style={{fontSize:14,fontWeight:600}}>Selecciona un usuario</div>
-                    <div style={{fontSize:12,marginTop:4}}>para configurar sus permisos por módulo</div>
+              {/* Panel derecho: editor del rol seleccionado */}
+              <div>
+                {rolSel === "admin" ? (
+                  <div className="card">
+                    <div className="card-body" style={{padding:"40px 24px"}}>
+                      <div style={{textAlign:"center",marginBottom:20}}>
+                        <div style={{fontSize:48,marginBottom:12}}>🔒</div>
+                        <div style={{fontSize:16,fontWeight:700,color:"#3d3525"}}>Rol Administrador</div>
+                        <div style={{fontSize:12,color:"#8a8070",marginTop:4}}>
+                          Este rol tiene acceso total a todos los módulos y no puede modificarse ni eliminarse.
+                        </div>
+                      </div>
+                      <div style={{padding:16,background:"#faf8f3",borderRadius:8,border:"1px solid #e8e0d0"}}>
+                        <div style={{fontSize:11,fontWeight:700,color:"#8a8070",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>
+                          Usuarios con este rol ({usuariosConRolSel.length})
+                        </div>
+                        {usuariosConRolSel.length === 0 ? (
+                          <div style={{fontSize:12,color:"#8a8070",fontStyle:"italic"}}>Ningún usuario asignado</div>
+                        ) : (
+                          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                            {usuariosConRolSel.map(u => (
+                              <div key={u.id} style={{fontSize:12,color:"#3d3525",padding:"4px 0"}}>
+                                👑 <strong>{u.nombre}</strong> <span style={{color:"#8a8070"}}>(@{u.usuario})</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ) : (()=>{
-                const uSel = todosUsuarios.find(x=>x.id===userPermSel);
-                if (!uSel) return null;
-                const rolInf = ROLES[uSel.rol];
-                const NIVELES = [
-                  { id:"none",   label:"Sin acceso", icon:"🚫", color:"#c0392b", bg:"#fdf0ef" },
-                  { id:"ver",    label:"Solo ver",   icon:"👁",  color:"#1a6ea8", bg:"#edf4fb" },
-                  { id:"editar", label:"Ver y editar",icon:"✏️", color:"#2d5a1b", bg:"#f0f8e8" },
-                ];
-                return (
+                ) : !tempRol ? null : (
                   <div>
+                    {/* Header: nombre editable y acciones */}
                     <div className="card" style={{marginBottom:16}}>
-                      <div className="card-header">
-                        <div className="card-title" style={{display:"flex",alignItems:"center",gap:8}}>
-                          <span style={{fontSize:20}}>{rolInf?.icon}</span>
-                          Permisos de {uSel.nombre}
-                          <span style={{fontSize:11,padding:"2px 10px",borderRadius:10,fontWeight:700,
-                            background:`${rolInf?.color}22`,color:rolInf?.color}}>{rolInf?.label}</span>
+                      <div className="card-header" style={{flexWrap:"wrap",gap:10}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:200}}>
+                          <span style={{fontSize:24}}>{tempRol.icon}</span>
+                          <input className="form-input" value={tempRol.nombre}
+                            onChange={e=>setTempRol(r=>({...r,nombre:e.target.value}))}
+                            placeholder="Nombre del rol"
+                            style={{fontSize:15,fontWeight:700,flex:1,minWidth:120}}/>
                         </div>
                         <div style={{display:"flex",gap:8,alignItems:"center"}}>
                           {guardado && (
                             <span style={{fontSize:12,color:"#2d5a1b",fontWeight:600,padding:"4px 12px",background:"#d4edda",borderRadius:8}}>
-                              Guardado
+                              ✅ Guardado
                             </span>
                           )}
-                          <button className="btn btn-sm btn-secondary" onClick={resetPermisosGranulares}>↺ Restaurar default</button>
-                          <button className="btn btn-sm btn-primary" onClick={guardarPermisosGranulares}>💾 Guardar</button>
+                          <button className="btn btn-sm btn-danger" onClick={eliminarRol} title="Eliminar rol">
+                            🗑 Eliminar
+                          </button>
+                          <button className="btn btn-sm btn-primary" onClick={guardarRol}>💾 Guardar</button>
                         </div>
                       </div>
                     </div>
 
                     {/* Leyenda */}
-                    <div style={{display:"flex",gap:16,marginBottom:16}}>
+                    <div style={{display:"flex",gap:16,marginBottom:16,alignItems:"center"}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"#5a5040"}}>Nivel de acceso:</div>
                       {NIVELES.map(n=>(
                         <div key={n.id} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:n.color,fontWeight:600}}>
                           <span>{n.icon}</span> {n.label}
@@ -15747,6 +15887,7 @@ function ConfiguracionModule({ userRol }) {
                       ))}
                     </div>
 
+                    {/* Permisos por sección */}
                     {secciones.map(sec=>{
                       const mods = TODOS_MODULOS.filter(m=>m.section===sec);
                       return (
@@ -15755,9 +15896,9 @@ function ConfiguracionModule({ userRol }) {
                             letterSpacing:1,marginBottom:8,paddingBottom:4,borderBottom:"1px solid #e8e0d0"}}>
                             {sec}
                           </div>
-                          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:8}}>
+                          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:8}}>
                             {mods.map(mod=>{
-                              const nivel = tempGranular[mod.id] || "none";
+                              const nivel = tempRol.permisos[mod.id] || "none";
                               const nivelInfo = NIVELES.find(n=>n.id===nivel);
                               return (
                                 <div key={mod.id}
@@ -15771,13 +15912,14 @@ function ConfiguracionModule({ userRol }) {
                                     {NIVELES.map(n=>{
                                       const activo = nivel===n.id;
                                       return (
-                                        <button key={n.id} onClick={()=>setNivelModulo(mod.id, n.id)}
+                                        <button key={n.id} onClick={()=>setNivelRolModulo(mod.id, n.id)}
                                           style={{padding:"4px 10px",borderRadius:6,fontSize:11,fontWeight:activo?700:400,
                                             cursor:"pointer",transition:"all 0.15s",border:"1px solid",
                                             borderColor:activo?n.color:"#ddd5c0",
                                             background:activo?n.color:"white",
-                                            color:activo?"white":n.color}}>
-                                          {n.icon} {n.label}
+                                            color:activo?"white":n.color}}
+                                          title={n.label}>
+                                          {n.icon}
                                         </button>
                                       );
                                     })}
@@ -15789,19 +15931,51 @@ function ConfiguracionModule({ userRol }) {
                         </div>
                       );
                     })}
+
+                    {/* Usuarios con este rol */}
+                    <div className="card" style={{marginTop:20}}>
+                      <div className="card-header">
+                        <div className="card-title">
+                          Usuarios con el rol "{tempRol.nombre}" ({usuariosConRolSel.length})
+                        </div>
+                      </div>
+                      <div className="card-body" style={{padding:usuariosConRolSel.length===0?"20px":0}}>
+                        {usuariosConRolSel.length === 0 ? (
+                          <div style={{fontSize:13,color:"#8a8070",fontStyle:"italic",textAlign:"center"}}>
+                            Ningún usuario asignado a este rol
+                          </div>
+                        ) : (
+                          usuariosConRolSel.map(u => (
+                            <div key={u.id} style={{padding:"10px 16px",borderBottom:"1px solid #f0ece4",
+                              display:"flex",alignItems:"center",gap:10}}>
+                              <span style={{fontSize:16}}>{tempRol.icon}</span>
+                              <div style={{flex:1}}>
+                                <div style={{fontWeight:700,fontSize:13}}>{u.nombre}</div>
+                                <div style={{fontSize:11,color:"#8a8070"}}>@{u.usuario}</div>
+                              </div>
+                              <span style={{fontSize:11,padding:"2px 8px",borderRadius:8,fontWeight:600,
+                                background:u.activo!==false?"#d4edda":"#f8d7da",
+                                color:u.activo!==false?"#155724":"#721c24"}}>
+                                {u.activo!==false?"● Activo":"○ Inactivo"}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
                   </div>
-                );
-              })()}
+                )}
+              </div>
+            </div>
+
+            <div style={{marginTop:16,padding:"10px 14px",background:"#faf3e0",borderRadius:8,
+              fontSize:12,color:"#7a6030",border:"1px solid #e0c87040"}}>
+              <strong>Niveles:</strong> "Sin acceso" oculta el módulo. "Solo ver" permite consultar datos.
+              "Ver y editar" permite agregar, modificar y cancelar registros. La eliminación permanente de datos queda siempre reservada para administradores.
             </div>
           </div>
-
-          <div style={{marginTop:12,padding:"10px 14px",background:"#faf3e0",borderRadius:8,
-            fontSize:12,color:"#7a6030",border:"1px solid #e0c87040"}}>
-            <strong>Niveles de acceso:</strong> "Sin acceso" oculta el módulo. "Solo ver" permite consultar datos.
-            "Ver y editar" permite agregar, modificar y cancelar registros. La eliminación permanente queda reservada para administradores.
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── TAB USUARIOS ── */}
       {tabActiva==="usuarios" && (
@@ -15820,18 +15994,22 @@ function ConfiguracionModule({ userRol }) {
                     const permsU = getPermisosUsuario(state, u.id, u.rol);
                     const accesos = u.rol==="admin" ? TODOS_MODULOS.length : Object.keys(permsU).length;
                     const nEditar = u.rol==="admin" ? TODOS_MODULOS.length : Object.values(permsU).filter(v=>v==="editar").length;
-                    const rolInf  = ROLES[u.rol];
-                    const esBase  = u.id <= 3;
+                    const rolInf  = getRolInfo(state, u.rol);
+                    const esBase  = esUsuarioBase(u.id);
                     const activo  = u.activo !== false;
                     const bg      = i%2===0?"white":"#faf8f3";
                     return (
                       <tr key={u.id}>
-                        <td style={{background:bg,fontFamily:"monospace",fontWeight:700}}>{u.usuario}</td>
+                        <td style={{background:bg,fontFamily:"monospace",fontWeight:700}}>
+                          {u.usuario}
+                          {esBase && <span style={{marginLeft:6,fontSize:9,padding:"1px 5px",borderRadius:6,
+                            background:"#e8e0d0",color:"#5a5040",fontWeight:600}}>BASE</span>}
+                        </td>
                         <td style={{background:bg,fontWeight:600}}>{u.nombre}</td>
                         <td style={{background:bg}}>
                           <span style={{fontSize:11,padding:"3px 10px",borderRadius:10,fontWeight:700,
-                            background:`${rolInf?.color||"#888"}22`,color:rolInf?.color||"#888"}}>
-                            {rolInf?.icon} {rolInf?.label}
+                            background:`${rolInf.color}22`,color:rolInf.color}}>
+                            {rolInf.icon} {rolInf.label}
                           </span>
                         </td>
                         <td style={{background:bg,fontFamily:"monospace",fontSize:12}}>
@@ -15853,6 +16031,10 @@ function ConfiguracionModule({ userRol }) {
                               title={activo?"Desactivar":"Activar"}>
                               {activo?"🔒":"🔓"}
                             </button>
+                            {u.rol !== "admin" && (
+                              <button className="btn btn-sm btn-danger" onClick={()=>eliminarUsuario(u)}
+                                title={esBase?"Desactivar permanentemente (base)":"Eliminar usuario"}>🗑</button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -16099,16 +16281,71 @@ function ConfiguracionModule({ userRol }) {
               <label className="form-label">Rol *</label>
               <select className="form-select" value={formUser.rol}
                 onChange={e=>setFormUser(f=>({...f,rol:e.target.value}))}>
-                <option value="admin">👑 Administrador</option>
-                <option value="socio">🤝 Socio (Agrofraga)</option>
-                <option value="campo">🌾 Encargado de Campo</option>
+                {rolesDisponibles.map(r => (
+                  <option key={r.id} value={r.id}>{r.icon} {r.nombre}</option>
+                ))}
               </select>
+              {editUsuario && editUsuario.rol !== formUser.rol && (
+                <div style={{fontSize:11,color:"#1a6ea8",marginTop:4,fontStyle:"italic"}}>
+                  ℹ️ Al cambiar el rol se aplicarán los permisos por defecto del nuevo rol.
+                </div>
+              )}
             </div>
             {todosUsuarios.find(u=>u.usuario===formUser.usuario.trim()&&u.id!==editUsuario?.id) && (
               <div style={{padding:"8px 12px",background:"#f8d7da",borderRadius:6,fontSize:12,color:"#721c24"}}>
                 ⚠️ Ese nombre de usuario ya existe
               </div>
             )}
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal nuevo rol */}
+      {modalNewRol && (
+        <Modal title="Nuevo Rol" onClose={()=>setModalNewRol(false)}
+          footer={
+            <>
+              <button className="btn btn-secondary" onClick={()=>setModalNewRol(false)}>Cancelar</button>
+              <button className="btn btn-primary" onClick={crearNuevoRol}
+                disabled={!formNewRol.nombre.trim()}>
+                ＋ Crear rol
+              </button>
+            </>
+          }>
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div className="form-group">
+              <label className="form-label">Nombre del rol *</label>
+              <input className="form-input" value={formNewRol.nombre}
+                onChange={e=>setFormNewRol(f=>({...f,nombre:e.target.value}))}
+                placeholder="Ej. Contador, Supervisor, Auditor"
+                autoFocus/>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Ícono (emoji)</label>
+                <input className="form-input" value={formNewRol.icon}
+                  onChange={e=>setFormNewRol(f=>({...f,icon:e.target.value}))}
+                  placeholder="👥"
+                  style={{fontSize:20,textAlign:"center"}}/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Color</label>
+                <input type="color" value={formNewRol.color}
+                  onChange={e=>setFormNewRol(f=>({...f,color:e.target.value}))}
+                  style={{width:"100%",height:38,padding:2,border:"1px solid #ddd5c0",borderRadius:6,cursor:"pointer"}}/>
+              </div>
+            </div>
+            <div style={{padding:"10px 14px",background:"#edf4fb",borderRadius:8,
+              fontSize:12,color:"#1a4a70",border:"1px solid #1a6ea833"}}>
+              <strong>Preview:</strong>
+              <span style={{marginLeft:8,padding:"4px 12px",borderRadius:10,fontWeight:700,
+                background:`${formNewRol.color}22`,color:formNewRol.color}}>
+                {formNewRol.icon} {formNewRol.nombre || "Nombre del rol"}
+              </span>
+            </div>
+            <div style={{fontSize:11,color:"#8a8070",fontStyle:"italic"}}>
+              El rol se creará sin permisos. Después de crearlo podrás configurar qué módulos puede ver/editar.
+            </div>
           </div>
         </Modal>
       )}
@@ -16147,7 +16384,7 @@ function ConfiguracionModule({ userRol }) {
         const nomUser = uid => todosUsuarios.find(u=>u.usuario===uid)?.nombre || uid;
         const rolUser = uid => {
           const u = todosUsuarios.find(u=>u.usuario===uid);
-          return u ? (ROLES[u.rol]?.label || u.rol) : uid;
+          return u ? getRolInfo(state, u.rol).label : uid;
         };
 
         return (
@@ -18595,6 +18832,7 @@ export default function App() {
         usuariosBaseEdit:parsed.usuariosBaseEdit || {},
         permisosUsuario: parsed.permisosUsuario || {},
         permisosGranulares: parsed.permisosGranulares || {},
+        rolesPersonalizados: parsed.rolesPersonalizados || {},
         creditoParams:   parsed.creditoParams   || {},
         paramsCultivo:   parsed.paramsCultivo   || {},
         // Catálogos — si localStorage tiene datos úsalos, si no usa initState
@@ -18664,6 +18902,7 @@ export default function App() {
         usuariosBaseEdit: state.usuariosBaseEdit || {},
         permisosUsuario:  state.permisosUsuario  || {},
         permisosGranulares: state.permisosGranulares || {},
+        rolesPersonalizados: state.rolesPersonalizados || {},
         creditoParams:    state.creditoParams    || {},
         paramsCultivo:    state.paramsCultivo    || {},
         // Catálogos
@@ -18738,6 +18977,7 @@ export default function App() {
   }, []);
   const [page, setPage]   = useState("dashboard");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [bellOpen, setBellOpen] = useState(false);
 
   // Detectar conexión online/offline
   useEffect(() => {
@@ -18868,7 +19108,7 @@ export default function App() {
     ...(state.recomendaciones||[]).filter(s=>s.estatus==="pendiente"),
   ].length;
 
-  const rolInfo = ROLES[rol];
+  const rolInfo = getRolInfo(state, rol);
 
   return (
     <Ctx.Provider value={{ state, dispatch }}>
@@ -18956,6 +19196,133 @@ export default function App() {
             <div className="topbar-right" style={{gap:12}}>
               {(rol === "admin" || rol === "socio") && <ProductorSelector />}
               <WidgetCBOTCompact />
+              {rol !== "campo" && (()=>{
+                const notifs = state.notificaciones || [];
+                const misNotifs = notifs.filter(n => n.para===rol || n.para===usuario?.usuario || n.para==="todos" || !n.para);
+                const noLeidas = misNotifs.filter(n=>!n.leida);
+                const ultimas = misNotifs.slice(0,5);
+                const ICONO_TIPO = {
+                  aprobacion:"✅", alerta:"⚠️", error:"❌", info:"ℹ️",
+                  credito:"💰", gasto:"💸", insumo:"🧪", diesel:"⛽",
+                  cosecha:"🌾", sistema:"⚙️", bitacora:"📋"
+                };
+                const TITULO_TIPO = {
+                  aprobacion:"Aprobación", alerta:"Alerta", error:"Error", info:"Información",
+                  credito:"Crédito", gasto:"Egreso", insumo:"Insumos", diesel:"Diesel",
+                  cosecha:"Cosecha", sistema:"Sistema", bitacora:"Bitácora"
+                };
+                const tiempoRel = (fecha) => {
+                  if (!fecha) return "";
+                  const ms = Date.now() - new Date(fecha).getTime();
+                  const min = Math.floor(ms/60000);
+                  if (min < 1) return "ahora";
+                  if (min < 60) return `hace ${min} min`;
+                  const h = Math.floor(min/60);
+                  if (h < 24) return `hace ${h} h`;
+                  const d = Math.floor(h/24);
+                  if (d < 7) return `hace ${d} d`;
+                  return new Date(fecha).toLocaleDateString("es-MX",{day:"2-digit",month:"short"});
+                };
+                return (
+                  <div style={{position:"relative"}}>
+                    <button onClick={()=>setBellOpen(o=>!o)}
+                      title="Notificaciones"
+                      style={{background:"none",border:"none",cursor:"pointer",
+                        padding:"6px 8px",borderRadius:8,position:"relative",
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        transition:"background 0.15s"}}
+                      onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.1)"}
+                      onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                      <span style={{fontSize:20,lineHeight:1}}>🔔</span>
+                      {noLeidas.length>0 && (
+                        <span style={{position:"absolute",top:2,right:2,
+                          minWidth:16,height:16,borderRadius:8,padding:"0 4px",
+                          background:"#c0392b",color:"white",fontSize:10,fontWeight:700,
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          border:"2px solid white",boxSizing:"content-box"}}>
+                          {noLeidas.length>99?"99+":noLeidas.length}
+                        </span>
+                      )}
+                    </button>
+                    {bellOpen && (
+                      <>
+                        <div onClick={()=>setBellOpen(false)}
+                          style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:999}}/>
+                        <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,
+                          width:360,maxHeight:480,background:"white",
+                          borderRadius:12,boxShadow:"0 12px 32px rgba(0,0,0,0.18)",
+                          border:"1px solid #e8e0d0",zIndex:1000,overflow:"hidden",
+                          display:"flex",flexDirection:"column"}}>
+                          <div style={{padding:"14px 16px",borderBottom:"1px solid #f0ece4",
+                            display:"flex",alignItems:"center",justifyContent:"space-between",
+                            background:"#faf8f3"}}>
+                            <div style={{fontWeight:700,fontSize:14,color:"#3d3525"}}>
+                              🔔 Notificaciones
+                              {noLeidas.length>0 && (
+                                <span style={{marginLeft:8,fontSize:11,padding:"2px 8px",
+                                  borderRadius:10,background:"#c0392b22",color:"#c0392b",fontWeight:600}}>
+                                  {noLeidas.length} sin leer
+                                </span>
+                              )}
+                            </div>
+                            {noLeidas.length>0 && (
+                              <button onClick={()=>dispatch({type:"LEER_ALL_NOTIF"})}
+                                style={{background:"none",border:"none",cursor:"pointer",
+                                  fontSize:11,color:"#1a6ea8",fontWeight:600,padding:"4px 8px",borderRadius:6}}>
+                                Marcar todas leídas
+                              </button>
+                            )}
+                          </div>
+                          <div style={{flex:1,overflowY:"auto"}}>
+                            {ultimas.length===0 ? (
+                              <div style={{padding:"40px 20px",textAlign:"center",color:"#8a8070"}}>
+                                <div style={{fontSize:32,marginBottom:8}}>📭</div>
+                                <div style={{fontSize:13,fontWeight:600}}>Sin notificaciones</div>
+                                <div style={{fontSize:11,marginTop:4}}>Todo al día</div>
+                              </div>
+                            ) : (
+                              ultimas.map(n=>{
+                                const icono = ICONO_TIPO[n.tipo] || "📌";
+                                const titulo = n.titulo || TITULO_TIPO[n.tipo] || "Notificación";
+                                return (
+                                  <div key={n.id}
+                                    onClick={()=>!n.leida && dispatch({type:"LEER_NOTIF",payload:n.id})}
+                                    style={{padding:"12px 16px",borderBottom:"1px solid #f5f2e9",
+                                      cursor:n.leida?"default":"pointer",
+                                      background:n.leida?"white":"#f0f8e8",
+                                      display:"flex",gap:10,transition:"background 0.15s"}}
+                                    onMouseEnter={e=>{if(!n.leida)e.currentTarget.style.background="#e4f1d4";}}
+                                    onMouseLeave={e=>{if(!n.leida)e.currentTarget.style.background="#f0f8e8";}}>
+                                    <div style={{fontSize:20,lineHeight:1,flexShrink:0,marginTop:2}}>{icono}</div>
+                                    <div style={{flex:1,minWidth:0}}>
+                                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                                        <span style={{fontWeight:700,fontSize:13,color:"#3d3525"}}>{titulo}</span>
+                                        {!n.leida && <span style={{width:6,height:6,borderRadius:"50%",background:"#c0392b"}}/>}
+                                      </div>
+                                      <div style={{fontSize:12,color:"#5a5040",lineHeight:1.4,
+                                        overflow:"hidden",textOverflow:"ellipsis",
+                                        display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>
+                                        {n.mensaje||"—"}
+                                      </div>
+                                      <div style={{fontSize:10,color:"#8a8070",marginTop:4}}>{tiempoRel(n.fecha)}</div>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                          {misNotifs.length>5 && (
+                            <div style={{padding:"10px 16px",borderTop:"1px solid #f0ece4",
+                              textAlign:"center",fontSize:11,color:"#8a8070",background:"#faf8f3"}}>
+                              Mostrando 5 de {misNotifs.length}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="topbar-date">{today()}</div>
               <span className="badge" style={{background:rolInfo.color+"22",color:rolInfo.color,border:`1px solid ${rolInfo.color}44`,fontSize:11,fontWeight:600}}>
                 {rolInfo.icon} {rolInfo.label}
