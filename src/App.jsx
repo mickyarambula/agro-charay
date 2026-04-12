@@ -1791,11 +1791,16 @@ const initState = {
   usuariosExtra: [],
   usuariosBaseEdit: {}, // overrides para los 3 usuarios base
 
-  // ── PERMISOS DE USUARIO (admin puede modificar roles no-admin) ──
+  // ── PERMISOS DE USUARIO (legacy — roles, mantenido para fallback) ──
   permisosUsuario: {
     socio: ["dashboard","lotes","bitacora","maquinaria","operadores","insumos","diesel","costos","cosecha","rentas","proyeccion","asistente"],
     campo: ["bitacora","lotes"],
   },
+
+  // ── PERMISOS GRANULARES POR USUARIO ──
+  // { [userId]: { [moduleId]: "ver" | "editar" } }
+  // Si no existe entrada, se calcula fallback desde ACCESO[rol] con nivel "ver"
+  permisosGranulares: {},
 
   precioVentaMXN: 4800,        // precio global legacy (fallback)
   rendimientoEsperado: 10,    // rendimiento global legacy (fallback)
@@ -2311,6 +2316,7 @@ function reducer(s, a) {
     case "SET_IA_CONFIG": return { ...s, iaMotor: a.payload.motor, iaKeyGemini: a.payload.keyGemini, iaKeyClaude: a.payload.keyClaude };
     case "SET_IA_HISTORIAL": return { ...s, iaHistorial: a.payload };
     case "UPD_PERMISOS_ROL": return { ...s, permisosUsuario: { ...s.permisosUsuario, [a.payload.rol]: a.payload.modulos } };
+    case "SET_PERMISOS_USUARIO": return { ...s, permisosGranulares: { ...s.permisosGranulares, [a.payload.userId]: a.payload.permisos } };
     case "SET_CICLO_ACTIVO_ID": return { ...s, cicloActivoId: a.payload,
       cicloActual: (s.ciclos||[]).find(c=>c.id===a.payload)?.nombre || s.cicloActual,
       cultivoActivo: null };
@@ -2325,6 +2331,22 @@ function reducer(s, a) {
 }
 
 function useData() { return useContext(Ctx); }
+
+// ─── PERMISOS GRANULARES — resolver nivel por usuario + módulo ───────────────
+function getPermisosUsuario(state, userId, rol) {
+  if (rol === "admin") {
+    const r = {};
+    (ACCESO.admin || []).forEach(m => { r[m] = "editar"; });
+    return r;
+  }
+  const granulares = state.permisosGranulares?.[userId];
+  if (granulares && Object.keys(granulares).length > 0) return granulares;
+  // Fallback: derivar de ACCESO[rol] con nivel "ver"
+  const modulos = state.permisosUsuario?.[rol] || ACCESO[rol] || [];
+  const r = {};
+  modulos.forEach(m => { r[m] = "ver"; });
+  return r;
+}
 
 // ─── FILTRAR ESTADO POR PRODUCTOR ─────────────────────────────────────────────
 // Devuelve una "vista" del estado filtrada por productorActivo (null = todos)
@@ -2370,7 +2392,7 @@ function nomCompleto(p) {
   return [p.apPat, p.apMat, p.nombres].filter(Boolean).join(" ");
 }
 
-function ProductoresModule({ userRol, onNavigate }) {
+function ProductoresModule({ userRol, puedeEditar, onNavigate }) {
   const { state, dispatch } = useData();
   const nav = (page, pid, filtros) => onNavigate && onNavigate(page, pid, filtros);
   const [modo, setModo]     = useState("lista");
@@ -2732,7 +2754,7 @@ function ProductoresModule({ userRol, onNavigate }) {
             </div>
             <TipoBadge tipo={p.tipo} />
           </div>
-          {userRol==="admin" && (
+          {puedeEditar && (
             <div style={{display:"flex",gap:8}}>
               <button className="btn btn-secondary btn-sm" onClick={()=>{setSel(p);abrirForm(p);}}>✏️ Editar</button>
             </div>
@@ -2972,7 +2994,7 @@ function ProductoresModule({ userRol, onNavigate }) {
         <div className="card" style={{marginBottom:16}}>
           <div className="card-header">
             <div className="card-title">👤 Datos del Productor</div>
-            {userRol==="admin" && <button className="btn btn-secondary btn-sm" onClick={()=>{setSel(p);abrirForm(p);}}>✏️ Editar</button>}
+            {puedeEditar && <button className="btn btn-secondary btn-sm" onClick={()=>{setSel(p);abrirForm(p);}}>✏️ Editar</button>}
           </div>
           <div className="card-body">
             {[
@@ -2991,7 +3013,7 @@ function ProductoresModule({ userRol, onNavigate }) {
           </div>
         </div>
 
-        {userRol==="admin" && (
+        {puedeEditar && (
           <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
             <button className="btn btn-secondary" onClick={()=>{setSel(p);abrirForm(p);}} style={{flex:1}}>✏️ Editar</button>
             <div onClick={()=>dispatch({type:"UPD_PRODUCTOR",payload:{...p,activo:!(p.activo!==false)}})}
@@ -3189,7 +3211,7 @@ function ProductoresModule({ userRol, onNavigate }) {
                 </div>
               ))}
             </div>
-            {userRol==="admin" && <button className="btn btn-primary btn-sm" onClick={()=>abrirForm()}>＋ Agregar productor</button>}
+            {puedeEditar && <button className="btn btn-primary btn-sm" onClick={()=>abrirForm()}>＋ Agregar productor</button>}
             <button className="btn btn-secondary btn-sm"
               onClick={()=>descargarHTML(`EstadosCuenta_Todos_${state.cicloActual||"ciclo"}`, generarHTMLTodos(state))}
               style={{background:"#8e44ad",color:"white",border:"none",fontWeight:600}}>
@@ -3208,7 +3230,7 @@ function ProductoresModule({ userRol, onNavigate }) {
             <div className="empty-icon">👥</div>
             <div className="empty-title">Sin productores registrados</div>
             <div className="empty-sub">Agrega los productores del ciclo para activar todos los módulos</div>
-            {userRol==="admin" && <button className="btn btn-primary" onClick={()=>abrirForm()}>＋ Agregar primer productor</button>}
+            {puedeEditar && <button className="btn btn-primary" onClick={()=>abrirForm()}>＋ Agregar primer productor</button>}
           </div>
         ) : (
           <>
@@ -3282,7 +3304,7 @@ function ProductoresModule({ userRol, onNavigate }) {
                         </td>
                         <td style={{background:bgFila}}>
                           <div className="flex gap-2" onClick={e=>e.stopPropagation()}>
-                            {userRol==="admin" && <button className="btn btn-sm btn-secondary" onClick={()=>{setSel(p);abrirForm(p);}}>✏️</button>}
+                            {puedeEditar && <button className="btn btn-sm btn-secondary" onClick={()=>{setSel(p);abrirForm(p);}}>✏️</button>}
                             {userRol==="admin" && <button className="btn btn-sm btn-danger" onClick={()=>{
   const razones = puedeEliminarProductor(p.id, state);
   if (razones.length>0) { alert("No se puede eliminar: " + razones.join(", ") + "."); return; }
@@ -5719,7 +5741,7 @@ function ComboConNuevo({label, value, opts, onSelect, placeholder}) {
   );
 }
 
-function LotesModule({ userRol }) {
+function LotesModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
   const [modo, setModo]     = useState("lista");   // lista | detalle | form | analisis | fenologia
   const [sel, setSel]       = useState(null);
@@ -5845,7 +5867,7 @@ function LotesModule({ userRol }) {
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,flex:1}}>
             {l.apodo||"Lote"} {l.lote?"· "+l.lote:""}
           </div>
-          {userRol==="admin" && <button className="btn btn-secondary" onClick={()=>abrirForm(l)}>✏️ Editar</button>}
+          {puedeEditar && <button className="btn btn-secondary" onClick={()=>abrirForm(l)}>✏️ Editar</button>}
         </div>
 
         <div className="stat-grid" style={{gridTemplateColumns:"repeat(3,1fr)",marginBottom:20}}>
@@ -5886,14 +5908,14 @@ function LotesModule({ userRol }) {
           </div>
         </div>
 
-        {userRol==="admin" && (
+        {(puedeEditar || userRol==="admin") && (
           <div style={{display:"flex",gap:10,marginTop:16,flexWrap:"wrap"}}>
-            <button className="btn btn-secondary" onClick={()=>abrirForm(l)} style={{flex:1}}>✏️ Editar</button>
-            <button className="btn btn-danger" onClick={()=>{
+            {puedeEditar && <button className="btn btn-secondary" onClick={()=>abrirForm(l)} style={{flex:1}}>✏️ Editar</button>}
+            {userRol==="admin" && <button className="btn btn-danger" onClick={()=>{
   const razones = puedeEliminarLote(l.id, state);
   if (razones.length>0) { alert("No se puede eliminar este lote porque " + razones.join(", ") + "."); return; }
   confirmarEliminar("¿Eliminar este lote? Esta acción no se puede deshacer.",()=>{dispatch({type:"DEL_LOTE",payload:l.id});setModo("lista");setSel(null);});
-}} style={{flex:1}}>🗑 Eliminar</button>
+}} style={{flex:1}}>🗑 Eliminar</button>}
           </div>
         )}
       </div>
@@ -6215,7 +6237,7 @@ function LotesModule({ userRol }) {
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,flexWrap:"wrap"}}>
           <button className="btn btn-secondary" onClick={()=>{setModo("lista");setFiltroSel("");}}>← Volver</button>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,flex:1}}>Análisis de Superficie</div>
-          {userRol==="admin" && <button className="btn btn-primary btn-sm" onClick={()=>abrirForm()}>＋ Nuevo lote</button>}
+          {puedeEditar && <button className="btn btn-primary btn-sm" onClick={()=>abrirForm()}>＋ Nuevo lote</button>}
         </div>
         {/* KPIs */}
         <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:20}}>
@@ -6432,7 +6454,7 @@ function LotesModule({ userRol }) {
                 </div>
               ))}
             </div>
-            {userRol==="admin" && <button className="btn btn-primary btn-sm" onClick={()=>abrirForm()}>＋ Nuevo lote</button>}
+            {puedeEditar && <button className="btn btn-primary btn-sm" onClick={()=>abrirForm()}>＋ Nuevo lote</button>}
             <button className="btn btn-secondary btn-sm" onClick={()=>setModo("analisis")}
               style={{background:"#f0f7ec",border:"1px solid #4a8c2a44",color:"#2d5a1b",fontWeight:600}}>
               📊 Análisis
@@ -6495,7 +6517,7 @@ function LotesModule({ userRol }) {
                     <td style={{background:bgFila,textAlign:"right",fontFamily:"'DM Mono',monospace",fontSize:12,fontWeight:700,color:T.field}}>{l.supCredito>0?fmt2(l.supCredito):"—"}</td>
                     <td style={{background:bgFila}} onClick={e=>e.stopPropagation()}>
                       <div style={{display:"flex",gap:4}}>
-                        {userRol==="admin" && <button className="btn btn-sm btn-secondary" onClick={()=>{setSel(l);abrirForm(l);}}>✏️</button>}
+                        {puedeEditar && <button className="btn btn-sm btn-secondary" onClick={()=>{setSel(l);abrirForm(l);}}>✏️</button>}
                         {userRol==="admin" && <button className="btn btn-sm btn-danger" onClick={()=>{
   const razones = puedeEliminarLote(l.id, state);
   if (razones.length>0) { alert("No se puede eliminar: " + razones.join(", ") + "."); return; }
@@ -6520,7 +6542,7 @@ function LotesModule({ userRol }) {
 // ─── CICLOS MODULE ────────────────────────────────────────────────────────────
 
 // ─── CICLOS MODULE v2 ──────────────────────────────────────────────────────────
-function CiclosModule({ userRol }) {
+function CiclosModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
   const [vista, setVista]   = useState("lista");    // lista | detalle | editProds | editLotes | cultivos
   const [selCiclo, setSelCiclo] = useState(null);   // id del ciclo en edición/detalle
@@ -6789,7 +6811,7 @@ function CiclosModule({ userRol }) {
                         <div style={{fontWeight:700,fontSize:13,color:"#2d5a1b"}}>{c.cultivoNombre}</div>
                         <div style={{fontSize:11,color:"#5a7a3a"}}>Var. {c.variedad}</div>
                       </div>
-                      {userRol==="admin"&&(
+                      {puedeEditar&&(
                         <button onClick={()=>quitarCultivoCiclo(c.cultivoId,c.variedad)}
                           style={{background:"none",border:"none",cursor:"pointer",color:"#c0392b",fontSize:16,lineHeight:1}}>✕</button>
                       )}
@@ -6806,7 +6828,7 @@ function CiclosModule({ userRol }) {
           <div className="card">
             <div className="card-header">
               <div className="card-title">📚 Catálogo de Cultivos</div>
-              {userRol==="admin"&&(
+              {puedeEditar&&(
                 <div style={{display:"flex",gap:6}}>
                   <input className="form-input" value={nuevoCult} onChange={e=>setNuevoCult(e.target.value)}
                     placeholder="Nuevo cultivo..." style={{width:130,fontSize:12}}
@@ -6835,7 +6857,7 @@ function CiclosModule({ userRol }) {
                           <div key={i} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",
                             borderRadius:20,background:"white",border:"1px solid #ddd5c0",fontSize:12}}>
                             <span>{v}</span>
-                            {userRol==="admin"&&(
+                            {puedeEditar&&(
                               <button onClick={()=>{
                                 if(window.confirm(`¿Eliminar variedad "${v}"?`)){
                                   dispatch({type:"UPD_CULTIVO_CAT",payload:{
@@ -6847,7 +6869,7 @@ function CiclosModule({ userRol }) {
                           </div>
                         ))}
                       </div>
-                      {userRol==="admin"&&(
+                      {puedeEditar&&(
                         <div style={{display:"flex",gap:6}}>
                           <input className="form-input" value={nuevaVar}
                             onChange={e=>setNuevaVar(e.target.value)}
@@ -7530,7 +7552,7 @@ function CiclosModule({ userRol }) {
 
 
 // ─── BITÁCORA MODULE ──────────────────────────────────────────────────────────
-function BitacoraModule({ userRol }) {
+function BitacoraModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
   const [vista, setVista] = useState("feed");       // feed | porLote
   const [tipoModal, setTipoModal] = useState(null); // null | tipo de registro
@@ -9172,7 +9194,7 @@ function Placeholder({ icon, title, desc }) {
 const mxn = n => (typeof n==="number" ? n.toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2}) : "$0.00");
 
 // ─── INSUMOS MODULE ───────────────────────────────────────────────────────────
-function InsumosModule({ userRol, onNavigate, navFiltro = {} }) {
+function InsumosModule({ userRol, puedeEditar, onNavigate, navFiltro = {} }) {
   const { state, dispatch } = useData();
   const nav = (page, pid, filtros) => onNavigate && onNavigate(page, pid, filtros);
   const hoy = new Date().toISOString().split("T")[0];
@@ -9912,14 +9934,14 @@ function InsumosModule({ userRol, onNavigate, navFiltro = {} }) {
                     <td style={{background:bg,fontSize:11,color:"#7a7060",maxWidth:150}}>{ins.proveedor}</td>
                     <td style={{background:bg}}>
                       <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-                        {!ins.cancelado&&ins.estatus!=="recibido"&&userRol==="admin"&&(
+                        {!ins.cancelado&&ins.estatus!=="recibido"&&puedeEditar&&(
                           <button className="btn btn-sm" style={{fontSize:10,background:"#d4edda",color:"#155724",border:"1px solid #c3e6cb"}}
                             onClick={()=>{setRecibirModal(ins);setFormRecep({...emptyRecep,cantidad:String((parseFloat(ins.cantidad)||0)-(parseFloat(ins.cantidadRecibida)||0))});}}>
                             📥 Recibir
                           </button>
                         )}
                         {ins.cancelado&&<BadgeCancelado registro={ins}/>}
-                        {ins.cancelado?(userRol==="admin"&&<button className="btn btn-sm btn-secondary" style={{fontSize:11}} onClick={()=>setCancelModal({action:"reactivar",tabla:"insumos",rec:ins})}>↺</button>):(userRol==="admin"&&<button className="btn btn-sm" style={{fontSize:11,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>setCancelModal({action:"cancelar",tabla:"insumos",rec:ins})}>🚫</button>)}
+                        {ins.cancelado?(puedeEditar&&<button className="btn btn-sm btn-secondary" style={{fontSize:11}} onClick={()=>setCancelModal({action:"reactivar",tabla:"insumos",rec:ins})}>↺</button>):(puedeEditar&&<button className="btn btn-sm" style={{fontSize:11,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>setCancelModal({action:"cancelar",tabla:"insumos",rec:ins})}>🚫</button>)}
                       </div>
                     </td>
                   </tr>
@@ -10139,7 +10161,7 @@ function InsumosModule({ userRol, onNavigate, navFiltro = {} }) {
 }
 
 // ─── DIESEL MODULE ─────────────────────────────────────────────────────────────
-function DieselModule({ userRol, navFiltro = {} }) {
+function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   const { state, dispatch } = useData();
   const hoy = new Date().toISOString().split("T")[0];
   const productores = state.productores || [];
@@ -10492,7 +10514,7 @@ function DieselModule({ userRol, navFiltro = {} }) {
                     <td style={{background:bg,fontSize:11,color:"#7a7060",maxWidth:150}}>{d.proveedor}</td>
                     <td style={{background:bg}}>
                       <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-                        {!d.cancelado&&!d.esAjuste&&d.estatus!=="recibido"&&userRol==="admin"&&(
+                        {!d.cancelado&&!d.esAjuste&&d.estatus!=="recibido"&&puedeEditar&&(
                           <button className="btn btn-sm" style={{fontSize:10,background:"#d4edda",color:"#155724",border:"1px solid #c3e6cb"}}
                             onClick={()=>{setRecibirDieselModal(d);setFormRecepDie({...emptyRecepDie,litros:String((parseFloat(d.cantidad)||0)-(parseFloat(d.litrosRecibidos)||0))});}}>
                             📥 Recibir
@@ -10511,8 +10533,8 @@ function DieselModule({ userRol, navFiltro = {} }) {
                         )}
                         {d.cancelado&&<BadgeCancelado registro={d}/>}
                         {d.cancelado
-                          ?(userRol==="admin"&&<button className="btn btn-sm btn-secondary" style={{fontSize:11}} onClick={()=>setCancelModal({action:"reactivar",tabla:"diesel",rec:d})}>↺</button>)
-                          :(userRol==="admin"&&<button className="btn btn-sm" style={{fontSize:11,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>setCancelModal({action:"cancelar",tabla:"diesel",rec:d})}>🚫</button>)
+                          ?(puedeEditar&&<button className="btn btn-sm btn-secondary" style={{fontSize:11}} onClick={()=>setCancelModal({action:"reactivar",tabla:"diesel",rec:d})}>↺</button>)
+                          :(puedeEditar&&<button className="btn btn-sm" style={{fontSize:11,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>setCancelModal({action:"cancelar",tabla:"diesel",rec:d})}>🚫</button>)
                         }
                       </div>
                     </td>
@@ -10716,7 +10738,7 @@ function DieselModule({ userRol, navFiltro = {} }) {
 
 // ─── GASTOS MODULE ─────────────────────────────────────────────────────────────
 // ─── EGRESOS DEL CICLO MODULE ─────────────────────────────────────────────────
-function EgresosModule({ userRol, onNavigate, navFiltro = {} }) {
+function EgresosModule({ userRol, puedeEditar, onNavigate, navFiltro = {} }) {
   const { state, dispatch } = useData();
   const nav = (page, pid, filtros) => onNavigate && onNavigate(page, pid, filtros);
   const hoy = new Date().toISOString().split("T")[0];
@@ -11397,7 +11419,7 @@ const fileEgresosRef    = useRef(null);
                       <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700}}>{mxnFmt(d.monto)}</td>
                       <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12}}>{aplicado>0?mxnFmt(aplicado):"—"}</td>
                       <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,fontWeight:700,color:dif>=0?"#2d5a1b":"#c0392b"}}>{mxnFmt(Math.abs(dif))}{dif<0?" ⚠️":dif===0?" ✅":""}</td>
-                      <td style={{background:bg}}>{d.cancelado&&<BadgeCancelado registro={d}/>}{d.cancelado?(userRol==="admin"&&<button className="btn btn-sm btn-secondary" style={{fontSize:11}} onClick={()=>setCancelModal({action:"reactivar",tabla:"dispersiones",rec:d})}>↺</button>):(userRol==="admin"&&<button className="btn btn-sm" style={{fontSize:11,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>setCancelModal({action:"cancelar",tabla:"dispersiones",rec:d})}>🚫</button>)}</td>
+                      <td style={{background:bg}}>{d.cancelado&&<BadgeCancelado registro={d}/>}{d.cancelado?(puedeEditar&&<button className="btn btn-sm btn-secondary" style={{fontSize:11}} onClick={()=>setCancelModal({action:"reactivar",tabla:"dispersiones",rec:d})}>↺</button>):(puedeEditar&&<button className="btn btn-sm" style={{fontSize:11,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>setCancelModal({action:"cancelar",tabla:"dispersiones",rec:d})}>🚫</button>)}</td>
                     </tr>
                   );
                 })}
@@ -11612,7 +11634,7 @@ const fileEgresosRef    = useRef(null);
                       <td style={{background:bg,fontSize:12,fontWeight:600}}>{nomProd(g.productorId)}</td>
                       <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}>{mxnFmt(g.monto)}</td>
                       <td style={{background:bg,fontSize:11,fontFamily:"monospace",color:"#5a7a3a"}}>{numSolG||"—"}</td>
-                      <td style={{background:bg}}>{g.cancelado&&<BadgeCancelado registro={g}/>}{g.cancelado?(userRol==="admin"&&<button className="btn btn-sm btn-secondary" style={{fontSize:11}} onClick={()=>setCancelModal({action:"reactivar",tabla:"egresosManual",rec:g})}>↺</button>):(userRol==="admin"&&<button className="btn btn-sm" style={{fontSize:11,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>setCancelModal({action:"cancelar",tabla:"egresosManual",rec:g})}>🚫</button>)}</td>
+                      <td style={{background:bg}}>{g.cancelado&&<BadgeCancelado registro={g}/>}{g.cancelado?(puedeEditar&&<button className="btn btn-sm btn-secondary" style={{fontSize:11}} onClick={()=>setCancelModal({action:"reactivar",tabla:"egresosManual",rec:g})}>↺</button>):(puedeEditar&&<button className="btn btn-sm" style={{fontSize:11,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>setCancelModal({action:"cancelar",tabla:"egresosManual",rec:g})}>🚫</button>)}</td>
                     </tr>
                   );
                 })}
@@ -12204,7 +12226,7 @@ function calcInteresExp(exp) {
 }
 
 
-function CreditoModule({ userRol, onNavigate, navFiltro = {} }) {
+function CreditoModule({ userRol, puedeEditar, onNavigate, navFiltro = {} }) {
   const { state, dispatch } = useData();
   const nav = (page, pid, filtros) => onNavigate && onNavigate(page, pid, filtros);
   const [vista, setVista]         = useState(navFiltro.vista || "consolidado");
@@ -12506,7 +12528,7 @@ function CreditoModule({ userRol, onNavigate, navFiltro = {} }) {
             Parafin: {params.para_tasaAnual}% mens. · Fact {params.para_factibilidad}% · FEGA {params.para_fega}% · AT $200/ha &nbsp;|&nbsp;
             Directo: {params.dir_tasaAnual}% mens. · Fact {params.dir_factibilidad}% · FEGA {params.dir_fega}%
           </div>
-          {userRol==="admin"&&<button className="btn btn-sm btn-secondary" onClick={()=>{setFormParams(params);setEditParams(true);}}>⚙️ Editar parámetros</button>}
+          {puedeEditar&&<button className="btn btn-sm btn-secondary" onClick={()=>{setFormParams(params);setEditParams(true);}}>⚙️ Editar parámetros</button>}
         </div>
 
         {/* Resumen global — 3 columnas */}
@@ -12740,7 +12762,7 @@ function CreditoModule({ userRol, onNavigate, navFiltro = {} }) {
         <div className="card" style={{marginBottom:16}}>
           <div className="card-header">
             <div className="card-title">💰 Monto Parafinanciero por Ha</div>
-            {userRol==="admin"&&!editMontoPorHa&&<button className="btn btn-sm btn-secondary" onClick={()=>setEditMontoPorHa(true)}>✏️ Editar</button>}
+            {puedeEditar&&!editMontoPorHa&&<button className="btn btn-sm btn-secondary" onClick={()=>setEditMontoPorHa(true)}>✏️ Editar</button>}
           </div>
           <div className="card-body">
             {editMontoPorHa?(
@@ -13340,7 +13362,7 @@ function PersonalModule() {
 }
 
 // ─── COSECHA Y MAQUILA MODULE ─────────────────────────────────────────────────
-function CosechaModule({ userRol }) {
+function CosechaModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
   const hoy = new Date().toISOString().split("T")[0];
   const productores  = state.productores || [];
@@ -13606,7 +13628,7 @@ function CosechaModule({ userRol }) {
               borderBottom:`1px solid ${T.line}`}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                 <span style={{fontWeight:600,fontSize:13}}>{label}</span>
-                {userRol==="admin"&&<button className="btn btn-sm btn-secondary" onClick={onClick}>＋ Agregar</button>}
+                {puedeEditar&&<button className="btn btn-sm btn-secondary" onClick={onClick}>＋ Agregar</button>}
               </div>
               <div style={{fontFamily:"monospace",fontWeight:700,fontSize:16,color:"#c0392b"}}>{mxnFmt(costo)}</div>
               <div style={{fontSize:11,color:T.fog,marginTop:2}}>{items.length} registro{items.length!==1?"s":""}</div>
@@ -13772,8 +13794,8 @@ function CosechaModule({ userRol }) {
                     <td style={{background:bg,fontSize:11,...st}}>{b.placas}</td>
                     <td style={{background:bg}}>
                       {b.cancelado
-                        ? (userRol==="admin"&&<button className="btn btn-sm btn-secondary" style={{fontSize:10}} onClick={()=>dispatch({type:"REACTIVAR_BOLETA",payload:b.id})}>↺</button>)
-                        : (userRol==="admin"&&<button className="btn btn-sm" style={{fontSize:10,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>confirmarEliminar("¿Cancelar esta boleta?",()=>dispatch({type:"CANCELAR_BOLETA",payload:b.id}))}>🚫</button>)
+                        ? (puedeEditar&&<button className="btn btn-sm btn-secondary" style={{fontSize:10}} onClick={()=>dispatch({type:"REACTIVAR_BOLETA",payload:b.id})}>↺</button>)
+                        : (puedeEditar&&<button className="btn btn-sm" style={{fontSize:10,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>confirmarEliminar("¿Cancelar esta boleta?",()=>dispatch({type:"CANCELAR_BOLETA",payload:b.id}))}>🚫</button>)
                       }
                     </td>
                   </tr>
@@ -15530,16 +15552,13 @@ function ConfiguracionModule({ userRol }) {
     ...(state.alertaParams||{})
   });
   const [savedAlerta, setSavedAlerta] = useState(false);
-  const [rolSel, setRolSel]         = useState("socio");
   const [guardado, setGuardado]     = useState(false);
   const [modalUsuario, setModalUsuario] = useState(false);
   const [editUsuario, setEditUsuario]   = useState(null); // null=nuevo, obj=editar
 
-  const permisoActual = (rol) => state.permisosUsuario?.[rol] || ACCESO[rol] || [];
-  const [tempPermisos, setTempPermisos] = useState({
-    socio: permisoActual("socio"),
-    campo: permisoActual("campo"),
-  });
+  // ── Permisos granulares por usuario ──
+  const [userPermSel, setUserPermSel] = useState(null);       // userId seleccionado
+  const [tempGranular, setTempGranular] = useState({});        // { moduleId: "none"|"ver"|"editar" }
 
   // Usuarios: base hardcoded + extras del state
   const usuariosExtra  = state.usuariosExtra || [];
@@ -15549,28 +15568,45 @@ function ConfiguracionModule({ userRol }) {
     ...usuariosExtra
   ];
 
-  const emptyUser = { nombre:"", usuario:"", password:"", rol:"campo", activo:true };
-  const [formUser, setFormUser] = useState(emptyUser);
-
-  const toggleModulo = (rol, modId) => {
+  const seleccionarUsuarioPerm = (u) => {
+    setUserPermSel(u.id);
     setGuardado(false);
-    setTempPermisos(prev => {
-      const curr = prev[rol] || [];
-      const next = curr.includes(modId) ? curr.filter(m=>m!==modId) : [...curr, modId];
-      return { ...prev, [rol]: next };
+    // Cargar permisos actuales o fallback del rol
+    const actual = getPermisosUsuario(state, u.id, u.rol);
+    setTempGranular({...actual});
+  };
+
+  const setNivelModulo = (modId, nivel) => {
+    setGuardado(false);
+    setTempGranular(prev => {
+      const next = {...prev};
+      if (nivel === "none") { delete next[modId]; }
+      else { next[modId] = nivel; }
+      return next;
     });
   };
 
-  const guardarPermisos = (rol) => {
-    dispatch({ type:"UPD_PERMISOS_ROL", payload:{ rol, modulos: tempPermisos[rol] } });
-    setGuardado(rol);
+  const guardarPermisosGranulares = () => {
+    if (!userPermSel) return;
+    dispatch({ type:"SET_PERMISOS_USUARIO", payload:{ userId: userPermSel, permisos: tempGranular } });
+    setGuardado(true);
     setTimeout(()=>setGuardado(false), 2500);
   };
 
-  const resetPermisos = (rol) => {
-    setTempPermisos(prev => ({ ...prev, [rol]: ACCESO[rol] || [] }));
+  const resetPermisosGranulares = () => {
+    if (!userPermSel) return;
+    const u = todosUsuarios.find(x => x.id === userPermSel);
+    if (!u) return;
+    // Reset a defaults del rol
+    const modulos = ACCESO[u.rol] || [];
+    const r = {};
+    modulos.forEach(m => { r[m] = "ver"; });
+    setTempGranular(r);
     setGuardado(false);
   };
+
+  const emptyUser = { nombre:"", usuario:"", password:"", rol:"campo", activo:true };
+  const [formUser, setFormUser] = useState(emptyUser);
 
   const abrirNuevoUsuario = () => {
     setFormUser(emptyUser);
@@ -15611,7 +15647,6 @@ function ConfiguracionModule({ userRol }) {
   };
 
   const secciones = [...new Set(TODOS_MODULOS.map(m => m.section))];
-  const rolInfo   = ROLES_EDITABLES.find(r => r.id === rolSel);
 
   return (
     <div>
@@ -15623,81 +15658,147 @@ function ConfiguracionModule({ userRol }) {
         <div className={`tab ${tabActiva==="backup"?"active":""}`}    onClick={()=>setTabActiva("backup")}>💾 Backup / Restore</div>
       </div>
 
-      {/* ── TAB PERMISOS ── */}
+      {/* ── TAB PERMISOS GRANULARES POR USUARIO ── */}
       {tabActiva==="permisos" && (
         <div>
-          {/* Selector de rol */}
-          <div style={{display:"flex",gap:12,marginBottom:20}}>
-            {ROLES_EDITABLES.map(r=>(
-              <div key={r.id} onClick={()=>{setRolSel(r.id);setGuardado(false);}}
-                style={{padding:"12px 20px",borderRadius:10,cursor:"pointer",
-                  border:`2px solid ${rolSel===r.id?r.color:"#ddd5c0"}`,
-                  background:rolSel===r.id?`${r.color}15`:"white",transition:"all 0.15s"}}>
-                <div style={{fontSize:22,marginBottom:4}}>{r.icon}</div>
-                <div style={{fontWeight:700,fontSize:13,color:rolSel===r.id?r.color:"#3d3525"}}>{r.label}</div>
-                <div style={{fontSize:11,color:"#8a8070",marginTop:2}}>
-                  {(tempPermisos[r.id]||[]).length} módulos habilitados
+          <div style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:20}}>
+            {/* Panel izquierdo: lista de usuarios */}
+            <div className="card" style={{alignSelf:"start"}}>
+              <div className="card-header"><div className="card-title">Usuarios</div></div>
+              <div className="card-body" style={{padding:0}}>
+                {todosUsuarios.filter(u=>u.activo!==false&&u.rol!=="admin").map(u=>{
+                  const rolInf = ROLES[u.rol];
+                  const sel = userPermSel===u.id;
+                  const perms = getPermisosUsuario(state, u.id, u.rol);
+                  const nMods = Object.keys(perms).length;
+                  const nEdit = Object.values(perms).filter(v=>v==="editar").length;
+                  return (
+                    <div key={u.id} onClick={()=>seleccionarUsuarioPerm(u)}
+                      style={{padding:"12px 16px",cursor:"pointer",borderBottom:"1px solid #f0ece4",
+                        background:sel?"#f0f8e8":"white",transition:"background 0.15s"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{fontSize:16}}>{rolInf?.icon}</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontWeight:700,fontSize:13,color:sel?"#2d5a1b":"#3d3525"}}>{u.nombre}</div>
+                          <div style={{fontSize:11,color:"#8a8070"}}>
+                            @{u.usuario} · <span style={{color:rolInf?.color}}>{rolInf?.label}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{fontSize:10,color:"#8a8070",marginTop:4}}>
+                        {nMods} módulos · {nEdit} con edición
+                      </div>
+                    </div>
+                  );
+                })}
+                <div style={{padding:"10px 16px",fontSize:11,color:"#8a8070",background:"#faf8f3",fontStyle:"italic"}}>
+                  Los administradores siempre tienen acceso total.
                 </div>
               </div>
-            ))}
-          </div>
-
-          <div className="card">
-            <div className="card-header">
-              <div className="card-title" style={{color:rolInfo?.color}}>
-                {rolInfo?.icon} Módulos para {rolInfo?.label}
-              </div>
-              <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                {guardado===rolSel && (
-                  <span style={{fontSize:12,color:"#2d5a1b",fontWeight:600,padding:"4px 12px",background:"#d4edda",borderRadius:8}}>
-                    ✅ Guardado
-                  </span>
-                )}
-                <button className="btn btn-sm btn-secondary" onClick={()=>resetPermisos(rolSel)}>↺ Restaurar default</button>
-                <button className="btn btn-sm btn-primary"   onClick={()=>guardarPermisos(rolSel)}>💾 Guardar cambios</button>
-              </div>
             </div>
-            <div className="card-body">
-              {secciones.map(sec=>{
-                const mods = TODOS_MODULOS.filter(m=>m.section===sec);
+
+            {/* Panel derecho: permisos del usuario seleccionado */}
+            <div>
+              {!userPermSel ? (
+                <div className="card">
+                  <div className="card-body" style={{textAlign:"center",padding:"60px 20px",color:"#8a8070"}}>
+                    <div style={{fontSize:36,marginBottom:12}}>👈</div>
+                    <div style={{fontSize:14,fontWeight:600}}>Selecciona un usuario</div>
+                    <div style={{fontSize:12,marginTop:4}}>para configurar sus permisos por módulo</div>
+                  </div>
+                </div>
+              ) : (()=>{
+                const uSel = todosUsuarios.find(x=>x.id===userPermSel);
+                if (!uSel) return null;
+                const rolInf = ROLES[uSel.rol];
+                const NIVELES = [
+                  { id:"none",   label:"Sin acceso", icon:"🚫", color:"#c0392b", bg:"#fdf0ef" },
+                  { id:"ver",    label:"Solo ver",   icon:"👁",  color:"#1a6ea8", bg:"#edf4fb" },
+                  { id:"editar", label:"Ver y editar",icon:"✏️", color:"#2d5a1b", bg:"#f0f8e8" },
+                ];
                 return (
-                  <div key={sec} style={{marginBottom:20}}>
-                    <div style={{fontSize:11,fontWeight:700,color:"#8a8070",textTransform:"uppercase",
-                      letterSpacing:1,marginBottom:8,paddingBottom:4,borderBottom:"1px solid #e8e0d0"}}>
-                      {sec}
-                    </div>
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:8}}>
-                      {mods.map(mod=>{
-                        const activo = (tempPermisos[rolSel]||[]).includes(mod.id);
-                        return (
-                          <div key={mod.id} onClick={()=>toggleModulo(rolSel, mod.id)}
-                            style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
-                              borderRadius:8,cursor:"pointer",
-                              border:`1px solid ${activo?"#2d5a1b44":"#ddd5c0"}`,
-                              background:activo?"#f0f8e8":"#faf8f3",transition:"all 0.15s"}}>
-                            <div style={{width:18,height:18,borderRadius:4,flexShrink:0,
-                              border:`2px solid ${activo?"#2d5a1b":"#bbb"}`,
-                              background:activo?"#2d5a1b":"white",
-                              display:"flex",alignItems:"center",justifyContent:"center"}}>
-                              {activo&&<span style={{color:"white",fontSize:11,fontWeight:700}}>✓</span>}
-                            </div>
-                            <span style={{fontSize:13,fontWeight:activo?600:400,color:activo?"#2d5a1b":"#5a5040"}}>
-                              {mod.label}
+                  <div>
+                    <div className="card" style={{marginBottom:16}}>
+                      <div className="card-header">
+                        <div className="card-title" style={{display:"flex",alignItems:"center",gap:8}}>
+                          <span style={{fontSize:20}}>{rolInf?.icon}</span>
+                          Permisos de {uSel.nombre}
+                          <span style={{fontSize:11,padding:"2px 10px",borderRadius:10,fontWeight:700,
+                            background:`${rolInf?.color}22`,color:rolInf?.color}}>{rolInf?.label}</span>
+                        </div>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                          {guardado && (
+                            <span style={{fontSize:12,color:"#2d5a1b",fontWeight:600,padding:"4px 12px",background:"#d4edda",borderRadius:8}}>
+                              Guardado
                             </span>
-                          </div>
-                        );
-                      })}
+                          )}
+                          <button className="btn btn-sm btn-secondary" onClick={resetPermisosGranulares}>↺ Restaurar default</button>
+                          <button className="btn btn-sm btn-primary" onClick={guardarPermisosGranulares}>💾 Guardar</button>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Leyenda */}
+                    <div style={{display:"flex",gap:16,marginBottom:16}}>
+                      {NIVELES.map(n=>(
+                        <div key={n.id} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:n.color,fontWeight:600}}>
+                          <span>{n.icon}</span> {n.label}
+                        </div>
+                      ))}
+                    </div>
+
+                    {secciones.map(sec=>{
+                      const mods = TODOS_MODULOS.filter(m=>m.section===sec);
+                      return (
+                        <div key={sec} style={{marginBottom:20}}>
+                          <div style={{fontSize:11,fontWeight:700,color:"#8a8070",textTransform:"uppercase",
+                            letterSpacing:1,marginBottom:8,paddingBottom:4,borderBottom:"1px solid #e8e0d0"}}>
+                            {sec}
+                          </div>
+                          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:8}}>
+                            {mods.map(mod=>{
+                              const nivel = tempGranular[mod.id] || "none";
+                              const nivelInfo = NIVELES.find(n=>n.id===nivel);
+                              return (
+                                <div key={mod.id}
+                                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
+                                    borderRadius:8,border:`1px solid ${nivelInfo.color}33`,
+                                    background:nivelInfo.bg,transition:"all 0.15s"}}>
+                                  <span style={{fontWeight:700,fontSize:13,color:"#3d3525",flex:1,minWidth:120}}>
+                                    {mod.label}
+                                  </span>
+                                  <div style={{display:"flex",gap:2}}>
+                                    {NIVELES.map(n=>{
+                                      const activo = nivel===n.id;
+                                      return (
+                                        <button key={n.id} onClick={()=>setNivelModulo(mod.id, n.id)}
+                                          style={{padding:"4px 10px",borderRadius:6,fontSize:11,fontWeight:activo?700:400,
+                                            cursor:"pointer",transition:"all 0.15s",border:"1px solid",
+                                            borderColor:activo?n.color:"#ddd5c0",
+                                            background:activo?n.color:"white",
+                                            color:activo?"white":n.color}}>
+                                          {n.icon} {n.label}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 );
-              })}
+              })()}
             </div>
           </div>
 
           <div style={{marginTop:12,padding:"10px 14px",background:"#faf3e0",borderRadius:8,
             fontSize:12,color:"#7a6030",border:"1px solid #e0c87040"}}>
-            ⚠️ <strong>Nota:</strong> Los cambios se aplican en el próximo inicio de sesión del usuario.
-            El rol <strong>Administrador</strong> siempre tiene acceso completo.
+            <strong>Niveles de acceso:</strong> "Sin acceso" oculta el módulo. "Solo ver" permite consultar datos.
+            "Ver y editar" permite agregar, modificar y cancelar registros. La eliminación permanente queda reservada para administradores.
           </div>
         </div>
       )}
@@ -15716,7 +15817,9 @@ function ConfiguracionModule({ userRol }) {
                 </thead>
                 <tbody>
                   {todosUsuarios.map((u,i)=>{
-                    const accesos = u.rol==="admin" ? TODOS_MODULOS.length : (state.permisosUsuario?.[u.rol]||ACCESO[u.rol]||[]).length;
+                    const permsU = getPermisosUsuario(state, u.id, u.rol);
+                    const accesos = u.rol==="admin" ? TODOS_MODULOS.length : Object.keys(permsU).length;
+                    const nEditar = u.rol==="admin" ? TODOS_MODULOS.length : Object.values(permsU).filter(v=>v==="editar").length;
                     const rolInf  = ROLES[u.rol];
                     const esBase  = u.id <= 3;
                     const activo  = u.activo !== false;
@@ -15734,7 +15837,7 @@ function ConfiguracionModule({ userRol }) {
                         <td style={{background:bg,fontFamily:"monospace",fontSize:12}}>
                           {u.rol==="admin"
                             ? <span style={{color:"#2d5a1b",fontWeight:700}}>Todos ({TODOS_MODULOS.length})</span>
-                            : `${accesos} módulos`}
+                            : <span>{accesos} módulos <span style={{color:"#2d5a1b",fontWeight:600}}>({nEditar} edición)</span></span>}
                         </td>
                         <td style={{background:bg}}>
                           <span style={{fontSize:11,padding:"2px 8px",borderRadius:8,fontWeight:600,
@@ -16293,7 +16396,7 @@ function ConfiguracionModule({ userRol }) {
 }
 
 // ─── COSTOS Y EQUILIBRIO MODULE ──────────────────────────────────────────────
-function CostosModule({ userRol, onNavigate }) {
+function CostosModule({ userRol, puedeEditar, onNavigate }) {
   const { state, dispatch } = useData();
   const nav = (page, pid, filtros) => onNavigate && onNavigate(page, pid, filtros);
   const [vista, setVista]   = useState("global"); // global | productor
@@ -16382,7 +16485,7 @@ function CostosModule({ userRol, onNavigate }) {
             {F.hayProduccionReal && <span style={{marginLeft:8,color:"#2d5a1b",fontWeight:600}}>✅ Con producción real</span>}
           </div>
         )}
-        {!editParams && userRol==="admin" && <button className="btn btn-sm btn-secondary" onClick={()=>setEditParams(true)}>✏️ Editar parámetros</button>}
+        {!editParams && puedeEditar && <button className="btn btn-sm btn-secondary" onClick={()=>setEditParams(true)}>✏️ Editar parámetros</button>}
       </div>
 
       {/* KPIs */}
@@ -16665,7 +16768,7 @@ function CostosModule({ userRol, onNavigate }) {
 }
 
 // ─── MAQUINARIA MODULE ────────────────────────────────────────────────────────
-function MaquinariaModule({ userRol }) {
+function MaquinariaModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
   const [modal, setModal]   = useState(false);
   const [modalH, setModalH] = useState(false);
@@ -16808,8 +16911,8 @@ function MaquinariaModule({ userRol }) {
         <div className="stat-card rust"><div className="stat-icon">💵</div><div className="stat-label">Costo Total</div><div className="stat-value" style={{fontSize:18}}>{mxnFmt(totalCosto)}</div></div>
       </div>
       <div style={{display:"flex",gap:8,marginBottom:12}}>
-        {userRol==="admin"&&<button className="btn btn-primary" onClick={()=>{setSel(null);setFormM(emptyM);setModal(true);}}>＋ Agregar Equipo</button>}
-        {userRol==="admin"&&<button className="btn btn-secondary" onClick={()=>{setFormH(emptyH);setModalH(true);}}>＋ Registrar Horas Manual</button>}
+        {puedeEditar&&<button className="btn btn-primary" onClick={()=>{setSel(null);setFormM(emptyM);setModal(true);}}>＋ Agregar Equipo</button>}
+        {puedeEditar&&<button className="btn btn-secondary" onClick={()=>{setFormH(emptyH);setModalH(true);}}>＋ Registrar Horas Manual</button>}
       </div>
       <div className="card">
         <div className="table-wrap-scroll">
@@ -16839,10 +16942,8 @@ function MaquinariaModule({ userRol }) {
                     <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700}}>{mxnFmt(hc*m.costoHora)}</td>
                     <td style={{background:bg}}>
                       <button className="btn btn-sm btn-secondary" onClick={e=>{e.stopPropagation();setVistaH(m.id);}}>Ver →</button>
-                      {userRol==="admin"&&<>
-                        <button className="btn btn-sm btn-secondary" onClick={e=>{e.stopPropagation();setSel(m);setFormM({...m});setModal(true);}}>✏️</button>
-                        <button className="btn btn-sm btn-danger" onClick={e=>{e.stopPropagation();confirmarEliminar("¿Eliminar esta máquina?",()=>{ const r=puedeEliminarMaquina(m.id,state); if(r.length>0){alert("No se puede: "+r.join(", "));return;} dispatch({type:"DEL_MAQ",payload:m.id}); });}}> 🗑</button>
-                      </>}
+                      {puedeEditar&&<button className="btn btn-sm btn-secondary" onClick={e=>{e.stopPropagation();setSel(m);setFormM({...m});setModal(true);}}>✏️</button>}
+                      {userRol==="admin"&&<button className="btn btn-sm btn-danger" onClick={e=>{e.stopPropagation();confirmarEliminar("¿Eliminar esta máquina?",()=>{ const r=puedeEliminarMaquina(m.id,state); if(r.length>0){alert("No se puede: "+r.join(", "));return;} dispatch({type:"DEL_MAQ",payload:m.id}); });}}> 🗑</button>}
                     </td>
                   </tr>
                 );
@@ -16900,7 +17001,7 @@ function MaquinariaModule({ userRol }) {
 }
 
 // ─── OPERADORES MODULE ────────────────────────────────────────────────────────
-function OperadoresModule({ userRol }) {
+function OperadoresModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
   const hoy    = new Date().toISOString().split("T")[0];
   const mxnFmt = n => (parseFloat(n)||0).toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2});
@@ -17537,7 +17638,7 @@ function OperadoresModule({ userRol }) {
                 </tfoot>
               </table>
             </div>
-            {!pagadaSem&&userRol==="admin"&&(
+            {!pagadaSem&&puedeEditar&&(
               <div style={{padding:"12px 16px",borderTop:`1px solid ${T.line}`,display:"flex",justifyContent:"flex-end",gap:8}}>
                 <button className="btn btn-primary" onClick={registrarPago}
                   style={{background:"#2d5a1b",border:"none",fontWeight:700,fontSize:14,padding:"10px 24px"}}>
@@ -17635,12 +17736,12 @@ function OperadoresModule({ userRol }) {
             <span style={{fontSize:11,color:T.fog}}>Tarifa estándar:</span>
             <span style={{fontSize:12,fontWeight:700,color:"#2d5a1b"}}>Normal {mxnFmt(tarifaStd.normal)}</span>
             <span style={{fontSize:12,fontWeight:700,color:"#e67e22"}}>· Especial {mxnFmt(tarifaStd.especial)}</span>
-            {userRol==="admin"&&<button className="btn btn-sm btn-secondary" style={{fontSize:10}}
+            {puedeEditar&&<button className="btn btn-sm btn-secondary" style={{fontSize:10}}
               onClick={()=>{setFormTarifa({normal:String(tarifaStd.normal),especial:String(tarifaStd.especial)});setModalTarifa(true);}}>
               ✏️ Editar
             </button>}
           </div>
-          {userRol==="admin"&&<button className="btn btn-primary"
+          {puedeEditar&&<button className="btn btn-primary"
             onClick={()=>{setSelOp(null);setFormOp({...emptyOp,salarioDia:tarifaStd.normal,tarifaEspecial:tarifaStd.especial});setModalOp(true);}}>
             ＋ Agregar Operador
           </button>}
@@ -17681,16 +17782,14 @@ function OperadoresModule({ userRol }) {
                       </span>
                     </td>
                     <td style={{background:bg}}>
-                      {userRol==="admin"&&<>
-                        <button className="btn btn-sm btn-secondary"
-                          onClick={()=>{setSelOp(o);setFormOp({nombre:o.nombre,puesto:o.puesto,telefono:o.telefono||"",salarioDia:o.salarioDia||tarifaStd.normal,tarifaEspecial:o.tarifaEspecial||tarifaStd.especial,activo:o.activo!==false,maquinaAsignada:o.maquinaAsignada||"",notas:o.notas||""});setModalOp(true);}}>✏️</button>
-                        <button className="btn btn-sm btn-danger"
+                      {puedeEditar&&<button className="btn btn-sm btn-secondary"
+                          onClick={()=>{setSelOp(o);setFormOp({nombre:o.nombre,puesto:o.puesto,telefono:o.telefono||"",salarioDia:o.salarioDia||tarifaStd.normal,tarifaEspecial:o.tarifaEspecial||tarifaStd.especial,activo:o.activo!==false,maquinaAsignada:o.maquinaAsignada||"",notas:o.notas||""});setModalOp(true);}}>✏️</button>}
+                      {userRol==="admin"&&<button className="btn btn-sm btn-danger"
                           onClick={()=>confirmarEliminar("¿Eliminar este operador?",()=>{
                             const r=puedeEliminarOperador(o.id,state);
                             if(r.length>0){alert("No se puede: "+r.join(", "));return;}
                             dispatch({type:"DEL_OPER",payload:o.id});
-                          })}>🗑</button>
-                      </>}
+                          })}>🗑</button>}
                     </td>
                   </tr>
                 );
@@ -17765,7 +17864,7 @@ function OperadoresModule({ userRol }) {
 }
 
 // ─── CAPITAL PROPIO MODULE ────────────────────────────────────────────────────
-function CapitalModule({ userRol }) {
+function CapitalModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
   const [modalA, setModalA] = useState(false);
   const [modalR, setModalR] = useState(false);
@@ -17796,7 +17895,7 @@ function CapitalModule({ userRol }) {
         <div className="stat-card rust"><div className="stat-icon">💸</div><div className="stat-label">Total Retirado</div><div className="stat-value" style={{fontSize:18}}>{mxnFmt(totalRetir)}</div></div>
         <div className="stat-card gold"><div className="stat-icon">⚖️</div><div className="stat-label">Capital Neto</div><div className="stat-value" style={{fontSize:18,color:neto>=0?"#2d5a1b":"#c0392b"}}>{mxnFmt(neto)}</div></div>
       </div>
-      {userRol==="admin"&&<div style={{display:"flex",gap:8,marginBottom:12}}>
+      {puedeEditar&&<div style={{display:"flex",gap:8,marginBottom:12}}>
         <button className="btn btn-primary" onClick={()=>setModalA(true)}>＋ Aportación</button>
         <button className="btn btn-secondary" onClick={()=>setModalR(true)}>− Retiro</button>
       </div>}
@@ -17906,7 +18005,7 @@ function RentasModule({ userRol }) {
 }
 
 // ─── ACTIVOS MODULE ───────────────────────────────────────────────────────────
-function ActivosModule({ userRol }) {
+function ActivosModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
   const [modal, setModal] = useState(false);
   const [sel, setSel]     = useState(null);
@@ -17934,7 +18033,7 @@ function ActivosModule({ userRol }) {
         <div className="stat-card gold"><div className="stat-icon">💰</div><div className="stat-label">Valor Total</div><div className="stat-value" style={{fontSize:18}}>{mxnFmt(valorTotal)}</div></div>
         <div className="stat-card sky"><div className="stat-icon">📋</div><div className="stat-label">Tipos</div><div className="stat-value">{[...new Set(activos.map(a=>a.tipo))].length}</div></div>
       </div>
-      {userRol==="admin"&&<div style={{marginBottom:12}}><button className="btn btn-primary" onClick={()=>{setSel(null);setForm(empty);setModal(true);}}>＋ Agregar Activo</button></div>}
+      {puedeEditar&&<div style={{marginBottom:12}}><button className="btn btn-primary" onClick={()=>{setSel(null);setForm(empty);setModal(true);}}>＋ Agregar Activo</button></div>}
       <div className="card">
         <div className="table-wrap">
           <table>
@@ -17949,10 +18048,8 @@ function ActivosModule({ userRol }) {
                   <td style={{background:bg,fontSize:12,color:"#6a6050"}}>{a.descripcion||a.notas||"—"}</td>
                   <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700}}>{mxnFmt(a.valorAdq)}</td>
                   <td style={{background:bg}}>
-                    {userRol==="admin"&&<>
-                      <button className="btn btn-sm btn-secondary" onClick={()=>{setSel(a);setForm({...a});setModal(true);}}>✏️</button>
-                      <button className="btn btn-sm btn-danger" onClick={()=>confirmarEliminar("¿Eliminar este activo?",()=>dispatch({type:"DEL_ACTIVO",payload:a.id}))}>🗑</button>
-                    </>}
+                    {puedeEditar&&<button className="btn btn-sm btn-secondary" onClick={()=>{setSel(a);setForm({...a});setModal(true);}}>✏️</button>}
+                    {userRol==="admin"&&<button className="btn btn-sm btn-danger" onClick={()=>confirmarEliminar("¿Eliminar este activo?",()=>dispatch({type:"DEL_ACTIVO",payload:a.id}))}>🗑</button>}
                   </td>
                 </tr>);
               })}
@@ -17977,7 +18074,7 @@ function ActivosModule({ userRol }) {
 }
 
 // ─── INVENTARIO MODULE ────────────────────────────────────────────────────────
-function InventarioModule({ userRol }) {
+function InventarioModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
   const mxnFmt = n => (parseFloat(n)||0).toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2});
   const numFmt = (n,d=2) => (parseFloat(n)||0).toLocaleString("es-MX",{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -18108,8 +18205,8 @@ function InventarioModule({ userRol }) {
       </div>
 
       <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-        {userRol==="admin"&&<button className="btn btn-primary" onClick={()=>{setSelItem(null);setFormItem(emptyItem);setModalItem(true);}}>＋ Agregar Producto</button>}
-        {userRol==="admin"&&<button className="btn btn-secondary" onClick={()=>{setFormMov(emptyMov);setModalMov(true);}}>📥 Registrar Entrada/Salida</button>}
+        {puedeEditar&&<button className="btn btn-primary" onClick={()=>{setSelItem(null);setFormItem(emptyItem);setModalItem(true);}}>＋ Agregar Producto</button>}
+        {puedeEditar&&<button className="btn btn-secondary" onClick={()=>{setFormMov(emptyMov);setModalMov(true);}}>📥 Registrar Entrada/Salida</button>}
         <select className="form-select" style={{width:180}} value={filtroCat} onChange={e=>setFiltroCat(e.target.value)}>
           <option value="todas">Todas las categorías</option>
           {CATEGORIAS.map(c=><option key={c} value={c}>{c}</option>)}
@@ -18121,7 +18218,7 @@ function InventarioModule({ userRol }) {
           <div className="empty-icon">📦</div>
           <div className="empty-title">Sin productos en catálogo</div>
           <div className="empty-sub">Agrega los productos que manejas en bodega para llevar el control de existencias</div>
-          {userRol==="admin"&&<button className="btn btn-primary" style={{marginTop:12}} onClick={()=>{setSelItem(null);setFormItem(emptyItem);setModalItem(true);}}>＋ Agregar primer producto</button>}
+          {puedeEditar&&<button className="btn btn-primary" style={{marginTop:12}} onClick={()=>{setSelItem(null);setFormItem(emptyItem);setModalItem(true);}}>＋ Agregar primer producto</button>}
         </div>
       ) : (
         <div className="card">
@@ -18159,7 +18256,7 @@ function InventarioModule({ userRol }) {
                       </td>
                       <td style={{background:bg}}>
                         <div style={{display:"flex",gap:4}}>
-                          {userRol==="admin"&&<button className="btn btn-sm btn-secondary" onClick={e=>{e.stopPropagation();setSelItem(item);setFormItem({...item});setModalItem(true);}}>✏️</button>}
+                          {puedeEditar&&<button className="btn btn-sm btn-secondary" onClick={e=>{e.stopPropagation();setSelItem(item);setFormItem({...item});setModalItem(true);}}>✏️</button>}
                           {userRol==="admin"&&<button className="btn btn-sm btn-danger" onClick={e=>{e.stopPropagation();confirmarEliminar("¿Eliminar este producto del inventario?",()=>dispatch({type:"DEL_INV_ITEM",payload:item.id}));}}>🗑</button>}
                         </div>
                       </td>
@@ -18242,7 +18339,7 @@ function InventarioModule({ userRol }) {
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700}}>{item.nombre}</div>
             <span style={{fontSize:11,padding:"3px 10px",borderRadius:10,background:catColor(item.categoria)+"22",color:catColor(item.categoria),fontWeight:600}}>{item.categoria}</span>
           </div>
-          {userRol==="admin"&&<button className="btn btn-primary" onClick={()=>{setFormMov({...emptyMov,itemId:String(item.id)});setModalMov(true);}}>＋ Movimiento</button>}
+          {puedeEditar&&<button className="btn btn-primary" onClick={()=>{setFormMov({...emptyMov,itemId:String(item.id)});setModalMov(true);}}>＋ Movimiento</button>}
         </div>
 
         <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:16}}>
@@ -18497,6 +18594,7 @@ export default function App() {
         usuariosExtra:   parsed.usuariosExtra   || [],
         usuariosBaseEdit:parsed.usuariosBaseEdit || {},
         permisosUsuario: parsed.permisosUsuario || {},
+        permisosGranulares: parsed.permisosGranulares || {},
         creditoParams:   parsed.creditoParams   || {},
         paramsCultivo:   parsed.paramsCultivo   || {},
         // Catálogos — si localStorage tiene datos úsalos, si no usa initState
@@ -18565,6 +18663,7 @@ export default function App() {
         usuariosExtra:    state.usuariosExtra    || [],
         usuariosBaseEdit: state.usuariosBaseEdit || {},
         permisosUsuario:  state.permisosUsuario  || {},
+        permisosGranulares: state.permisosGranulares || {},
         creditoParams:    state.creditoParams    || {},
         paramsCultivo:    state.paramsCultivo    || {},
         // Catálogos
@@ -18663,9 +18762,12 @@ export default function App() {
   if (!usuario) return <LoginScreen onLogin={handleLogin} />;
 
   const rol = usuario.rol;
+  // Permisos granulares por usuario
+  const permisosActual = getPermisosUsuario(state, usuario.id, rol);
   const accesoRol = rol === "admin"
     ? ACCESO.admin
-    : (state.permisosUsuario?.[rol] || ACCESO[rol] || []);
+    : Object.keys(permisosActual).filter(m => permisosActual[m] === "ver" || permisosActual[m] === "editar");
+  const puedeEditarMod = (modId) => rol === "admin" || permisosActual[modId] === "editar";
 
   // navTo — navegación programática (KPIs, links internos): guarda historial
   const navTo = (nextPage, prodId, filtros) => {
@@ -18710,29 +18812,30 @@ export default function App() {
         <div className="empty-sub">No tienes permisos para ver esta sección.</div>
       </div>
     );
+    const pe = puedeEditarMod(page);
     switch(page) {
       case "dashboard":      return ["campo","encargado","ingeniero"].includes(rol) ? <DashboardCampo userRol={rol}/> : <Dashboard userRol={rol} onNavigate={navTo} />;
       case "flujos":         return <FlujoModule userRol={rol} usuario={usuario} />;
-      case "productores":    return <ProductoresModule userRol={rol} onNavigate={navTo} />;
-      case "ciclos":         return <CiclosModule userRol={rol} />;
-      case "lotes":          return <LotesModule userRol={rol} />;
-      case "bitacora":       return <BitacoraModule userRol={rol} />;
+      case "productores":    return <ProductoresModule userRol={rol} puedeEditar={pe} onNavigate={navTo} />;
+      case "ciclos":         return <CiclosModule userRol={rol} puedeEditar={pe} />;
+      case "lotes":          return <LotesModule userRol={rol} puedeEditar={pe} />;
+      case "bitacora":       return <BitacoraModule userRol={rol} puedeEditar={pe} />;
       case "asistente":      return <AsisteModule userRol={rol} />;
       case "proyeccion":     return <ProyeccionModule userRol={rol} onNavigate={navTo} />;
-      case "maquinaria":     return <MaquinariaModule userRol={rol} />;
-      case "operadores":     return <OperadoresModule userRol={rol} />;
-      case "insumos":        return <InsumosModule userRol={rol} onNavigate={navTo} navFiltro={getNavFiltro("insumos")} />;
-      case "diesel":         return <DieselModule userRol={rol} onNavigate={navTo} navFiltro={getNavFiltro("diesel")} />;
-      case "capital":        return <CapitalModule userRol={rol} />;
+      case "maquinaria":     return <MaquinariaModule userRol={rol} puedeEditar={pe} />;
+      case "operadores":     return <OperadoresModule userRol={rol} puedeEditar={pe} />;
+      case "insumos":        return <InsumosModule userRol={rol} puedeEditar={pe} onNavigate={navTo} navFiltro={getNavFiltro("insumos")} />;
+      case "diesel":         return <DieselModule userRol={rol} puedeEditar={pe} onNavigate={navTo} navFiltro={getNavFiltro("diesel")} />;
+      case "capital":        return <CapitalModule userRol={rol} puedeEditar={pe} />;
       case "creditosref":    return <CreditosRefModule userRol={rol} />;
-      case "activos":        return <ActivosModule userRol={rol} />;
+      case "activos":        return <ActivosModule userRol={rol} puedeEditar={pe} />;
       case "personal":       return <PersonalModule userRol={rol} />;
-      case "cosecha":        return <CosechaModule userRol={rol} />;
-      case "credito":        return <CreditoModule userRol={rol} onNavigate={navTo} navFiltro={getNavFiltro("credito")} />;
+      case "cosecha":        return <CosechaModule userRol={rol} puedeEditar={pe} />;
+      case "credito":        return <CreditoModule userRol={rol} puedeEditar={pe} onNavigate={navTo} navFiltro={getNavFiltro("credito")} />;
       case "rentas":         return <RentasModule userRol={rol} onNavigate={navTo} />;
-      case "gastos":         return <EgresosModule userRol={rol} onNavigate={navTo} navFiltro={getNavFiltro("gastos")} />;
-      case "inventario":     return <InventarioModule userRol={rol} />;
-      case "costos":         return <CostosModule userRol={rol} onNavigate={navTo} />;
+      case "gastos":         return <EgresosModule userRol={rol} puedeEditar={pe} onNavigate={navTo} navFiltro={getNavFiltro("gastos")} />;
+      case "inventario":     return <InventarioModule userRol={rol} puedeEditar={pe} />;
+      case "costos":         return <CostosModule userRol={rol} puedeEditar={pe} onNavigate={navTo} />;
       case "reportes":       return <ReportesModule userRol={rol} onNavigate={navTo} />;
       case "edo_resultados": return <EdoResultadosModule userRol={rol} onNavigate={navTo} />;
       case "balance":        return <BalanceModule userRol={rol} onNavigate={navTo} />;
