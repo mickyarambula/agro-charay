@@ -2216,6 +2216,7 @@ function reducer(s, a) {
     // Solicitudes de gasto
     case "ADD_SOL_GASTO":    return { ...s, solicitudesGasto: [{ ...a.payload, id:Date.now(), creadoEn:new Date().toISOString(), historial:[{accion:"Creada",usuario:a.payload.creadoPor,fecha:new Date().toISOString()}] }, ...(s.solicitudesGasto||[])] };
     case "UPD_SOL_GASTO":    return { ...s, solicitudesGasto: (s.solicitudesGasto||[]).map(x=>x.id===a.payload.id?{...x,...a.payload}:x) };
+    case "DEL_SOL_GASTO":    return { ...s, solicitudesGasto: (s.solicitudesGasto||[]).filter(x=>x.id!==a.payload) };
     // Recomendaciones de aplicación
     case "ADD_RECOM":        return { ...s, recomendaciones: [{ ...a.payload, id:Date.now(), creadoEn:new Date().toISOString(), historial:[{accion:"Creada",usuario:a.payload.creadoPor,fecha:new Date().toISOString()}] }, ...(s.recomendaciones||[])] };
     case "UPD_RECOM":        return { ...s, recomendaciones: (s.recomendaciones||[]).map(x=>x.id===a.payload.id?{...x,...a.payload}:x) };
@@ -4756,8 +4757,10 @@ function FlujoModule({ userRol, usuario }) {
   const hoy = new Date().toISOString().split("T")[0];
   const mxnFmt = n => (parseFloat(n)||0).toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2});
 
-  const [tab, setTab]         = useState("pendientes");
-  const [modalTipo, setModalTipo] = useState(null); // "compra"|"gasto"|"recom"
+  const esSocio = userRol === "socio";
+  const esAdmin = userRol === "admin";
+  const [tab, setTab]         = useState(esSocio ? "reembolsos" : "pendientes");
+  const [modalTipo, setModalTipo] = useState(null); // "compra"|"gasto"|"recom"|"reembolso"
   const [form, setForm]       = useState({});
   const [detalle, setDetalle] = useState(null); // solicitud seleccionada
 
@@ -4783,16 +4786,16 @@ function FlujoModule({ userRol, usuario }) {
   // Puede aprobar si: es admin/socio, O tiene una delegación activa de alguien con ese rol
   const PUEDE_APROBAR = ["admin","socio"];
   const puedeAprobar = PUEDE_APROBAR.includes(userRol) || !!delegacionActiva;
-  const puedeCrear    = ["admin","socio","encargado","ingeniero","compras"].includes(userRol);
+  const puedeCrear    = ["admin","encargado","ingeniero","compras"].includes(userRol);
 
   // Colores de estatus
   const ESTATUS_COLOR = {
     borrador:"#8a8070", pendiente:"#e67e22", aprobado:"#2d5a1b",
-    rechazado:"#c0392b", ejecutado:"#1a6ea8", cotizando:"#8e44ad"
+    rechazado:"#c0392b", ejecutado:"#1a6ea8", cotizando:"#8e44ad", pagado:"#16a085"
   };
   const ESTATUS_LABEL = {
     borrador:"Borrador", pendiente:"⏳ Pendiente", aprobado:"✅ Aprobado",
-    rechazado:"❌ Rechazado", ejecutado:"✔ Ejecutado", cotizando:"📋 Cotizando"
+    rechazado:"❌ Rechazado", ejecutado:"✔ Ejecutado", cotizando:"📋 Cotizando", pagado:"💰 Pagado"
   };
 
   // ── Agregar historial a una solicitud ────────────────────────────────────
@@ -4833,12 +4836,60 @@ function FlujoModule({ userRol, usuario }) {
   // ── Crear nueva solicitud ────────────────────────────────────────────────
   const guardar = () => {
     const base = { ...form, estatus:"pendiente", creadoPor:usuario?.usuario||userRol,
-      cicloId:state.cicloActivoId||1, fecha:hoy };
+      cicloId:state.cicloActivoId||1, fecha: form.fecha || hoy };
     if(modalTipo==="compra")  dispatch({type:"ADD_SOL_COMPRA", payload:base});
     if(modalTipo==="gasto")   dispatch({type:"ADD_SOL_GASTO",  payload:base});
-    if(modalTipo==="recom")   dispatch({type:"ADD_RECOM",       payload:base});
+    if(modalTipo==="recom")   dispatch({type:"ADD_RECOM",      payload:base});
+    if(modalTipo==="reembolso") {
+      const payload = { ...base, esReembolso:true };
+      dispatch({type:"ADD_SOL_GASTO", payload});
+      const msg = `${usuario?.nombre||usuario?.usuario} registró un reembolso: ${form.concepto||""} (${mxnFmt(form.monto||0)})`;
+      dispatch({type:"ADD_NOTIF", payload:{ para:"admin",   tipo:"gasto", titulo:"Nuevo reembolso", mensaje:msg }});
+      dispatch({type:"ADD_NOTIF", payload:{ para:"daniela", tipo:"gasto", titulo:"Nuevo reembolso", mensaje:msg }});
+    }
     setModalTipo(null); setForm({});
   };
+
+  // ── Reembolsos: aprobar / marcar pagado (solo admin) ─────────────────────
+  const aprobarReembolso = (sol) => {
+    if (!esAdmin) return;
+    const updated = agregarHistorial({...sol, estatus:"aprobado", aprobadoPor:usuario?.usuario}, "Aprobada");
+    dispatch({type:"UPD_SOL_GASTO", payload:updated});
+    dispatch({type:"ADD_NOTIF", payload:{
+      para: sol.creadoPor, tipo:"gasto", titulo:"Reembolso aprobado",
+      mensaje:`Tu reembolso "${sol.concepto||""}" fue aprobado por ${usuario?.nombre||usuario?.usuario}`
+    }});
+  };
+
+  const marcarPagado = (sol) => {
+    if (!esAdmin) return;
+    const updated = agregarHistorial({...sol, estatus:"pagado", pagadoPor:usuario?.usuario, fechaPago:new Date().toISOString()}, "Marcado como pagado");
+    dispatch({type:"UPD_SOL_GASTO", payload:updated});
+    // Crear egreso automático
+    const categoriaToEgreso = {
+      reparaciones:"reparaciones", combustible:"diesel", servicios:"otro", otro:"otro"
+    };
+    dispatch({type:"ADD_EGRESO", payload:{
+      id: Date.now(),
+      categoria: categoriaToEgreso[sol.categoria] || "otro",
+      concepto: `Reembolso: ${sol.concepto||""}`,
+      monto: parseFloat(sol.monto)||0,
+      fecha: hoy,
+      notas: `Reembolso a ${nomUsuario(sol.creadoPor)}. ${sol.notas||""}`.trim(),
+      origenReembolsoId: sol.id,
+      lineaCredito: "directo",
+    }});
+    dispatch({type:"ADD_NOTIF", payload:{
+      para: sol.creadoPor, tipo:"gasto", titulo:"Reembolso pagado",
+      mensaje:`Tu reembolso "${sol.concepto||""}" fue marcado como pagado (${mxnFmt(sol.monto||0)})`
+    }});
+  };
+
+  // ── Reembolsos visibles según rol ────────────────────────────────────────
+  const todosReembolsos = solGastos.filter(g => g.esReembolso);
+  const reembolsosVisibles = esSocio
+    ? todosReembolsos.filter(g => g.creadoPor === usuario?.usuario)
+    : todosReembolsos;
 
   // ── Badge contadores ────────────────────────────────────────────────────
   const pendCompras = solCompras.filter(s=>s.estatus==="pendiente").length;
@@ -4937,13 +4988,18 @@ function FlujoModule({ userRol, usuario }) {
   };
 
   // ── Tabs ────────────────────────────────────────────────────────────────
-  const tabs = [
-    {id:"pendientes", label:`⏳ Pendientes${totalPend>0?` (${totalPend})`:""}` },
-    {id:"compras",    label:`🛒 Compras (${solCompras.length})` },
-    {id:"gastos",     label:`💸 Gastos (${solGastos.length})` },
-    {id:"recomend",   label:`🌿 Aplicaciones (${recomends.length})` },
-    {id:"ordenes",    label:`📋 Órdenes OC (${ordenesOC.length})` },
-  ];
+  const tabs = esSocio
+    ? [
+        {id:"reembolsos", label:`💰 Mis Reembolsos (${reembolsosVisibles.length})` },
+      ]
+    : [
+        {id:"pendientes", label:`⏳ Pendientes${totalPend>0?` (${totalPend})`:""}` },
+        {id:"compras",    label:`🛒 Compras (${solCompras.length})` },
+        {id:"gastos",     label:`💸 Gastos (${solGastos.filter(g=>!g.esReembolso).length})` },
+        {id:"recomend",   label:`🌿 Aplicaciones (${recomends.length})` },
+        {id:"ordenes",    label:`📋 Órdenes OC (${ordenesOC.length})` },
+        {id:"reembolsos", label:`💰 Reembolsos (${todosReembolsos.length})` },
+      ];
 
   return (
     <div>
@@ -4952,6 +5008,14 @@ function FlujoModule({ userRol, usuario }) {
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700}}>
           ✅ Flujos y Aprobaciones
         </div>
+        {esSocio && (
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            <button className="btn btn-primary btn-sm"
+              onClick={()=>{setModalTipo("reembolso");setForm({tipo:"reembolso",fecha:hoy});}}>
+              💰 Registrar Gasto de Reembolso
+            </button>
+          </div>
+        )}
         {puedeCrear&&(
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             <button className="btn btn-secondary btn-sm" onClick={()=>{setModalTipo("recom");setForm({tipo:"recom"});}}>🌿 Nueva Recomendación</button>
@@ -4983,21 +5047,37 @@ function FlujoModule({ userRol, usuario }) {
         </div>
       )}
 
-      {/* KPIs */}
-      <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:16}}>
-        {[
-          {label:"Pendientes aprobación", val:totalPend,        color:"#e67e22", icon:"⏳"},
-          {label:"Compras aprobadas",     val:solCompras.filter(s=>s.estatus==="aprobado").length, color:"#2d5a1b", icon:"✅"},
-          {label:"Órdenes de compra",     val:ordenesOC.length, color:"#1a6ea8", icon:"📋"},
-          {label:"Gastos autorizados",    val:solGastos.filter(s=>s.estatus==="aprobado").reduce((s,g)=>s+(parseFloat(g.monto)||0),0), color:"#c0392b", icon:"💸", esMonto:true},
-        ].map(({label,val,color,icon,esMonto})=>(
-          <div key={label} className="stat-card" style={{borderTop:`3px solid ${color}`}}>
-            <div className="stat-icon">{icon}</div>
-            <div className="stat-label">{label}</div>
-            <div className="stat-value" style={{color,fontSize:esMonto?16:24}}>{esMonto?mxnFmt(val):val}</div>
-          </div>
-        ))}
-      </div>
+      {/* KPIs — admin/otros ven 4 tarjetas; socio ve solo resumen de sus reembolsos */}
+      {esSocio ? (
+        <div className="stat-grid" style={{gridTemplateColumns:"repeat(3,1fr)",marginBottom:16}}>
+          {[
+            {label:"Pendientes", val:reembolsosVisibles.filter(r=>r.estatus==="pendiente").length, color:"#e67e22", icon:"⏳"},
+            {label:"Aprobados por pagar", val:reembolsosVisibles.filter(r=>r.estatus==="aprobado").length, color:"#2d5a1b", icon:"✅"},
+            {label:"Pagados (total)", val:reembolsosVisibles.filter(r=>r.estatus==="pagado").reduce((s,r)=>s+(parseFloat(r.monto)||0),0), color:"#16a085", icon:"💰", esMonto:true},
+          ].map(({label,val,color,icon,esMonto})=>(
+            <div key={label} className="stat-card" style={{borderTop:`3px solid ${color}`}}>
+              <div className="stat-icon">{icon}</div>
+              <div className="stat-label">{label}</div>
+              <div className="stat-value" style={{color,fontSize:esMonto?16:24}}>{esMonto?mxnFmt(val):val}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:16}}>
+          {[
+            {label:"Pendientes aprobación", val:totalPend,        color:"#e67e22", icon:"⏳"},
+            {label:"Compras aprobadas",     val:solCompras.filter(s=>s.estatus==="aprobado").length, color:"#2d5a1b", icon:"✅"},
+            {label:"Órdenes de compra",     val:ordenesOC.length, color:"#1a6ea8", icon:"📋"},
+            {label:"Gastos autorizados",    val:solGastos.filter(s=>s.estatus==="aprobado").reduce((s,g)=>s+(parseFloat(g.monto)||0),0), color:"#c0392b", icon:"💸", esMonto:true},
+          ].map(({label,val,color,icon,esMonto})=>(
+            <div key={label} className="stat-card" style={{borderTop:`3px solid ${color}`}}>
+              <div className="stat-icon">{icon}</div>
+              <div className="stat-label">{label}</div>
+              <div className="stat-value" style={{color,fontSize:esMonto?16:24}}>{esMonto?mxnFmt(val):val}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="tabs" style={{marginBottom:16}}>
@@ -5014,7 +5094,7 @@ function FlujoModule({ userRol, usuario }) {
           ) : (
             <div>
               {solCompras.filter(s=>s.estatus==="pendiente").map(s=><CardSolicitud key={s.id} sol={s} tipo="compra"/>)}
-              {solGastos.filter(s=>s.estatus==="pendiente").map(s=><CardSolicitud key={s.id} sol={s} tipo="gasto"/>)}
+              {solGastos.filter(s=>s.estatus==="pendiente"&&!s.esReembolso).map(s=><CardSolicitud key={s.id} sol={s} tipo="gasto"/>)}
               {recomends.filter(s=>s.estatus==="pendiente").map(s=><CardSolicitud key={s.id} sol={s} tipo="recom"/>)}
             </div>
           )}
@@ -5030,14 +5110,17 @@ function FlujoModule({ userRol, usuario }) {
         </div>
       )}
 
-      {/* ── Tab: Gastos ── */}
-      {tab==="gastos"&&(
-        <div>
-          {solGastos.length===0 ? (
-            <div className="empty-state"><div className="empty-icon">💸</div><div className="empty-title">Sin solicitudes de gasto</div></div>
-          ) : solGastos.map(s=><CardSolicitud key={s.id} sol={s} tipo="gasto"/>)}
-        </div>
-      )}
+      {/* ── Tab: Gastos (excluye reembolsos) ── */}
+      {tab==="gastos"&&(()=>{
+        const gastosRegulares = solGastos.filter(g=>!g.esReembolso);
+        return (
+          <div>
+            {gastosRegulares.length===0 ? (
+              <div className="empty-state"><div className="empty-icon">💸</div><div className="empty-title">Sin solicitudes de gasto</div></div>
+            ) : gastosRegulares.map(s=><CardSolicitud key={s.id} sol={s} tipo="gasto"/>)}
+          </div>
+        );
+      })()}
 
       {/* ── Tab: Recomendaciones de aplicación ── */}
       {tab==="recomend"&&(
@@ -5111,14 +5194,131 @@ function FlujoModule({ userRol, usuario }) {
         </div>
       )}
 
+      {/* ── Tab: Reembolsos ── */}
+      {tab==="reembolsos"&&(()=>{
+        const CAT_LABEL = { reparaciones:"🔧 Reparación", combustible:"⛽ Combustible", servicios:"🛠 Servicios", otro:"📦 Otro" };
+        if (reembolsosVisibles.length===0) {
+          return (
+            <div className="empty-state">
+              <div className="empty-icon">💰</div>
+              <div className="empty-title">{esSocio?"Sin reembolsos registrados":"Sin reembolsos"}</div>
+              <div className="empty-sub">
+                {esSocio ? "Usa el botón 'Registrar Gasto de Reembolso' para capturar un nuevo gasto." : "Aún no hay reembolsos registrados por los socios."}
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div>
+            {reembolsosVisibles.map(sol => {
+              const color = ESTATUS_COLOR[sol.estatus]||T.fog;
+              const open  = detalle?.id === sol.id;
+              return (
+                <div key={sol.id} style={{border:`1px solid ${T.line}`,borderRadius:10,marginBottom:10,
+                  overflow:"hidden",background:"white",boxShadow:"0 1px 4px rgba(0,0,0,0.05)"}}>
+                  <div style={{padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
+                        <span style={{padding:"2px 10px",borderRadius:20,fontSize:11,fontWeight:700,
+                          background:color+"22",color,border:`1px solid ${color}44`}}>
+                          {ESTATUS_LABEL[sol.estatus]||sol.estatus}
+                        </span>
+                        <span style={{fontSize:11,color:T.fog}}>{sol.fecha}</span>
+                        {sol.categoria && (
+                          <span style={{fontSize:11,padding:"2px 8px",borderRadius:10,background:"#faf3e0",color:"#7a6030",fontWeight:600}}>
+                            {CAT_LABEL[sol.categoria]||sol.categoria}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{fontWeight:700,fontSize:14,marginBottom:2}}>{sol.concepto||"Sin concepto"}</div>
+                      <div style={{fontSize:13,color:"#2d5a1b",fontWeight:700,marginBottom:2}}>
+                        {mxnFmt(sol.monto||0)}
+                      </div>
+                      <div style={{fontSize:12,color:T.fog}}>
+                        Registrado por: {nomUsuario(sol.creadoPor)}
+                      </div>
+                      {sol.notas && <div style={{fontSize:12,color:T.fog,marginTop:4,fontStyle:"italic"}}>"{sol.notas}"</div>}
+                    </div>
+                    <button onClick={()=>setDetalle(open?null:sol)}
+                      style={{padding:"4px 10px",borderRadius:6,border:`1px solid ${T.line}`,background:T.mist,
+                        fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>
+                      {open?"Cerrar":"Ver más"}
+                    </button>
+                  </div>
+                  {open && (
+                    <div style={{borderTop:`1px solid ${T.line}`,padding:"12px 16px",background:"#faf8f3"}}>
+                      <div style={{fontSize:11,fontWeight:700,color:T.fog,marginBottom:8,letterSpacing:"0.08em"}}>HISTORIAL</div>
+                      {(sol.historial||[]).map((h,i)=>(
+                        <div key={i} style={{display:"flex",gap:8,marginBottom:6}}>
+                          <div style={{width:6,height:6,borderRadius:"50%",background:T.field,marginTop:5,flexShrink:0}}/>
+                          <div>
+                            <span style={{fontWeight:600,fontSize:12}}>{h.accion}</span>
+                            <span style={{fontSize:11,color:T.fog}}> · {h.nombre||h.usuario} · {new Date(h.fecha).toLocaleDateString("es-MX")}</span>
+                            {h.nota && <div style={{fontSize:11,color:T.fog,fontStyle:"italic"}}>"{h.nota}"</div>}
+                          </div>
+                        </div>
+                      ))}
+                      {/* Acciones admin */}
+                      {esAdmin && sol.estatus==="pendiente" && (
+                        <div style={{marginTop:12,display:"flex",gap:8,flexWrap:"wrap"}}>
+                          <button className="btn btn-primary btn-sm"
+                            onClick={()=>aprobarReembolso(sol)}>
+                            ✅ Aprobar
+                          </button>
+                          <button className="btn btn-sm" style={{background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}}
+                            onClick={()=>{
+                              const n = window.prompt("Motivo del rechazo (requerido):","");
+                              if (!n || !n.trim()) return;
+                              rechazar("gasto", sol, n);
+                            }}>
+                            ❌ Rechazar
+                          </button>
+                        </div>
+                      )}
+                      {esAdmin && sol.estatus==="aprobado" && (
+                        <div style={{marginTop:12}}>
+                          <button className="btn btn-primary btn-sm"
+                            onClick={()=>{
+                              if(!window.confirm(`¿Marcar como pagado este reembolso por ${mxnFmt(sol.monto||0)}? Se creará automáticamente un egreso.`)) return;
+                              marcarPagado(sol);
+                            }}
+                            style={{background:"#16a085",border:"none"}}>
+                            💰 Marcar como pagado
+                          </button>
+                        </div>
+                      )}
+                      {sol.estatus==="pagado" && sol.fechaPago && (
+                        <div style={{marginTop:10,padding:"8px 12px",background:"#d4efdf",borderRadius:6,fontSize:12,color:"#117a65"}}>
+                          <strong>✓ Pagado</strong> el {new Date(sol.fechaPago).toLocaleDateString("es-MX")} — se generó egreso automático en la categoría del reembolso.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* ── Modal nueva solicitud ── */}
       {modalTipo&&(
-        <Modal title={modalTipo==="compra"?"🛒 Nueva Solicitud de Compra":modalTipo==="gasto"?"💸 Nueva Solicitud de Gasto":"🌿 Nueva Recomendación de Aplicación"}
+        <Modal title={
+          modalTipo==="compra"    ? "🛒 Nueva Solicitud de Compra" :
+          modalTipo==="gasto"     ? "💸 Nueva Solicitud de Gasto" :
+          modalTipo==="reembolso" ? "💰 Registrar Gasto de Reembolso" :
+                                    "🌿 Nueva Recomendación de Aplicación"}
           onClose={()=>{setModalTipo(null);setForm({});}}
           footer={<>
             <button className="btn btn-secondary" onClick={()=>{setModalTipo(null);setForm({});}}>Cancelar</button>
             <button className="btn btn-primary" onClick={guardar}
-              disabled={!form.concepto&&!form.descripcion}>💾 Enviar solicitud</button>
+              disabled={
+                modalTipo==="reembolso"
+                  ? (!form.concepto || !form.monto || !form.categoria)
+                  : (!form.concepto&&!form.descripcion)
+              }>
+              {modalTipo==="reembolso" ? "💰 Registrar reembolso" : "💾 Enviar solicitud"}
+            </button>
           </>}>
 
           {/* Campos comunes */}
@@ -5189,29 +5389,65 @@ function FlujoModule({ userRol, usuario }) {
             </div>
           </>}
 
-          {/* Urgencia y notas */}
-          <div className="form-row">
+          {modalTipo==="reembolso"&&<>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Monto ($) *</label>
+                <input className="form-input" type="number" value={form.monto||""}
+                  placeholder="0.00"
+                  onChange={e=>setForm(f=>({...f,monto:parseFloat(e.target.value)||0}))}/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Fecha del gasto *</label>
+                <input className="form-input" type="date" value={form.fecha||hoy}
+                  onChange={e=>setForm(f=>({...f,fecha:e.target.value}))}/>
+              </div>
+            </div>
             <div className="form-group">
-              <label className="form-label">Urgencia</label>
-              <select className="form-select" value={form.urgente||false} onChange={e=>setForm(f=>({...f,urgente:e.target.value==="true"}))}>
-                <option value="false">Normal</option>
-                <option value="true">🔴 Urgente</option>
+              <label className="form-label">Categoría *</label>
+              <select className="form-select" value={form.categoria||""} onChange={e=>setForm(f=>({...f,categoria:e.target.value}))}>
+                <option value="">— Seleccionar —</option>
+                <option value="reparaciones">🔧 Reparación</option>
+                <option value="combustible">⛽ Combustible</option>
+                <option value="servicios">🛠 Servicios</option>
+                <option value="otro">📦 Otro</option>
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Fecha requerida</label>
-              <input className="form-input" type="date" value={form.fechaRequerida||""}
-                onChange={e=>setForm(f=>({...f,fechaRequerida:e.target.value}))}/>
+              <label className="form-label">Notas</label>
+              <textarea className="form-input" rows={2} value={form.notas||""}
+                onChange={e=>setForm(f=>({...f,notas:e.target.value}))}
+                placeholder="Detalles del gasto, proveedor, ubicación..."/>
             </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Notas adicionales</label>
-            <textarea className="form-input" rows={2} value={form.detalle||""}
-              onChange={e=>setForm(f=>({...f,detalle:e.target.value}))}
-              placeholder="Contexto, justificación, detalles..."/>
-          </div>
+          </>}
+
+          {/* Urgencia y notas (no aplica para reembolsos) */}
+          {modalTipo!=="reembolso" && <>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Urgencia</label>
+                <select className="form-select" value={form.urgente||false} onChange={e=>setForm(f=>({...f,urgente:e.target.value==="true"}))}>
+                  <option value="false">Normal</option>
+                  <option value="true">🔴 Urgente</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Fecha requerida</label>
+                <input className="form-input" type="date" value={form.fechaRequerida||""}
+                  onChange={e=>setForm(f=>({...f,fechaRequerida:e.target.value}))}/>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Notas adicionales</label>
+              <textarea className="form-input" rows={2} value={form.detalle||""}
+                onChange={e=>setForm(f=>({...f,detalle:e.target.value}))}
+                placeholder="Contexto, justificación, detalles..."/>
+            </div>
+          </>}
           <div style={{padding:"8px 12px",background:"#fff9e6",borderRadius:6,fontSize:12,color:"#856404"}}>
-            ⚡ Esta solicitud quedará pendiente de aprobación por Administración / Socio
+            {modalTipo==="reembolso"
+              ? "⚡ Este reembolso quedará pendiente de aprobación y pago por Administración."
+              : "⚡ Esta solicitud quedará pendiente de aprobación por Administración / Socio"}
           </div>
         </Modal>
       )}
