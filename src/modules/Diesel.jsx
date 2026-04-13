@@ -27,6 +27,8 @@ import {
 
 export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   const { state, dispatch } = useData();
+  // Visibilidad de precios: encargado e ingeniero NO ven importes.
+  const verPrecios = ["admin", "socio", "compras"].includes(userRol);
   const hoy = new Date().toISOString().split("T")[0];
   const productores = state.productores || [];
 
@@ -241,9 +243,9 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
             <thead><tr>
               <th>Productor</th>
               <th style={{textAlign:"right"}}>Litros</th>
-              <th style={{textAlign:"right"}}>Ajustes</th>
-              <th style={{textAlign:"right"}}>Total</th>
-              <th style={{textAlign:"right"}}>$/L prom.</th>
+              {verPrecios && <th style={{textAlign:"right"}}>Ajustes</th>}
+              {verPrecios && <th style={{textAlign:"right"}}>Total</th>}
+              {verPrecios && <th style={{textAlign:"right"}}>$/L prom.</th>}
               <th>Registros</th>
             </tr></thead>
             <tbody>
@@ -264,9 +266,9 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
                       </div>
                     </td>
                     <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12}}>{lts>0?lts.toLocaleString("es-MX")+" L":"—"}</td>
-                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,color:"#856404"}}>{adj>0?mxnFmt(adj):"—"}</td>
-                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}>{mxnFmt(imp)}</td>
-                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12}}>{prom>0?"$"+prom.toFixed(2):"—"}</td>
+                    {verPrecios && <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,color:"#856404"}}>{adj>0?mxnFmt(adj):"—"}</td>}
+                    {verPrecios && <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}>{mxnFmt(imp)}</td>}
+                    {verPrecios && <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12}}>{prom>0?"$"+prom.toFixed(2):"—"}</td>}
                     <td style={{background:bg,fontSize:12,color:"#5a7a3a"}}>{reg.length} reg.</td>
                   </tr>
                 );
@@ -350,8 +352,8 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
               <th>Productor</th><th>Tipo</th>
               <th style={{textAlign:"right"}}>Cantidad</th><th>Unidad</th>
               <th>IEPS</th>
-              <th style={{textAlign:"right"}}>Importe</th>
-              <th style={{textAlign:"right"}}>$/L</th>
+              {verPrecios && <th style={{textAlign:"right"}}>Importe</th>}
+              {verPrecios && <th style={{textAlign:"right"}}>$/L</th>}
               <th>Proveedor</th><th></th>
             </tr></thead>
             <tbody>
@@ -373,8 +375,8 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
                     <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,...style}}>{d.esAjuste?"—":parseFloat(d.cantidad).toLocaleString("es-MX")}</td>
                     <td style={{background:bg,fontSize:11}}>{d.unidad}</td>
                     <td style={{background:bg,fontSize:10,color:"#8a8070"}}>{d.ieps||"—"}</td>
-                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:d.cancelado?"#999":"#c0392b"}}>{mxnFmt(d.importe)}</td>
-                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#5a7a3a"}}>{pxl?"$"+pxl.toFixed(2):"—"}</td>
+                    {verPrecios && <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:d.cancelado?"#999":"#c0392b"}}>{mxnFmt(d.importe)}</td>}
+                    {verPrecios && <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#5a7a3a"}}>{pxl?"$"+pxl.toFixed(2):"—"}</td>}
                     <td style={{background:bg,fontSize:11,color:"#7a7060",maxWidth:150}}>{d.proveedor}</td>
                     <td style={{background:bg}}>
                       <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>

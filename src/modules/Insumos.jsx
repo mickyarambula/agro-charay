@@ -27,6 +27,9 @@ import {
 
 export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFiltro = {} }) {
   const { state, dispatch } = useData();
+  // ─── Visibilidad de precios: admin, socio y compras ven importes.
+  //     encargado e ingeniero NO ven precios (solo nombres y cantidades).
+  const verPrecios = ["admin", "socio", "compras"].includes(userRol);
   const nav = (page, pid, filtros) => onNavigate && onNavigate(page, pid, filtros);
   const hoy = new Date().toISOString().split("T")[0];
   const productores = state.productores || [];
@@ -637,7 +640,8 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
           </span>
         )}
         <div style={{fontFamily:"monospace",fontSize:12,marginLeft:"auto",color:"#5a7a3a",fontWeight:700}}>
-          {insumosFiltrados.filter(i=>filtroCancelados==="todos"?true:filtroCancelados==="cancelados"?i.cancelado:!i.cancelado).length} reg. · {mxnFmt(insumosFiltrados.filter(i=>!i.cancelado).reduce((s,i)=>s+(parseFloat(i.importe)||0),0))}
+          {insumosFiltrados.filter(i=>filtroCancelados==="todos"?true:filtroCancelados==="cancelados"?i.cancelado:!i.cancelado).length} reg.
+          {verPrecios && <> · {mxnFmt(insumosFiltrados.filter(i=>!i.cancelado).reduce((s,i)=>s+(parseFloat(i.importe)||0),0))}</>}
         </div>
       </div>
 
@@ -736,8 +740,8 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
               <th style={{textAlign:"right"}}>Pedido</th><th>Unidad</th>
               <th style={{textAlign:"right"}}>Recibido</th>
               <th>Estatus</th>
-              <th style={{textAlign:"right"}}>Precio Unit.</th>
-              <th style={{textAlign:"right"}}>Importe</th>
+              {verPrecios && <th style={{textAlign:"right"}}>Precio Unit.</th>}
+              {verPrecios && <th style={{textAlign:"right"}}>Importe</th>}
               <th>Proveedor</th><th></th>
             </tr></thead>
             <tbody>
@@ -760,8 +764,8 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                     <td style={{background:bg,fontSize:11}}>{ins.unidad}</td>
                     <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,color:"#2d5a1b"}}>{parseFloat(ins.cantidadRecibida)||0 > 0 ? `${ins.cantidadRecibida} ${ins.unidad}` : "—"}</td>
                     <td style={{background:bg}}>{badgeEstatus(ins)}</td>
-                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12}}>{ins.precioUnitario>0?mxnFmt(ins.precioUnitario):"—"}</td>
-                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}>{mxnFmt(ins.importe)}</td>
+                    {verPrecios && <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12}}>{ins.precioUnitario>0?mxnFmt(ins.precioUnitario):"—"}</td>}
+                    {verPrecios && <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}>{mxnFmt(ins.importe)}</td>}
                     <td style={{background:bg,fontSize:11,color:"#7a7060",maxWidth:150}}>{ins.proveedor}</td>
                     <td style={{background:bg}}>
                       <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>

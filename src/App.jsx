@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from "./shared/helpers.jsx";
 import RentasModule from "./modules/Rentas.jsx";
+import VistaOperador from "./modules/VistaOperador.jsx";
 import CapitalModule from "./modules/Capital.jsx";
 import ActivosModule from "./modules/Activos.jsx";
 import CreditosRefModule from "./modules/CreditosRef.jsx";
@@ -1301,13 +1302,22 @@ export default function App() {
 
   const handleLogin = (u) => {
     setUsuario(u);
-    if (u.rol === "campo") setPage("bitacora");
+    if (u.rol === "campo") setPage("operador");
     else if (["encargado","ingeniero"].includes(u.rol)) setPage("dashboard");
     else if (u.rol === "compras") setPage("flujos");
     else setPage("dashboard");
   };
 
   if (!usuario) return <LoginScreen onLogin={handleLogin} />;
+
+  // ─── Vista minimalista para operadores de campo (bypass total del layout) ─
+  if (usuario.rol === "campo") {
+    return (
+      <Ctx.Provider value={{ state, dispatch }}>
+        <VistaOperador usuario={usuario} onLogout={() => setUsuario(null)} />
+      </Ctx.Provider>
+    );
+  }
 
   const rol = usuario.rol;
   // Permisos granulares por usuario
