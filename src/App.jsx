@@ -4759,24 +4759,6 @@ function FlujoModule({ userRol, usuario }) {
 
   const esSocio = userRol === "socio";
   const esAdmin = userRol === "admin";
-  // 🐛 DEBUG TEMPORAL — quitar después de diagnosticar bug de botones Aprobar/Rechazar
-  console.log("[DEBUG FlujoModule]", {
-    userRol,
-    esAdmin,
-    esSocio,
-    usuarioRol: usuario?.rol,
-    usuarioUsuario: usuario?.usuario,
-    reembolsos: (state.solicitudesGasto||[])
-      .filter(g => g.esReembolso)
-      .map(g => ({
-        id: g.id,
-        estatus: g.estatus,
-        estatusType: typeof g.estatus,
-        estatusLen: g.estatus?.length,
-        creadoPor: g.creadoPor,
-        concepto: g.concepto,
-      })),
-  });
   const [tab, setTab]         = useState(esSocio ? "reembolsos" : "pendientes");
   const [modalTipo, setModalTipo] = useState(null); // "compra"|"gasto"|"recom"|"reembolso"
   const [form, setForm]       = useState({});
@@ -5328,13 +5310,74 @@ function FlujoModule({ userRol, usuario }) {
                     <button onClick={()=>setDetalle(open?null:sol)}
                       style={{padding:"4px 10px",borderRadius:6,border:`1px solid ${T.line}`,background:T.mist,
                         fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>
-                      {open?"Cerrar":"Ver más"}
+                      {open?"Cerrar":"Ver historial"}
                     </button>
                   </div>
+
+                  {/* ── Acciones admin SIEMPRE visibles (sin expandir) ── */}
+                  {esAdmin && sol.estatus==="pendiente" && (
+                    <div style={{padding:"10px 16px",borderTop:`1px solid ${T.line}`,background:"#fff8e6",
+                      display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                      <span style={{fontSize:11,color:"#856404",fontWeight:600,marginRight:4}}>⚡ Acción requerida:</span>
+                      <button className="btn btn-primary btn-sm"
+                        onClick={()=>aprobarReembolso(sol)}>
+                        ✅ Aprobar
+                      </button>
+                      <button className="btn btn-sm" style={{background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}}
+                        onClick={()=>{
+                          const n = window.prompt("Motivo del rechazo (requerido):","");
+                          if (!n || !n.trim()) return;
+                          rechazarReembolso(sol, n.trim());
+                        }}>
+                        ❌ Rechazar
+                      </button>
+                    </div>
+                  )}
+                  {esAdmin && sol.estatus==="aprobado" && (
+                    <div style={{padding:"10px 16px",borderTop:`1px solid ${T.line}`,background:"#e8f5e9",
+                      display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                      <span style={{fontSize:11,color:"#2d5a1b",fontWeight:600,marginRight:4}}>⚡ Listo para pagar:</span>
+                      <button className="btn btn-primary btn-sm"
+                        onClick={()=>{
+                          if(!window.confirm(`¿Marcar como pagado este reembolso por ${mxnFmt(sol.monto||0)}? Se creará automáticamente un egreso.`)) return;
+                          marcarPagado(sol);
+                        }}
+                        style={{background:"#16a085",border:"none"}}>
+                        💰 Marcar como pagado
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ── Acciones socio SIEMPRE visibles (solo autor, solo pendiente/rechazado) ── */}
+                  {esSocio && sol.creadoPor === usuario?.usuario && ["pendiente","rechazado"].includes(sol.estatus) && (
+                    <div style={{padding:"10px 16px",borderTop:`1px solid ${T.line}`,background:"#faf8f3",
+                      display:"flex",gap:8,flexWrap:"wrap"}}>
+                      <button className="btn btn-sm btn-secondary"
+                        onClick={()=>editarReembolso(sol)}>
+                        ✏️ {sol.estatus==="rechazado"?"Editar y re-enviar":"Editar"}
+                      </button>
+                      <button className="btn btn-sm btn-danger"
+                        onClick={()=>eliminarReembolso(sol)}>
+                        🗑 Eliminar
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ── Badge pagado SIEMPRE visible ── */}
+                  {sol.estatus==="pagado" && sol.fechaPago && (
+                    <div style={{padding:"8px 16px",borderTop:`1px solid ${T.line}`,background:"#d4efdf",
+                      fontSize:12,color:"#117a65"}}>
+                      <strong>✓ Pagado</strong> el {new Date(sol.fechaPago).toLocaleDateString("es-MX")} — se generó egreso automático en la categoría del reembolso.
+                    </div>
+                  )}
+
+                  {/* ── Detalle expandible: solo historial ── */}
                   {open && (
                     <div style={{borderTop:`1px solid ${T.line}`,padding:"12px 16px",background:"#faf8f3"}}>
                       <div style={{fontSize:11,fontWeight:700,color:T.fog,marginBottom:8,letterSpacing:"0.08em"}}>HISTORIAL</div>
-                      {(sol.historial||[]).map((h,i)=>(
+                      {(sol.historial||[]).length === 0 ? (
+                        <div style={{fontSize:12,color:T.fog,fontStyle:"italic"}}>Sin movimientos registrados</div>
+                      ) : (sol.historial||[]).map((h,i)=>(
                         <div key={i} style={{display:"flex",gap:8,marginBottom:6}}>
                           <div style={{width:6,height:6,borderRadius:"50%",background:T.field,marginTop:5,flexShrink:0}}/>
                           <div>
@@ -5344,53 +5387,6 @@ function FlujoModule({ userRol, usuario }) {
                           </div>
                         </div>
                       ))}
-                      {/* Acciones admin */}
-                      {esAdmin && sol.estatus==="pendiente" && (
-                        <div style={{marginTop:12,display:"flex",gap:8,flexWrap:"wrap"}}>
-                          <button className="btn btn-primary btn-sm"
-                            onClick={()=>aprobarReembolso(sol)}>
-                            ✅ Aprobar
-                          </button>
-                          <button className="btn btn-sm" style={{background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}}
-                            onClick={()=>{
-                              const n = window.prompt("Motivo del rechazo (requerido):","");
-                              if (!n || !n.trim()) return;
-                              rechazarReembolso(sol, n.trim());
-                            }}>
-                            ❌ Rechazar
-                          </button>
-                        </div>
-                      )}
-                      {esAdmin && sol.estatus==="aprobado" && (
-                        <div style={{marginTop:12}}>
-                          <button className="btn btn-primary btn-sm"
-                            onClick={()=>{
-                              if(!window.confirm(`¿Marcar como pagado este reembolso por ${mxnFmt(sol.monto||0)}? Se creará automáticamente un egreso.`)) return;
-                              marcarPagado(sol);
-                            }}
-                            style={{background:"#16a085",border:"none"}}>
-                            💰 Marcar como pagado
-                          </button>
-                        </div>
-                      )}
-                      {/* Acciones socio (solo autor, solo pendiente/rechazado) */}
-                      {esSocio && sol.creadoPor === usuario?.usuario && ["pendiente","rechazado"].includes(sol.estatus) && (
-                        <div style={{marginTop:12,display:"flex",gap:8,flexWrap:"wrap"}}>
-                          <button className="btn btn-sm btn-secondary"
-                            onClick={()=>editarReembolso(sol)}>
-                            ✏️ {sol.estatus==="rechazado"?"Editar y re-enviar":"Editar"}
-                          </button>
-                          <button className="btn btn-sm btn-danger"
-                            onClick={()=>eliminarReembolso(sol)}>
-                            🗑 Eliminar
-                          </button>
-                        </div>
-                      )}
-                      {sol.estatus==="pagado" && sol.fechaPago && (
-                        <div style={{marginTop:10,padding:"8px 12px",background:"#d4efdf",borderRadius:6,fontSize:12,color:"#117a65"}}>
-                          <strong>✓ Pagado</strong> el {new Date(sol.fechaPago).toLocaleDateString("es-MX")} — se generó egreso automático en la categoría del reembolso.
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
