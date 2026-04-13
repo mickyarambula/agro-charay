@@ -56,6 +56,7 @@ export function enviarWhatsApp(orden, operador, lote, maquina) {
     `✅ *${orden.tipoTrabajo || "Trabajo asignado"}*`,
     `📍 Lote: ${nombreLote}`,
     `🚜 Máquina: ${nombreMaq}`,
+    orden.insumoNombre ? `🌱 Insumo: ${orden.insumoNombre}` : "",
     orden.horaInicio ? `⏰ Hora: ${orden.horaInicio}` : "",
     orden.horasEstimadas ? `⏱ Duración estimada: ${orden.horasEstimadas}h` : "",
     orden.notas ? `📝 Notas: ${orden.notas}` : "",
@@ -122,12 +123,14 @@ export default function OrdenDia({ userRol, usuario }) {
   const guardarOrden = () => {
     if (!form.operadorId || !form.loteId || !form.tipoTrabajo) return;
 
+    const insumoSel = form.insumoId ? getInsumo(form.insumoId) : null;
     const payload = {
       ...form,
       operadorId: parseInt(form.operadorId, 10) || form.operadorId,
       loteId:     parseInt(form.loteId, 10)     || form.loteId,
       maquinariaId: form.maquinariaId ? (parseInt(form.maquinariaId, 10) || form.maquinariaId) : "",
       insumoId:   form.insumoId ? (parseInt(form.insumoId, 10) || form.insumoId) : "",
+      insumoNombre: insumoSel?.insumo || "",
       horasEstimadas: parseFloat(form.horasEstimadas) || 0,
       fecha: hoy,
       estatus: "pendiente",
@@ -183,7 +186,9 @@ export default function OrdenDia({ userRol, usuario }) {
     const op  = getOperador(orden.operadorId);
     const lot = getLote(orden.loteId);
     const maq = getMaquina(orden.maquinariaId);
-    enviarWhatsApp(orden, op, lot, maq);
+    // Fallback: si la orden no trae insumoNombre (legado), lo hidratamos desde state
+    const insumoNombre = orden.insumoNombre || (orden.insumoId ? (getInsumo(orden.insumoId)?.insumo || "") : "");
+    enviarWhatsApp({ ...orden, insumoNombre }, op, lot, maq);
   };
 
   const fechaLarga = new Date().toLocaleDateString("es-MX", {
