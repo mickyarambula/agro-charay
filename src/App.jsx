@@ -19451,6 +19451,15 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [bellOpen, setBellOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
+
+  // Cerrar drawer con Escape (debe estar antes del early return de LoginScreen)
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e) => { if (e.key === "Escape") setSidebarOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sidebarOpen]);
+
   // ── Supabase realtime sync ──
   const [connectedUsers, setConnectedUsers] = useState(0);
   const syncChannelRef = useRef(null);
@@ -19583,14 +19592,6 @@ export default function App() {
     setPage(nextPage);
     setSidebarOpen(false); // cierra drawer en móvil al navegar
   };
-
-  // Cerrar drawer con Escape
-  useEffect(() => {
-    if (!sidebarOpen) return;
-    const onKey = (e) => { if (e.key === "Escape") setSidebarOpen(false); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [sidebarOpen]);
 
   // goBack — botón ← Volver
   const goBack = () => {
