@@ -1,5 +1,5 @@
 import React, { useState, useReducer, createContext, useContext, useCallback, useRef, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";import { loadStateFromSupabase } from "./supabaseLoader.js";
 
 // ─── SUPABASE REALTIME SYNC ───────────────────────────────────────────────────
 // Canal único para sincronizar en tiempo real entre sesiones conectadas.
@@ -246,18 +246,14 @@ function LoginScreen({ onLogin }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setLoading(true);
-    setTimeout(() => {
-      const baseOvr = window.__agroBaseOverrides || {};
-      const todosU = [
-        ...USUARIOS.map(u => baseOvr[u.id] ? {...u,...baseOvr[u.id]} : u),
-        ...(window.__agroExtraUsers||[])
-      ];
-      const u = todosU.find(u => u.usuario === user.trim().toLowerCase() && u.password === pass && u.activo!==false);
-      if (u) { setError(""); onLogin(u); }
-      else { setError("Usuario o contraseña incorrectos"); setLoading(false); }
-    }, 400);
+    try { await loadStateFromSupabase(); } catch(e) { console.warn("Supabase skip:", e); }
+    const baseOvr = window.__agroBaseOverrides || {};
+    const todosU = [...USUARIOS.map(u => baseOvr[u.id] ? {...u,...baseOvr[u.id]} : u), ...(window.__agroExtraUsers||[])];
+    const u = todosU.find(u => u.usuario === user.trim().toLowerCase() && u.password === pass && u.activo!==false);
+    if (u) { setError(''); onLogin(u); }
+    else { setError('Usuario o contraseña incorrectos'); setLoading(false); }
   };
 
   return (
