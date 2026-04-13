@@ -642,6 +642,108 @@ const css = `
   .fw-600 { font-weight: 600; }
   .w-full { width: 100%; }
   .divider { height: 1px; background: ${T.line}; margin: 16px 0; }
+
+  /* ─── HAMBURGER (solo móvil) ─── */
+  .hamburger {
+    display: none;
+    background: none; border: none; cursor: pointer;
+    padding: 8px 10px; margin-right: 4px;
+    border-radius: 8px; transition: background 0.15s;
+    font-size: 22px; line-height: 1; color: ${T.inkLt};
+  }
+  .hamburger:hover { background: ${T.paper}; }
+  .hamburger:active { background: ${T.sand}; }
+
+  /* Backdrop para drawer en móvil */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(30,25,20,0.55);
+    z-index: 99;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.28s ease;
+    backdrop-filter: blur(2px);
+  }
+  .sidebar-backdrop.open { opacity: 1; pointer-events: auto; }
+
+  /* ═════════ MOBILE (<768px) ═════════ */
+  @media (max-width: 767px) {
+    .hamburger { display: inline-flex; align-items: center; justify-content: center; }
+    .sidebar-backdrop { display: block; }
+
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 280px; max-width: 85vw;
+      transform: translateX(-100%);
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 100;
+      box-shadow: 6px 0 24px rgba(0,0,0,0.35);
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    .main { width: 100%; }
+
+    .topbar {
+      padding: 0 12px;
+      height: 56px;
+      gap: 8px;
+    }
+    .topbar-title {
+      font-size: 15px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      flex: 1;
+    }
+    .topbar-right { gap: 6px; flex-shrink: 0; }
+    .topbar-right > .topbar-date,
+    .topbar-right > .badge,
+    .topbar-right > .mobile-hide { display: none !important; }
+
+    .content { padding: 14px 12px; }
+
+    /* Stats: 2 columnas en móvil, luego 1 en muy angosto */
+    .stat-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; margin-bottom: 16px; }
+    .stat-card { padding: 14px; }
+    .stat-value { font-size: 22px; }
+    .stat-icon { font-size: 18px; margin-bottom: 6px; }
+    .stat-label { font-size: 10px; }
+
+    /* Grids de 2 y 3 columnas colapsan a 1 */
+    .grid-2, .grid-3 { grid-template-columns: 1fr !important; gap: 14px; }
+
+    .card-header { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+    .card-title { font-size: 14px; }
+    .card-body { padding: 14px; }
+
+    /* Tabs scrolleables horizontalmente */
+    .tabs { overflow-x: auto; flex-wrap: nowrap !important; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { white-space: nowrap; flex-shrink: 0; }
+
+    /* Tablas scrollean horizontal */
+    .table-wrap, .table-wrap-scroll { -webkit-overflow-scrolling: touch; }
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 8px 10px !important; }
+
+    /* Formularios: filas colapsan */
+    .form-row { grid-template-columns: 1fr !important; }
+
+    /* Modal fullscreen-friendly */
+    .modal { width: calc(100vw - 24px) !important; max-width: 100% !important; max-height: calc(100vh - 40px) !important; }
+
+    /* Botones más pequeños en móvil */
+    .btn { padding: 8px 14px; font-size: 13px; }
+    .btn-sm { padding: 6px 10px; font-size: 11px; }
+  }
+
+  /* Muy angosto (<420px): stat-grid a 1 columna */
+  @media (max-width: 419px) {
+    .stat-grid { grid-template-columns: 1fr !important; }
+    .topbar-title { font-size: 14px; }
+  }
 `;
 
 // ─── INJECT STYLES ─────────────────────────────────────────────────────────
@@ -19348,6 +19450,7 @@ export default function App() {
   const [page, setPage]   = useState("dashboard");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [bellOpen, setBellOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
   // ── Supabase realtime sync ──
   const [connectedUsers, setConnectedUsers] = useState(0);
   const syncChannelRef = useRef(null);
@@ -19478,7 +19581,16 @@ export default function App() {
     navFiltrosRef.current = {};
     dispatch({ type:"SET_PRODUCTOR_ACTIVO", payload: null });
     setPage(nextPage);
+    setSidebarOpen(false); // cierra drawer en móvil al navegar
   };
+
+  // Cerrar drawer con Escape
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e) => { if (e.key === "Escape") setSidebarOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sidebarOpen]);
 
   // goBack — botón ← Volver
   const goBack = () => {
@@ -19569,7 +19681,9 @@ export default function App() {
     <Ctx.Provider value={{ state, dispatch }}>
       <div className="app">
         {/* SIDEBAR */}
-        <div className="sidebar">
+        <div className={`sidebar-backdrop${sidebarOpen?" open":""}`}
+          onClick={()=>setSidebarOpen(false)}/>
+        <div className={`sidebar${sidebarOpen?" open":""}`}>
           <div className="sidebar-logo">
             <div className="logo-title">AgroSistema</div>
             <div className="logo-title" style={{color:"rgba(255,255,255,0.5)",fontSize:14}}>Charay</div>
@@ -19647,10 +19761,14 @@ export default function App() {
         {/* MAIN AREA */}
         <div className="main">
           <div className="topbar">
+            <button className="hamburger" aria-label="Abrir menú"
+              onClick={()=>setSidebarOpen(o=>!o)}>☰</button>
             <div className="topbar-title">{PAGE_TITLES[page]}</div>
             <div className="topbar-right" style={{gap:12}}>
-              {(rol === "admin" || rol === "socio") && <ProductorSelector />}
-              <WidgetCBOTCompact />
+              <div className="mobile-hide" style={{display:"contents"}}>
+                {(rol === "admin" || rol === "socio") && <ProductorSelector />}
+                <WidgetCBOTCompact />
+              </div>
               {rol !== "campo" && (()=>{
                 const notifs = state.notificaciones || [];
                 const misNotifs = notifs.filter(n => n.para===rol || n.para===usuario?.usuario || n.para==="todos" || !n.para);
