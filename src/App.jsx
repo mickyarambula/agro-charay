@@ -4763,6 +4763,7 @@ function FlujoModule({ userRol, usuario }) {
   const [modalTipo, setModalTipo] = useState(null); // "compra"|"gasto"|"recom"|"reembolso"
   const [form, setForm]       = useState({});
   const [detalle, setDetalle] = useState(null); // solicitud seleccionada
+  const [editandoReembolsoId, setEditandoReembolsoId] = useState(null); // id del reembolso en edición, null = nuevo
 
   const solCompras  = state.solicitudesCompra  || [];
   const solGastos   = state.solicitudesGasto   || [];
@@ -4833,7 +4834,20 @@ function FlujoModule({ userRol, usuario }) {
     else if(tipo==="recom") dispatch({type:"UPD_RECOM", payload:updated});
   };
 
-  // ── Crear nueva solicitud ────────────────────────────────────────────────
+  // ── Helper: notificar a TODOS los usuarios con rol admin ────────────────
+  const notifyAdmins = (titulo, mensaje) => {
+    const baseOv = state.usuariosBaseEdit || {};
+    const todos = [
+      ...USUARIOS.map(u => baseOv[u.id] ? { ...u, ...baseOv[u.id] } : u),
+      ...(state.usuariosExtra || []),
+    ];
+    const admins = todos.filter(u => u.rol === "admin" && u.activo !== false);
+    admins.forEach(u => {
+      dispatch({ type:"ADD_NOTIF", payload:{ para:u.usuario, tipo:"gasto", titulo, mensaje } });
+    });
+  };
+
+  // ── Crear nueva solicitud (o editar reembolso existente) ────────────────
   const guardar = () => {
     const base = { ...form, estatus:"pendiente", creadoPor:usuario?.usuario||userRol,
       cicloId:state.cicloActivoId||1, fecha: form.fecha || hoy };
@@ -4841,16 +4855,59 @@ function FlujoModule({ userRol, usuario }) {
     if(modalTipo==="gasto")   dispatch({type:"ADD_SOL_GASTO",  payload:base});
     if(modalTipo==="recom")   dispatch({type:"ADD_RECOM",      payload:base});
     if(modalTipo==="reembolso") {
-      const payload = { ...base, esReembolso:true };
-      dispatch({type:"ADD_SOL_GASTO", payload});
-      const msg = `${usuario?.nombre||usuario?.usuario} registró un reembolso: ${form.concepto||""} (${mxnFmt(form.monto||0)})`;
-      dispatch({type:"ADD_NOTIF", payload:{ para:"admin",   tipo:"gasto", titulo:"Nuevo reembolso", mensaje:msg }});
-      dispatch({type:"ADD_NOTIF", payload:{ para:"daniela", tipo:"gasto", titulo:"Nuevo reembolso", mensaje:msg }});
+      const autor = usuario?.nombre || usuario?.usuario;
+      const resumen = `${form.concepto||""} (${mxnFmt(form.monto||0)})`;
+      if (editandoReembolsoId) {
+        // ── Edit mode ──
+        const original = solGastos.find(g => g.id === editandoReembolsoId);
+        if (!original) { setModalTipo(null); setForm({}); setEditandoReembolsoId(null); return; }
+        const wasRechazado = original.estatus === "rechazado";
+        const merged = {
+          ...original,
+          ...form,
+          esReembolso: true,
+          estatus: wasRechazado ? "pendiente" : original.estatus,
+        };
+        const final = agregarHistorial(merged, wasRechazado ? "Re-enviada tras rechazo" : "Editada");
+        dispatch({ type:"UPD_SOL_GASTO", payload: final });
+        if (wasRechazado) {
+          notifyAdmins("Reembolso re-enviado", `${autor} corrigió y re-envió su reembolso: ${resumen}`);
+        }
+      } else {
+        // ── Nuevo ──
+        const payload = { ...base, esReembolso:true };
+        dispatch({ type:"ADD_SOL_GASTO", payload });
+        notifyAdmins("Nuevo reembolso", `${autor} registró un reembolso: ${resumen}`);
+      }
     }
-    setModalTipo(null); setForm({});
+    setModalTipo(null); setForm({}); setEditandoReembolsoId(null);
   };
 
-  // ── Reembolsos: aprobar / marcar pagado (solo admin) ─────────────────────
+  // ── Reembolsos: acciones del socio (editar / eliminar) ───────────────────
+  const editarReembolso = (sol) => {
+    // Solo el autor puede editar, y solo si está pendiente o rechazado
+    if (sol.creadoPor !== usuario?.usuario) return;
+    if (!["pendiente","rechazado"].includes(sol.estatus)) return;
+    setEditandoReembolsoId(sol.id);
+    setForm({
+      concepto: sol.concepto || "",
+      descripcion: sol.concepto || "",
+      monto: sol.monto || 0,
+      fecha: sol.fecha || hoy,
+      categoria: sol.categoria || "",
+      notas: sol.notas || "",
+    });
+    setModalTipo("reembolso");
+  };
+
+  const eliminarReembolso = (sol) => {
+    if (sol.creadoPor !== usuario?.usuario) return;
+    if (!["pendiente","rechazado"].includes(sol.estatus)) return;
+    if (!window.confirm("¿Eliminar este reembolso?")) return;
+    dispatch({ type:"DEL_SOL_GASTO", payload: sol.id });
+  };
+
+  // ── Reembolsos: acciones del admin (aprobar / rechazar / pagar) ──────────
   const aprobarReembolso = (sol) => {
     if (!esAdmin) return;
     const updated = agregarHistorial({...sol, estatus:"aprobado", aprobadoPor:usuario?.usuario}, "Aprobada");
@@ -4858,6 +4915,17 @@ function FlujoModule({ userRol, usuario }) {
     dispatch({type:"ADD_NOTIF", payload:{
       para: sol.creadoPor, tipo:"gasto", titulo:"Reembolso aprobado",
       mensaje:`Tu reembolso "${sol.concepto||""}" fue aprobado por ${usuario?.nombre||usuario?.usuario}`
+    }});
+  };
+
+  const rechazarReembolso = (sol, motivo) => {
+    if (!esAdmin) return;
+    if (!motivo || !motivo.trim()) return;
+    const updated = agregarHistorial({...sol, estatus:"rechazado", rechazadoPor:usuario?.usuario}, "Rechazada", motivo);
+    dispatch({type:"UPD_SOL_GASTO", payload:updated});
+    dispatch({type:"ADD_NOTIF", payload:{
+      para: sol.creadoPor, tipo:"gasto", titulo:"Reembolso rechazado",
+      mensaje:`Tu reembolso "${sol.concepto||""}" fue rechazado. Motivo: ${motivo}`
     }});
   };
 
@@ -5269,7 +5337,7 @@ function FlujoModule({ userRol, usuario }) {
                             onClick={()=>{
                               const n = window.prompt("Motivo del rechazo (requerido):","");
                               if (!n || !n.trim()) return;
-                              rechazar("gasto", sol, n);
+                              rechazarReembolso(sol, n.trim());
                             }}>
                             ❌ Rechazar
                           </button>
@@ -5284,6 +5352,19 @@ function FlujoModule({ userRol, usuario }) {
                             }}
                             style={{background:"#16a085",border:"none"}}>
                             💰 Marcar como pagado
+                          </button>
+                        </div>
+                      )}
+                      {/* Acciones socio (solo autor, solo pendiente/rechazado) */}
+                      {esSocio && sol.creadoPor === usuario?.usuario && ["pendiente","rechazado"].includes(sol.estatus) && (
+                        <div style={{marginTop:12,display:"flex",gap:8,flexWrap:"wrap"}}>
+                          <button className="btn btn-sm btn-secondary"
+                            onClick={()=>editarReembolso(sol)}>
+                            ✏️ {sol.estatus==="rechazado"?"Editar y re-enviar":"Editar"}
+                          </button>
+                          <button className="btn btn-sm btn-danger"
+                            onClick={()=>eliminarReembolso(sol)}>
+                            🗑 Eliminar
                           </button>
                         </div>
                       )}
@@ -5306,18 +5387,24 @@ function FlujoModule({ userRol, usuario }) {
         <Modal title={
           modalTipo==="compra"    ? "🛒 Nueva Solicitud de Compra" :
           modalTipo==="gasto"     ? "💸 Nueva Solicitud de Gasto" :
-          modalTipo==="reembolso" ? "💰 Registrar Gasto de Reembolso" :
+          modalTipo==="reembolso" ? (editandoReembolsoId ? "✏️ Editar Reembolso" : "💰 Registrar Gasto de Reembolso") :
                                     "🌿 Nueva Recomendación de Aplicación"}
-          onClose={()=>{setModalTipo(null);setForm({});}}
+          onClose={()=>{setModalTipo(null);setForm({});setEditandoReembolsoId(null);}}
           footer={<>
-            <button className="btn btn-secondary" onClick={()=>{setModalTipo(null);setForm({});}}>Cancelar</button>
+            <button className="btn btn-secondary" onClick={()=>{setModalTipo(null);setForm({});setEditandoReembolsoId(null);}}>Cancelar</button>
             <button className="btn btn-primary" onClick={guardar}
               disabled={
                 modalTipo==="reembolso"
                   ? (!form.concepto || !form.monto || !form.categoria)
                   : (!form.concepto&&!form.descripcion)
               }>
-              {modalTipo==="reembolso" ? "💰 Registrar reembolso" : "💾 Enviar solicitud"}
+              {modalTipo==="reembolso"
+                ? (editandoReembolsoId
+                    ? (solGastos.find(g=>g.id===editandoReembolsoId)?.estatus==="rechazado"
+                        ? "🔄 Re-enviar reembolso"
+                        : "💾 Guardar cambios")
+                    : "💰 Registrar reembolso")
+                : "💾 Enviar solicitud"}
             </button>
           </>}>
 
