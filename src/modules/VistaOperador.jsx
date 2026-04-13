@@ -12,9 +12,12 @@ export default function VistaOperador({ usuario, onLogout }) {
   const { state, dispatch } = useData();
   const hoy = new Date().toISOString().split("T")[0];
 
-  // El Operador de Campo SUPERVISA todas las órdenes del día (no solo las suyas).
-  // Ve el trabajo que se está ejecutando en el campo completo.
-  const misOrdenes = (state.ordenesTrabajo || []).filter(o => o.fecha === hoy);
+  // El Operador de Campo SUPERVISA todas las órdenes — hoy + ayer por si quedó
+  // algo pendiente del día anterior.
+  const ayer = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split("T")[0]; })();
+  const misOrdenes = (state.ordenesTrabajo || [])
+    .filter(o => o.fecha === hoy || o.fecha === ayer)
+    .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
 
   // Operadores y lotes para resolver nombres en cada orden
   const operadores = state.operadores || [];
@@ -23,22 +26,6 @@ export default function VistaOperador({ usuario, onLogout }) {
 
   const [modalNovedad, setModalNovedad] = useState(false);
   const [textoNovedad, setTextoNovedad] = useState("");
-
-  const iniciarTrabajo = (orden) => {
-    if (!orden) return;
-    const payload = {
-      ...orden,
-      estatus: "en_progreso",
-      horaInicio: new Date().toISOString(),
-    };
-    dispatch({ type: "UPD_ORDEN_TRABAJO", payload });
-    dispatch({ type: "ADD_NOTIF", payload: {
-      para: "admin",
-      tipo: "info",
-      titulo: "Trabajo iniciado",
-      mensaje: `${usuario?.nombre || usuario?.usuario} inició: ${orden.descripcion || orden.concepto || "trabajo"}`,
-    }});
-  };
 
   const finalizarTrabajo = (orden) => {
     if (!orden) return;
@@ -148,12 +135,12 @@ export default function VistaOperador({ usuario, onLogout }) {
           fontWeight: 700,
           color: "#3d3525",
         }}>
-          📋 Órdenes del Campo — Hoy
+          📋 Órdenes del Campo
         </div>
         <div style={{ fontSize: 13, color: "#8a8070", marginTop: 4 }}>
           {misOrdenes.length === 0
-            ? "No hay trabajos programados para hoy"
-            : `${misOrdenes.length} trabajo${misOrdenes.length === 1 ? "" : "s"} en el campo`}
+            ? "No hay trabajos programados"
+            : `${misOrdenes.length} trabajo${misOrdenes.length === 1 ? "" : "s"} (hoy + pendientes ayer)`}
         </div>
       </div>
 
@@ -178,8 +165,8 @@ export default function VistaOperador({ usuario, onLogout }) {
           </div>
         ) : (
           misOrdenes.map(orden => {
-            const iniciado   = orden.estatus === "en_progreso";
             const completado = orden.estatus === "completado";
+            const esDeAyer = orden.fecha === ayer;
             return (
               <div key={orden.id} style={{
                 background: "white",
@@ -187,14 +174,20 @@ export default function VistaOperador({ usuario, onLogout }) {
                 marginBottom: 14,
                 padding: "18px 20px",
                 boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-                borderLeft: `6px solid ${completado ? "#16a085" : iniciado ? "#e67e22" : "#2d5a1b"}`,
+                borderLeft: `6px solid ${completado ? "#16a085" : "#2d5a1b"}`,
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
                   <div style={{ fontSize: 17, fontWeight: 700, color: "#3d3525", flex: 1, lineHeight: 1.3 }}>
                     {orden.tipoTrabajo || orden.descripcion || "Trabajo"}
+                    {esDeAyer && !completado && (
+                      <span style={{
+                        marginLeft: 8, fontSize: 10, fontWeight: 700,
+                        padding: "2px 8px", borderRadius: 10,
+                        background: "#fff3cd", color: "#856404",
+                      }}>⏰ AYER</span>
+                    )}
                   </div>
                   {completado && <span style={{ fontSize: 22 }}>✅</span>}
-                  {iniciado && !completado && <span style={{ fontSize: 22 }}>⏳</span>}
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
@@ -242,20 +235,20 @@ export default function VistaOperador({ usuario, onLogout }) {
 
                 {!completado && (
                   <button
-                    onClick={() => iniciado ? finalizarTrabajo(orden) : iniciarTrabajo(orden)}
+                    onClick={() => finalizarTrabajo(orden)}
                     style={{
                       width: "100%",
                       padding: "16px",
                       borderRadius: 12,
                       border: "none",
-                      background: iniciado ? "#16a085" : "#2d5a1b",
+                      background: "#16a085",
                       color: "white",
                       fontSize: 16,
                       fontWeight: 700,
                       cursor: "pointer",
                       boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
                     }}>
-                    {iniciado ? "✅ Marcar como completado" : "▶️ Iniciar trabajo"}
+                    ✅ Marcar como completado
                   </button>
                 )}
 

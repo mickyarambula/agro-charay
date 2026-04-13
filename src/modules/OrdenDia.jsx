@@ -14,12 +14,88 @@ const TIPOS_TRABAJO = [
   "Cosecha", "Transporte", "Mantenimiento", "Otro"
 ];
 
+// Estatus simplificado: Pendiente → Completado. "En progreso" eliminado.
 const ESTATUS_COLORES = {
   pendiente:    { bg: "#fff3cd", color: "#856404", border: "#ffc107", label: "⏳ Pendiente" },
-  en_progreso:  { bg: "#fef5ed", color: "#e67e22", border: "#e67e22", label: "🚜 En progreso" },
   completado:   { bg: "#d4efdf", color: "#117a65", border: "#16a085", label: "✅ Completado" },
   cancelado:    { bg: "#fdf0ef", color: "#c0392b", border: "#c0392b", label: "🚫 Cancelado" },
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Supabase sync helpers (no dependen de cliente — usan fetch directo)
+// ─────────────────────────────────────────────────────────────────────────────
+const SUPA_URL = 'https://oryixvodfqojunnqbkln.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yeWl4dm9kZnFvanVubnFia2xuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4ODUzMjAsImV4cCI6MjA5MTQ2MTMyMH0.03nXDh5qj7N-RiCqXxGKvhfZSVWDmuV4hFwTOZ66ZCQ';
+
+async function guardarOrdenEnSupabase(orden, operador, lote, maquina) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/ordenes_trabajo`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPA_KEY,
+        Authorization: `Bearer ${SUPA_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({
+        id: String(orden.id),
+        fecha: orden.fecha,
+        tipo: orden.tipoTrabajo,
+        estatus: orden.estatus || 'pendiente',
+        operador_nombre:   operador?.nombre || '',
+        maquinaria_nombre: maquina?.nombre || '',
+        lote_nombre:       lote?.apodo || lote?.nombre || '',
+        insumo_nombre:     orden.insumoNombre || '',
+        hora_inicio:       orden.horaInicio || null,
+        horas_estimadas:   parseFloat(orden.horasEstimadas) || 0,
+        notas:             orden.notas || '',
+        creado_por:        orden.creadoPor || '',
+      }),
+    });
+  } catch (e) { console.warn('[Supabase] orden save failed:', e.message); }
+}
+
+async function completarOrdenEnSupabase(ordenId) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/ordenes_trabajo?id=eq.${encodeURIComponent(String(ordenId))}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPA_KEY,
+        Authorization: `Bearer ${SUPA_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({
+        estatus: 'completado',
+        hora_fin: new Date().toISOString(),
+      }),
+    });
+  } catch (e) { console.warn('[Supabase] orden update failed:', e.message); }
+}
+
+async function actualizarOrdenEnSupabase(orden, operador, lote, maquina) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/ordenes_trabajo?id=eq.${encodeURIComponent(String(orden.id))}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPA_KEY,
+        Authorization: `Bearer ${SUPA_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({
+        tipo: orden.tipoTrabajo,
+        operador_nombre:   operador?.nombre || '',
+        maquinaria_nombre: maquina?.nombre || '',
+        lote_nombre:       lote?.apodo || lote?.nombre || '',
+        insumo_nombre:     orden.insumoNombre || '',
+        hora_inicio:       orden.horaInicio || null,
+        horas_estimadas:   parseFloat(orden.horasEstimadas) || 0,
+        notas:             orden.notas || '',
+      }),
+    });
+  } catch (e) { console.warn('[Supabase] orden patch failed:', e.message); }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper — abrir WhatsApp con mensaje pre-armado
@@ -78,7 +154,19 @@ export default function OrdenDia({ userRol, usuario }) {
   const lotes       = state.lotes      || [];
   const maquinaria  = state.maquinaria || [];
   const insumosArr  = state.insumos    || [];
-  const ordenes     = (state.ordenesTrabajo || []).filter(o => o.fecha === hoy);
+
+  // ── Filtro de fecha: hoy / ayer / semana (últimos 7 días) ──
+  const [filtroFecha, setFiltroFecha] = useState("hoy");
+  const ayer = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split("T")[0]; })();
+  const hace7 = (() => { const d = new Date(); d.setDate(d.getDate() - 6); return d.toISOString().split("T")[0]; })();
+
+  const ordenes = (state.ordenesTrabajo || []).filter(o => {
+    if (!o.fecha) return false;
+    if (filtroFecha === "hoy")   return o.fecha === hoy;
+    if (filtroFecha === "ayer")  return o.fecha === ayer;
+    if (filtroFecha === "semana") return o.fecha >= hace7 && o.fecha <= hoy;
+    return true;
+  });
 
   const [modalNew, setModalNew] = useState(false);
   const [editandoId, setEditandoId] = useState(null); // id de la orden en edición; null = nueva
@@ -173,7 +261,8 @@ export default function OrdenDia({ userRol, usuario }) {
         estatus: original.estatus || "pendiente",
       };
       dispatch({ type: "UPD_ORDEN_TRABAJO", payload: updated });
-      // Notifica al operador del cambio
+      // Sync a Supabase (fire-and-forget)
+      actualizarOrdenEnSupabase(updated, op, lot, maq);
       dispatch({ type: "ADD_NOTIF", payload: {
         para: op?.usuario || "campo",
         tipo: "info",
@@ -181,17 +270,20 @@ export default function OrdenDia({ userRol, usuario }) {
         mensaje: `Se actualizó: ${updated.tipoTrabajo} en ${nombreLote(lot)}`,
       }});
       cerrarModal();
-      // Reenvía WhatsApp con los datos nuevos
       setTimeout(() => { enviarWhatsApp(updated, op, lot, maq); }, 100);
     } else {
       // ── Nueva orden ──
+      const newId = Date.now();
       const payload = {
         ...basePayload,
+        id: newId,  // id fijo para que el dispatch y el POST usen el mismo
         fecha: hoy,
         estatus: "pendiente",
         creadoPor: usuario?.usuario || userRol,
       };
       dispatch({ type: "ADD_ORDEN_TRABAJO", payload });
+      // Sync a Supabase (fire-and-forget)
+      guardarOrdenEnSupabase(payload, op, lot, maq);
       dispatch({ type: "ADD_NOTIF", payload: {
         para: op?.usuario || "campo",
         tipo: "info",
@@ -204,12 +296,14 @@ export default function OrdenDia({ userRol, usuario }) {
   };
 
   const marcarCompletada = (orden) => {
-    if (!window.confirm(`¿Marcar como completada la orden "${orden.tipoTrabajo}" de ${getOperador(orden.operadorId)?.nombre || "—"}?`)) return;
+    if (!window.confirm(`¿Marcar como completada la orden "${orden.tipoTrabajo}" de ${getOperador(orden.operadorId)?.nombre || orden.operadorNombre || "—"}?`)) return;
     dispatch({ type: "UPD_ORDEN_TRABAJO", payload: {
       ...orden,
       estatus: "completado",
       horaFin: new Date().toISOString(),
     }});
+    // Sync a Supabase (fire-and-forget)
+    completarOrdenEnSupabase(orden.id);
     // Crear registro automático en bitácora, etiquetado con origen=orden_trabajo
     // y ordenId para correlación inversa (evita doble captura manual).
     dispatch({ type: "ADD_BITACORA", payload: {
@@ -241,9 +335,8 @@ export default function OrdenDia({ userRol, usuario }) {
     weekday: "long", day: "2-digit", month: "long", year: "numeric",
   });
 
-  // ─── KPIs ──
+  // ─── KPIs (solo Pendientes y Completadas) ──
   const pendCount = ordenes.filter(o => o.estatus === "pendiente").length;
-  const progCount = ordenes.filter(o => o.estatus === "en_progreso").length;
   const compCount = ordenes.filter(o => o.estatus === "completado").length;
 
   return (
@@ -283,12 +376,38 @@ export default function OrdenDia({ userRol, usuario }) {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+      {/* Selector de fecha */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         {[
-          { label: "Pendientes",   val: pendCount, color: "#856404", icon: "⏳" },
-          { label: "En progreso",  val: progCount, color: "#e67e22", icon: "🚜" },
-          { label: "Completadas",  val: compCount, color: "#16a085", icon: "✅" },
+          { id: "hoy",    label: "📅 Hoy" },
+          { id: "ayer",   label: "🕐 Ayer" },
+          { id: "semana", label: "📆 Esta semana" },
+        ].map(opt => {
+          const sel = filtroFecha === opt.id;
+          return (
+            <button key={opt.id} onClick={() => setFiltroFecha(opt.id)}
+              style={{
+                padding: "10px 16px",
+                borderRadius: 10,
+                border: `1.5px solid ${sel ? "#2d5a1b" : "#ddd5c0"}`,
+                background: sel ? "#f0f8e8" : "white",
+                color: sel ? "#2d5a1b" : "#5a5040",
+                fontSize: 13,
+                fontWeight: sel ? 700 : 500,
+                cursor: "pointer",
+                transition: "all 0.15s",
+              }}>
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* KPIs — solo 2 estatus (pendiente, completado) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 20 }}>
+        {[
+          { label: "Pendientes",  val: pendCount, color: "#856404", icon: "⏳" },
+          { label: "Completadas", val: compCount, color: "#16a085", icon: "✅" },
         ].map(k => (
           <div key={k.label} style={{
             padding: "16px 14px",
@@ -324,7 +443,36 @@ export default function OrdenDia({ userRol, usuario }) {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {ordenes.map(orden => {
+          {(() => {
+            // Agrupamos por fecha si estamos viendo semana; si es hoy/ayer
+            // creamos un solo grupo sin header.
+            const grupos = {};
+            ordenes.forEach(o => { (grupos[o.fecha] = grupos[o.fecha] || []).push(o); });
+            const fechas = Object.keys(grupos).sort((a, b) => b.localeCompare(a));
+            const mostrarHeaders = filtroFecha === "semana" && fechas.length > 1;
+
+            return fechas.map(fecha => {
+              const fechaHeader = new Date(fecha + 'T00:00:00').toLocaleDateString("es-MX", {
+                weekday: "long", day: "2-digit", month: "long",
+              });
+              const esHoy  = fecha === hoy;
+              const esAyer = fecha === ayer;
+              return (
+                <div key={fecha}>
+                  {mostrarHeaders && (
+                    <div style={{
+                      fontSize: 11, fontWeight: 700, color: "#8a8070",
+                      textTransform: "uppercase", letterSpacing: 1,
+                      marginTop: 4, marginBottom: 8, paddingLeft: 4,
+                    }}>
+                      {esHoy ? "HOY" : esAyer ? "AYER" : fechaHeader}
+                      <span style={{ marginLeft: 8, fontSize: 10, color: "#8a8070", fontWeight: 500 }}>
+                        · {grupos[fecha].length} orden{grupos[fecha].length === 1 ? "" : "es"}
+                      </span>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {grupos[fecha].map(orden => {
             const op  = getOperador(orden.operadorId);
             const lot = getLote(orden.loteId);
             const maq = getMaquina(orden.maquinariaId);
@@ -412,6 +560,11 @@ export default function OrdenDia({ userRol, usuario }) {
               </div>
             );
           })}
+                  </div>
+                </div>
+              );
+            });
+          })()}
         </div>
       )}
 

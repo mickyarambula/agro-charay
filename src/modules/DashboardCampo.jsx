@@ -210,6 +210,99 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
         </div>
       </div>
 
+      {/* ═══ ÓRDENES DEL DÍA (HOY) ═══ */}
+      {(() => {
+        const ordenesHoy = (state.ordenesTrabajo || []).filter(o => o.fecha === hoy);
+        const ESTATUS_BADGE = {
+          pendiente:  { bg:"#fff3cd", color:"#856404", label:"⏳ Pendiente" },
+          completado: { bg:"#d4efdf", color:"#117a65", label:"✅ Completada" },
+          cancelado:  { bg:"#fdf0ef", color:"#c0392b", label:"🚫 Cancelada" },
+        };
+        return (
+          <div style={{marginBottom:20}}>
+            <div style={{
+              display:"flex",justifyContent:"space-between",alignItems:"center",
+              marginBottom:10,paddingLeft:4,
+            }}>
+              <div style={{fontSize:11,fontWeight:700,color:"#8a8070",
+                textTransform:"uppercase",letterSpacing:1}}>
+                📋 Órdenes del día
+              </div>
+              {ordenesHoy.length > 0 && (
+                <span onClick={()=>nav("ordenes")}
+                  style={{color:"#1a6ea8",cursor:"pointer",fontSize:11,fontWeight:600}}>
+                  Ver todas ({ordenesHoy.length}) →
+                </span>
+              )}
+            </div>
+            {ordenesHoy.length === 0 ? (
+              <div style={{
+                background:"white",borderRadius:12,padding:"20px 16px",
+                textAlign:"center",border:"2px dashed #ddd5c0",
+              }}>
+                <div style={{fontSize:32,marginBottom:6}}>📋</div>
+                <div style={{fontSize:13,fontWeight:700,color:"#3d3525",marginBottom:4}}>
+                  Sin órdenes programadas hoy
+                </div>
+                <button onClick={()=>nav("ordenes")}
+                  style={{
+                    marginTop:10,padding:"10px 18px",borderRadius:10,border:"none",
+                    background:"#2d5a1b",color:"white",fontSize:13,fontWeight:700,
+                    cursor:"pointer",
+                  }}>
+                  + Nueva orden
+                </button>
+              </div>
+            ) : (
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {ordenesHoy.slice(0, 4).map(orden => {
+                  const op = operadores.find(o => String(o.id) === String(orden.operadorId));
+                  const lot = lotes.find(l => String(l.id) === String(orden.loteId));
+                  const nomLote = lot
+                    ? (lot.apodo && lot.apodo !== "NO DEFINIDO" ? lot.apodo : lot.folioCorto)
+                    : (orden.loteNombre || "—");
+                  const nomOperador = op?.nombre || orden.operadorNombre || "Sin asignar";
+                  const badge = ESTATUS_BADGE[orden.estatus] || ESTATUS_BADGE.pendiente;
+                  return (
+                    <div key={orden.id}
+                      onClick={()=>nav("ordenes")}
+                      style={{
+                        background:"white",borderRadius:10,padding:"12px 14px",
+                        boxShadow:"0 1px 4px rgba(0,0,0,0.05)",
+                        borderLeft:`4px solid ${orden.estatus==="completado"?"#16a085":"#c8a84b"}`,
+                        cursor:"pointer",
+                      }}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:4}}>
+                        <div style={{fontSize:14,fontWeight:700,color:"#3d3525",flex:1}}>
+                          {orden.tipoTrabajo || "Trabajo"}
+                        </div>
+                        <span style={{
+                          padding:"2px 8px",borderRadius:10,fontSize:10,fontWeight:700,
+                          background:badge.bg,color:badge.color,
+                        }}>{badge.label}</span>
+                      </div>
+                      <div style={{fontSize:12,color:T.fog}}>
+                        👷 <strong>{nomOperador}</strong> · 📍 {nomLote}
+                        {orden.horaInicio && <> · ⏰ {orden.horaInicio}</>}
+                      </div>
+                    </div>
+                  );
+                })}
+                {ordenesHoy.length > 4 && (
+                  <div onClick={()=>nav("ordenes")}
+                    style={{
+                      textAlign:"center",padding:"8px",fontSize:12,
+                      color:"#1a6ea8",cursor:"pointer",fontWeight:600,
+                    }}>
+                    + {ordenesHoy.length - 4} órdenes más →
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* ═══ ACCIONES RÁPIDAS — 2x2 grid ═══ */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
         {[

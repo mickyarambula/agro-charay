@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -39,6 +39,10 @@ export async function loadStateFromSupabase() {
       supaFetch('diesel', 'order=legacy_id'),
       supaFetch('operadores', 'order=legacy_id'),
       supaFetch('maquinaria', 'order=legacy_id'),
+      supaFetch('ordenes_trabajo', 'order=created_at.desc&limit=200').catch(e => {
+        console.warn('[Supabase] ordenes_trabajo fetch falló (tabla puede no existir aún):', e.message);
+        return [];
+      }),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -114,6 +118,30 @@ export async function loadStateFromSupabase() {
       estado: r.estado||'activo', _uuid: r.id,
     }));
 
+    // Órdenes de trabajo — Supabase es la fuente de verdad. Los IDs son strings
+    // (uuid o Date.now() serializado al crear). Se normalizan a la forma local.
+    const ordenesTrabajo = (ordenesRows || []).map(r => ({
+      id:               r.id,
+      fecha:            r.fecha,
+      tipoTrabajo:      r.tipo,
+      estatus:          r.estatus || 'pendiente',
+      operadorId:       r.operador_id || null,
+      operadorNombre:   r.operador_nombre || '',
+      loteId:           r.lote_id || null,
+      loteNombre:       r.lote_nombre || '',
+      maquinariaId:     r.maquinaria_id || null,
+      maquinariaNombre: r.maquinaria_nombre || '',
+      insumoId:         r.insumo_id || null,
+      insumoNombre:     r.insumo_nombre || '',
+      horaInicio:       r.hora_inicio || '',
+      horasEstimadas:   parseFloat(r.horas_estimadas) || 0,
+      notas:            r.notas || '',
+      creadoPor:        r.creado_por || '',
+      creadoEn:         r.created_at,
+      horaFin:          r.hora_fin || null,
+      origen:           'supabase',
+    }));
+
     const predCiclo = ciclos.find(c => c.predeterminado);
     let estadoExistente = {};
     try { const s = localStorage.getItem('agroSistemaState'); if (s) estadoExistente = JSON.parse(s); } catch {}
@@ -156,7 +184,7 @@ export async function loadStateFromSupabase() {
       solicitudesGasto:   estadoExistente.solicitudesGasto   || [],
       recomendaciones:    estadoExistente.recomendaciones    || [],
       ordenesCompra:      estadoExistente.ordenesCompra      || [],
-      ordenesTrabajo:     estadoExistente.ordenesTrabajo     || [],
+      // ordenesTrabajo: NO se preserva — siempre viene de Supabase (fresco)
       notificaciones:     estadoExistente.notificaciones     || [],
       delegaciones:       estadoExistente.delegaciones       || [],
       invCampo:           estadoExistente.invCampo           || [],
@@ -173,6 +201,7 @@ export async function loadStateFromSupabase() {
       // ── Datos operativos: SIEMPRE frescos de Supabase (reemplazo total) ──
       productores, lotes, ciclos, operadores, maquinaria,
       insumos, diesel, egresosManual, dispersiones,
+      ordenesTrabajo,  // ← fresco de Supabase (tabla ordenes_trabajo)
       cicloActivoId: predCiclo ? predCiclo.id : (estadoExistente.cicloActivoId || 1),
       cicloActual:   predCiclo ? predCiclo.nombre : (estadoExistente.cicloActual || 'OI 2025-2026'),
       _supabaseCargado: Date.now(),

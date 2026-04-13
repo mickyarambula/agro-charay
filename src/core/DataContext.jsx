@@ -367,7 +367,7 @@ export function reducer(s, a) {
     // Solicitudes de compra
     case "ADD_SOL_COMPRA":   return { ...s, solicitudesCompra: [{ ...a.payload, id:Date.now(), creadoEn:new Date().toISOString(), historial:[{accion:"Creada",usuario:a.payload.creadoPor,fecha:new Date().toISOString()}] }, ...(s.solicitudesCompra||[])] };
     // Órdenes de trabajo (flujo Encargado → Operador)
-    case "ADD_ORDEN_TRABAJO": return { ...s, ordenesTrabajo: [{ ...a.payload, id:Date.now(), creadoEn:new Date().toISOString(), estatus: a.payload.estatus || "pendiente" }, ...(s.ordenesTrabajo||[])] };
+    case "ADD_ORDEN_TRABAJO": return { ...s, ordenesTrabajo: [{ ...a.payload, id: a.payload.id || Date.now(), creadoEn: a.payload.creadoEn || new Date().toISOString(), estatus: a.payload.estatus || "pendiente" }, ...(s.ordenesTrabajo||[])] };
     case "UPD_ORDEN_TRABAJO": return { ...s, ordenesTrabajo: (s.ordenesTrabajo||[]).map(x=>x.id===a.payload.id?{...x,...a.payload}:x) };
     case "DEL_ORDEN_TRABAJO": return { ...s, ordenesTrabajo: (s.ordenesTrabajo||[]).filter(x=>x.id!==a.payload) };
     case "UPD_SOL_COMPRA":   return { ...s, solicitudesCompra: (s.solicitudesCompra||[]).map(x=>x.id===a.payload.id?{...x,...a.payload}:x) };
