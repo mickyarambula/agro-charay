@@ -1,4 +1,26 @@
 import React, { useState, useReducer, createContext, useContext, useCallback, useRef, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+// ─── SUPABASE REALTIME SYNC ───────────────────────────────────────────────────
+// Canal único para sincronizar en tiempo real entre sesiones conectadas.
+// Usa broadcast channels (sin tablas): los cambios se propagan entre clientes
+// online. Si no hay Supabase disponible el resto de la app sigue funcionando
+// contra localStorage como siempre.
+const SUPABASE_URL = "https://oryixvodfqojunnqbkln.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yeWl4dm9kZnFvanVubnFia2xuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4ODUzMjAsImV4cCI6MjA5MTQ2MTMyMH0.03nXDh5qj7N-RiCqXxGKvhfZSVWDmuV4hFwTOZ66ZCQ";
+const SYNC_CHANNEL = "agro-charay-sync";
+const SYNC_KEYS = ["solicitudesGasto","solicitudesCompra","recomendaciones","ordenesCompra","notificaciones","delegaciones"];
+
+let supabaseClient = null;
+try {
+  supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    realtime: { params: { eventsPerSecond: 10 } },
+  });
+} catch (e) {
+  console.warn("Supabase init falló — fallback a localStorage:", e);
+  supabaseClient = null;
+}
 
 // ─── ROLES Y USUARIOS ─────────────────────────────────────────────────────────
 const ROLES = {
@@ -322,6 +344,10 @@ const css = `
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: ${T.paper}; }
   ::-webkit-scrollbar-thumb { background: ${T.sand}; border-radius: 3px; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.6; transform: scale(0.85); }
+  }
 
   .app { display: flex; height: 100vh; overflow: hidden; }
 
@@ -2323,6 +2349,13 @@ function reducer(s, a) {
     case "SET_PERMISOS_USUARIO": return { ...s, permisosGranulares: { ...s.permisosGranulares, [a.payload.userId]: a.payload.permisos } };
     case "CLEAR_PERMISOS_USUARIO": { const n={...(s.permisosGranulares||{})}; delete n[a.payload]; return {...s, permisosGranulares:n}; }
     case "SET_ROL": return { ...s, rolesPersonalizados: { ...(s.rolesPersonalizados||{}), [a.payload.id]: a.payload } };
+    case "SYNC_STATE": {
+      // Actualiza solo las claves sincronizadas desde un peer remoto sin tocar el resto del state.
+      const p = a.payload || {};
+      const next = { ...s };
+      SYNC_KEYS.forEach(k => { if (p[k] !== undefined) next[k] = p[k]; });
+      return next;
+    }
     case "DEL_ROL": { const n={...(s.rolesPersonalizados||{})}; delete n[a.payload]; return {...s, rolesPersonalizados:n}; }
     case "SET_CICLO_ACTIVO_ID": return { ...s, cicloActivoId: a.payload,
       cicloActual: (s.ciclos||[]).find(c=>c.id===a.payload)?.nombre || s.cicloActual,
@@ -18978,6 +19011,12 @@ export default function App() {
   const [page, setPage]   = useState("dashboard");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [bellOpen, setBellOpen] = useState(false);
+  // ── Supabase realtime sync ──
+  const [connectedUsers, setConnectedUsers] = useState(0);
+  const syncChannelRef = useRef(null);
+  const syncSenderIdRef = useRef(null);
+  const muteBroadcastRef = useRef(false);
+  const initialBroadcastSkipRef = useRef(true);
 
   // Detectar conexión online/offline
   useEffect(() => {
@@ -18990,6 +19029,85 @@ export default function App() {
   const [usuario, setUsuario] = useState(null);
   const navFiltrosRef = React.useRef({});
   const [pageStack, setPageStack] = React.useState([]); // historial de navegación
+
+  // ─── Supabase realtime: suscripción al canal al iniciar sesión ──────────────
+  useEffect(() => {
+    if (!usuario || !supabaseClient) return;
+    const senderId = `${usuario.usuario}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    syncSenderIdRef.current = senderId;
+    initialBroadcastSkipRef.current = true;
+
+    const channel = supabaseClient.channel(SYNC_CHANNEL, {
+      config: {
+        broadcast: { self: false },
+        presence:  { key: senderId },
+      },
+    });
+
+    const handleStateSync = ({ payload }) => {
+      if (!payload || payload.senderId === senderId) return;
+      muteBroadcastRef.current = true;
+      dispatch({ type: "SYNC_STATE", payload: payload.state || {} });
+    };
+
+    channel
+      .on("broadcast", { event: "state-sync" }, handleStateSync)
+      .on("presence",  { event: "sync" }, () => {
+        try {
+          const st = channel.presenceState() || {};
+          setConnectedUsers(Object.keys(st).length);
+        } catch { setConnectedUsers(0); }
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          try {
+            await channel.track({
+              usuario: usuario.usuario,
+              nombre:  usuario.nombre,
+              rol:     usuario.rol,
+              since:   Date.now(),
+            });
+          } catch (e) { console.warn("presence track falló:", e); }
+        }
+      });
+
+    syncChannelRef.current = channel;
+
+    return () => {
+      try { channel.unsubscribe(); } catch {}
+      try { supabaseClient.removeChannel(channel); } catch {}
+      syncChannelRef.current = null;
+      syncSenderIdRef.current = null;
+      setConnectedUsers(0);
+    };
+  }, [usuario]);
+
+  // ─── Supabase realtime: broadcast cuando cambian las claves sincronizadas ──
+  useEffect(() => {
+    // Saltar el primer fire (es el mount inicial con datos locales)
+    if (initialBroadcastSkipRef.current) { initialBroadcastSkipRef.current = false; return; }
+    // Si venimos de aplicar un cambio remoto, no rebroadcast
+    if (muteBroadcastRef.current) { muteBroadcastRef.current = false; return; }
+    const ch = syncChannelRef.current;
+    if (!ch || !usuario) return;
+    try {
+      ch.send({
+        type: "broadcast",
+        event: "state-sync",
+        payload: {
+          senderId: syncSenderIdRef.current,
+          state: {
+            solicitudesGasto:  state.solicitudesGasto  || [],
+            solicitudesCompra: state.solicitudesCompra || [],
+            recomendaciones:   state.recomendaciones   || [],
+            ordenesCompra:     state.ordenesCompra     || [],
+            notificaciones:    state.notificaciones    || [],
+            delegaciones:      state.delegaciones      || [],
+          },
+        },
+      });
+    } catch (e) { console.warn("broadcast falló:", e); }
+  }, [state.solicitudesGasto, state.solicitudesCompra, state.recomendaciones, state.ordenesCompra, state.notificaciones, state.delegaciones, usuario]);
 
   const handleLogin = (u) => {
     setUsuario(u);
@@ -19327,6 +19445,18 @@ export default function App() {
               <span className="badge" style={{background:rolInfo.color+"22",color:rolInfo.color,border:`1px solid ${rolInfo.color}44`,fontSize:11,fontWeight:600}}>
                 {rolInfo.icon} {rolInfo.label}
               </span>
+              {/* Realtime: usuarios conectados */}
+              {supabaseClient && connectedUsers > 0 && (
+                <span title={`${connectedUsers} sesión(es) activa(s) sincronizando en tiempo real`}
+                  style={{display:"inline-flex",alignItems:"center",gap:6,
+                    padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700,
+                    background:"rgba(46,213,115,0.15)",color:"#1e8449",
+                    border:"1px solid rgba(46,213,115,0.4)"}}>
+                  <span style={{width:8,height:8,borderRadius:"50%",background:"#2ed573",
+                    boxShadow:"0 0 6px rgba(46,213,115,0.8)",animation:"pulse 2s infinite"}}/>
+                  {connectedUsers} conectado{connectedUsers===1?"":"s"}
+                </span>
+              )}
               {/* Offline indicator */}
               {!isOnline && (
                 <span style={{padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700,
