@@ -12,15 +12,9 @@ export default function VistaOperador({ usuario, onLogout }) {
   const { state, dispatch } = useData();
   const hoy = new Date().toISOString().split("T")[0];
 
-  // Órdenes de trabajo del día asignadas al operador.
-  // La tabla "ordenesTrabajo" todavía no existe en el schema (ver PIZARRON.md
-  // prioridad 3). Por ahora leemos de state.ordenesTrabajo con fallback a [].
-  const todasOrdenes = state.ordenesTrabajo || [];
-  const misOrdenes = todasOrdenes.filter(o =>
-    o.fecha === hoy &&
-    (String(o.operadorId) === String(usuario?.id) ||
-     o.operador === usuario?.usuario)
-  );
+  // El Operador de Campo SUPERVISA todas las órdenes del día (no solo las suyas).
+  // Ve el trabajo que se está ejecutando en el campo completo.
+  const misOrdenes = (state.ordenesTrabajo || []).filter(o => o.fecha === hoy);
 
   // Operadores y lotes para resolver nombres en cada orden
   const operadores = state.operadores || [];
@@ -152,12 +146,12 @@ export default function VistaOperador({ usuario, onLogout }) {
           fontWeight: 700,
           color: "#3d3525",
         }}>
-          📋 Mis Órdenes del Día
+          📋 Órdenes del Campo — Hoy
         </div>
         <div style={{ fontSize: 13, color: "#8a8070", marginTop: 4 }}>
           {misOrdenes.length === 0
-            ? "No tienes trabajos asignados para hoy"
-            : `${misOrdenes.length} trabajo${misOrdenes.length === 1 ? "" : "s"} asignado${misOrdenes.length === 1 ? "" : "s"}`}
+            ? "No hay trabajos programados para hoy"
+            : `${misOrdenes.length} trabajo${misOrdenes.length === 1 ? "" : "s"} en el campo`}
         </div>
       </div>
 
@@ -195,13 +189,21 @@ export default function VistaOperador({ usuario, onLogout }) {
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
                   <div style={{ fontSize: 17, fontWeight: 700, color: "#3d3525", flex: 1, lineHeight: 1.3 }}>
-                    {orden.descripcion || orden.concepto || "Trabajo"}
+                    {orden.tipoTrabajo || orden.descripcion || "Trabajo"}
                   </div>
                   {completado && <span style={{ fontSize: 22 }}>✅</span>}
                   {iniciado && !completado && <span style={{ fontSize: 22 }}>⏳</span>}
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
+                    <span style={{ fontSize: 20 }}>👷</span>
+                    <span style={{ color: "#5a5040" }}>
+                      Tractorista: <strong style={{ color: "#2d5a1b" }}>
+                        {operadores.find(o => String(o.id) === String(orden.operadorId))?.nombre || "Sin asignar"}
+                      </strong>
+                    </span>
+                  </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
                     <span style={{ fontSize: 20 }}>📍</span>
                     <span style={{ color: "#5a5040" }}>
@@ -274,7 +276,7 @@ export default function VistaOperador({ usuario, onLogout }) {
         )}
       </div>
 
-      {/* BOTÓN FIJO INFERIOR: Reportar novedad */}
+      {/* BOTÓN FIJO INFERIOR: Reportar al encargado */}
       <div style={{
         position: "fixed",
         bottom: 16,
@@ -301,15 +303,15 @@ export default function VistaOperador({ usuario, onLogout }) {
             justifyContent: "center",
             gap: 10,
           }}>
-          <span style={{ fontSize: 24 }}>⚠️</span>
-          Reportar novedad
+          <span style={{ fontSize: 24 }}>📢</span>
+          Reportar al encargado
         </button>
       </div>
 
-      {/* MODAL: Reportar novedad */}
+      {/* MODAL: Reportar al encargado */}
       {modalNovedad && (
         <Modal
-          title="⚠️ Reportar novedad"
+          title="📢 Reportar al encargado"
           onClose={() => { setModalNovedad(false); setTextoNovedad(""); }}
           footer={
             <>

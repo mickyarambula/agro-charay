@@ -193,6 +193,7 @@ export const initState = {
   // ── FLUJOS DE TRABAJO ──────────────────────────────────────────────────────
   // Solicitudes de compra/gasto/aplicación
   solicitudesCompra: [],    // {id, tipo, estatus, creadoPor, creadoEn, historial, ...}
+  ordenesTrabajo:    [],    // {id, fecha, operadorId, loteId, maquinariaId, tipoTrabajo, insumoId, horaInicio, horasEstimadas, notas, estatus, creadoPor, creadoEn}
   ordenesCompra:     [],    // {id, solicitudId, cotizaciones[], ordenAprobada, ...}
   solicitudesGasto:  [],    // {id, tipo, estatus, monto, descripcion, historial, ...}
   recomendaciones:   [],    // {id, ingenieroId, descripcion, estatus, historial, ...}
@@ -365,6 +366,10 @@ export function reducer(s, a) {
     // ── FLUJOS DE TRABAJO ──────────────────────────────────────────────────────
     // Solicitudes de compra
     case "ADD_SOL_COMPRA":   return { ...s, solicitudesCompra: [{ ...a.payload, id:Date.now(), creadoEn:new Date().toISOString(), historial:[{accion:"Creada",usuario:a.payload.creadoPor,fecha:new Date().toISOString()}] }, ...(s.solicitudesCompra||[])] };
+    // Órdenes de trabajo (flujo Encargado → Operador)
+    case "ADD_ORDEN_TRABAJO": return { ...s, ordenesTrabajo: [{ ...a.payload, id:Date.now(), creadoEn:new Date().toISOString(), estatus: a.payload.estatus || "pendiente" }, ...(s.ordenesTrabajo||[])] };
+    case "UPD_ORDEN_TRABAJO": return { ...s, ordenesTrabajo: (s.ordenesTrabajo||[]).map(x=>x.id===a.payload.id?{...x,...a.payload}:x) };
+    case "DEL_ORDEN_TRABAJO": return { ...s, ordenesTrabajo: (s.ordenesTrabajo||[]).filter(x=>x.id!==a.payload) };
     case "UPD_SOL_COMPRA":   return { ...s, solicitudesCompra: (s.solicitudesCompra||[]).map(x=>x.id===a.payload.id?{...x,...a.payload}:x) };
     case "DEL_SOL_COMPRA":   return { ...s, solicitudesCompra: (s.solicitudesCompra||[]).filter(x=>x.id!==a.payload) };
     // Órdenes de compra

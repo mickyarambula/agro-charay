@@ -25,6 +25,7 @@ import {
 } from "./shared/helpers.jsx";
 import RentasModule from "./modules/Rentas.jsx";
 import VistaOperador from "./modules/VistaOperador.jsx";
+import OrdenDia from "./modules/OrdenDia.jsx";
 import CapitalModule from "./modules/Capital.jsx";
 import ActivosModule from "./modules/Activos.jsx";
 import CreditosRefModule from "./modules/CreditosRef.jsx";
@@ -871,6 +872,7 @@ const ROLES_EDITABLES = [
 const NAV = [
   { section: "Principal" },
   { id:"dashboard",  label:"Dashboard",             icon:"📊" },
+  { id:"ordenes",    label:"Órdenes del Día",       icon:"📋" },
   { id:"flujos",     label:"Flujos / Aprobaciones", icon:"✅" },
   { id:"productores",label:"Productores",           icon:"👥" },
   { id:"ciclos",      label:"Ciclos Agrícolas", icon:"📅" },
@@ -907,7 +909,7 @@ const NAV = [
 ];
 
 const PAGE_TITLES = {
-  dashboard:"Dashboard de Ciclo", flujos:"Flujos y Aprobaciones", productores:"Productores del Ciclo",ciclos:"Ciclos Agrícolas",
+  dashboard:"Dashboard de Ciclo", ordenes:"Órdenes del Día", flujos:"Flujos y Aprobaciones", productores:"Productores del Ciclo",ciclos:"Ciclos Agrícolas",
   lotes:"Lotes y Parcelas",bitacora:"Bitácora de Trabajos",
   maquinaria:"Control de Maquinaria",operadores:"Operadores",insumos:"Insumos y Semilla",
   diesel:"Diesel y Combustible",inventario:"Inventario",
@@ -1375,6 +1377,7 @@ export default function App() {
     switch(page) {
       case "dashboard":      return ["campo","encargado","ingeniero"].includes(rol) ? <DashboardCampo userRol={rol} usuario={usuario} onNavigate={navMenu}/> : <Dashboard userRol={rol} onNavigate={navTo} />;
       case "flujos":         return <FlujoModule userRol={rol} usuario={usuario} />;
+      case "ordenes":        return <OrdenDia userRol={rol} usuario={usuario} />;
       case "productores":    return <ProductoresModule userRol={rol} puedeEditar={pe} onNavigate={navTo} />;
       case "ciclos":         return <CiclosModule userRol={rol} puedeEditar={pe} />;
       case "lotes":          return <LotesModule userRol={rol} puedeEditar={pe} />;

@@ -13,9 +13,9 @@ export const ROLES = {
 
 // Módulos visibles por rol
 export const ACCESO = {
-  admin:      ["dashboard","flujos","productores","ciclos","lotes","bitacora","maquinaria","operadores","insumos","diesel","inventario","capital","credito","creditosref","rentas","gastos","costos","activos","personal","cosecha","proyeccion","asistente","edo_resultados","balance","flujo_caja","reportes","configuracion"],
+  admin:      ["dashboard","flujos","ordenes","productores","ciclos","lotes","bitacora","maquinaria","operadores","insumos","diesel","inventario","capital","credito","creditosref","rentas","gastos","costos","activos","personal","cosecha","proyeccion","asistente","edo_resultados","balance","flujo_caja","reportes","configuracion"],
   socio:      ["dashboard","flujos","lotes","bitacora","maquinaria","operadores","insumos","diesel","costos","cosecha","rentas","proyeccion","asistente","reportes"],
-  encargado:  ["dashboard","flujos","bitacora","lotes","maquinaria","operadores","insumos","diesel","inventario"],
+  encargado:  ["dashboard","flujos","ordenes","bitacora","lotes","maquinaria","operadores","insumos","diesel","inventario"],
   ingeniero:  ["dashboard","flujos","bitacora","lotes","insumos","inventario"],
   compras:    ["dashboard","flujos","insumos","diesel","inventario","gastos"],
   campo:      ["dashboard","bitacora","lotes"],
