@@ -4759,6 +4759,24 @@ function FlujoModule({ userRol, usuario }) {
 
   const esSocio = userRol === "socio";
   const esAdmin = userRol === "admin";
+  // 🐛 DEBUG TEMPORAL — quitar después de diagnosticar bug de botones Aprobar/Rechazar
+  console.log("[DEBUG FlujoModule]", {
+    userRol,
+    esAdmin,
+    esSocio,
+    usuarioRol: usuario?.rol,
+    usuarioUsuario: usuario?.usuario,
+    reembolsos: (state.solicitudesGasto||[])
+      .filter(g => g.esReembolso)
+      .map(g => ({
+        id: g.id,
+        estatus: g.estatus,
+        estatusType: typeof g.estatus,
+        estatusLen: g.estatus?.length,
+        creadoPor: g.creadoPor,
+        concepto: g.concepto,
+      })),
+  });
   const [tab, setTab]         = useState(esSocio ? "reembolsos" : "pendientes");
   const [modalTipo, setModalTipo] = useState(null); // "compra"|"gasto"|"recom"|"reembolso"
   const [form, setForm]       = useState({});
