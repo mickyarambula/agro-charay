@@ -81,6 +81,7 @@ export default function OrdenDia({ userRol, usuario }) {
   const ordenes     = (state.ordenesTrabajo || []).filter(o => o.fecha === hoy);
 
   const [modalNew, setModalNew] = useState(false);
+  const [editandoId, setEditandoId] = useState(null); // id de la orden en edición; null = nueva
   const emptyForm = {
     operadorId: "",
     loteId: "",
@@ -116,15 +117,37 @@ export default function OrdenDia({ userRol, usuario }) {
   };
 
   const abrirNueva = () => {
+    setEditandoId(null);
     setForm(emptyForm);
     setModalNew(true);
+  };
+
+  const abrirEditar = (orden) => {
+    setEditandoId(orden.id);
+    setForm({
+      operadorId:     String(orden.operadorId || ""),
+      loteId:         String(orden.loteId || ""),
+      tipoTrabajo:    orden.tipoTrabajo || "",
+      insumoId:       String(orden.insumoId || ""),
+      maquinariaId:   String(orden.maquinariaId || ""),
+      horaInicio:     orden.horaInicio || "",
+      horasEstimadas: String(orden.horasEstimadas || ""),
+      notas:          orden.notas || "",
+    });
+    setModalNew(true);
+  };
+
+  const cerrarModal = () => {
+    setModalNew(false);
+    setEditandoId(null);
+    setForm(emptyForm);
   };
 
   const guardarOrden = () => {
     if (!form.operadorId || !form.loteId || !form.tipoTrabajo) return;
 
     const insumoSel = form.insumoId ? getInsumo(form.insumoId) : null;
-    const payload = {
+    const basePayload = {
       ...form,
       operadorId: parseInt(form.operadorId, 10) || form.operadorId,
       loteId:     parseInt(form.loteId, 10)     || form.loteId,
@@ -132,31 +155,52 @@ export default function OrdenDia({ userRol, usuario }) {
       insumoId:   form.insumoId ? (parseInt(form.insumoId, 10) || form.insumoId) : "",
       insumoNombre: insumoSel?.insumo || "",
       horasEstimadas: parseFloat(form.horasEstimadas) || 0,
-      fecha: hoy,
-      estatus: "pendiente",
-      creadoPor: usuario?.usuario || userRol,
     };
 
-    dispatch({ type: "ADD_ORDEN_TRABAJO", payload });
+    const op  = getOperador(basePayload.operadorId);
+    const lot = getLote(basePayload.loteId);
+    const maq = getMaquina(basePayload.maquinariaId);
 
-    // Notificación al operador (push interno)
-    const op  = getOperador(payload.operadorId);
-    const lot = getLote(payload.loteId);
-    const maq = getMaquina(payload.maquinariaId);
-    dispatch({ type: "ADD_NOTIF", payload: {
-      para: op?.usuario || "campo",
-      tipo: "info",
-      titulo: "📋 Nueva orden de trabajo",
-      mensaje: `${payload.tipoTrabajo} en ${nombreLote(lot)} — ${payload.horasEstimadas || 0}h estimadas`,
-    }});
-
-    setModalNew(false);
-    setForm(emptyForm);
-
-    // Abrir WhatsApp con el mensaje pre-armado
-    setTimeout(() => {
-      enviarWhatsApp(payload, op, lot, maq);
-    }, 100);
+    if (editandoId) {
+      // ── Edición: preserva id, fecha y estatus originales ──
+      const original = (state.ordenesTrabajo || []).find(o => o.id === editandoId);
+      if (!original) { cerrarModal(); return; }
+      const updated = {
+        ...original,
+        ...basePayload,
+        id: editandoId,
+        fecha: original.fecha,  // no mover de fecha
+        estatus: original.estatus || "pendiente",
+      };
+      dispatch({ type: "UPD_ORDEN_TRABAJO", payload: updated });
+      // Notifica al operador del cambio
+      dispatch({ type: "ADD_NOTIF", payload: {
+        para: op?.usuario || "campo",
+        tipo: "info",
+        titulo: "✏️ Orden actualizada",
+        mensaje: `Se actualizó: ${updated.tipoTrabajo} en ${nombreLote(lot)}`,
+      }});
+      cerrarModal();
+      // Reenvía WhatsApp con los datos nuevos
+      setTimeout(() => { enviarWhatsApp(updated, op, lot, maq); }, 100);
+    } else {
+      // ── Nueva orden ──
+      const payload = {
+        ...basePayload,
+        fecha: hoy,
+        estatus: "pendiente",
+        creadoPor: usuario?.usuario || userRol,
+      };
+      dispatch({ type: "ADD_ORDEN_TRABAJO", payload });
+      dispatch({ type: "ADD_NOTIF", payload: {
+        para: op?.usuario || "campo",
+        tipo: "info",
+        titulo: "📋 Nueva orden de trabajo",
+        mensaje: `${payload.tipoTrabajo} en ${nombreLote(lot)} — ${payload.horasEstimadas || 0}h estimadas`,
+      }});
+      cerrarModal();
+      setTimeout(() => { enviarWhatsApp(payload, op, lot, maq); }, 100);
+    }
   };
 
   const marcarCompletada = (orden) => {
@@ -166,8 +210,8 @@ export default function OrdenDia({ userRol, usuario }) {
       estatus: "completado",
       horaFin: new Date().toISOString(),
     }});
-    // Crear registro automático en bitácora
-    const maq = getMaquina(orden.maquinariaId);
+    // Crear registro automático en bitácora, etiquetado con origen=orden_trabajo
+    // y ordenId para correlación inversa (evita doble captura manual).
     dispatch({ type: "ADD_BITACORA", payload: {
       tipo: "reporte",
       loteId: parseInt(orden.loteId, 10) || null,
@@ -178,6 +222,8 @@ export default function OrdenDia({ userRol, usuario }) {
       maquinariaId: orden.maquinariaId || "",
       horas: parseFloat(orden.horasEstimadas) || 0,
       notas: `Orden de trabajo completada: ${orden.tipoTrabajo}`,
+      origen: "orden_trabajo",
+      ordenId: orden.id,
       data: { titulo: orden.tipoTrabajo, descripcion: orden.notas || "" },
     }});
   };
@@ -322,6 +368,19 @@ export default function OrdenDia({ userRol, usuario }) {
 
                 {orden.estatus !== "completado" && orden.estatus !== "cancelado" && (
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                    <button onClick={() => abrirEditar(orden)}
+                      style={{
+                        padding: "10px 16px",
+                        borderRadius: 8,
+                        border: "1px solid #c8a84b",
+                        background: "white",
+                        color: "#8a6e10",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}>
+                      ✏️ Editar
+                    </button>
                     <button onClick={() => reenviarWhatsApp(orden)}
                       style={{
                         padding: "10px 16px",
@@ -356,17 +415,18 @@ export default function OrdenDia({ userRol, usuario }) {
         </div>
       )}
 
-      {/* Modal Nueva Orden */}
+      {/* Modal Nueva Orden / Editar */}
       {modalNew && (
-        <Modal title="📋 Nueva orden de trabajo" onClose={() => setModalNew(false)}
+        <Modal title={editandoId ? "✏️ Editar orden de trabajo" : "📋 Nueva orden de trabajo"}
+          onClose={cerrarModal}
           footer={
             <>
-              <button className="btn btn-secondary" onClick={() => setModalNew(false)}>Cancelar</button>
+              <button className="btn btn-secondary" onClick={cerrarModal}>Cancelar</button>
               <button className="btn btn-primary"
                 onClick={guardarOrden}
                 disabled={!form.operadorId || !form.loteId || !form.tipoTrabajo}
                 style={{ fontSize: 14, padding: "12px 20px", fontWeight: 700 }}>
-                💾 Crear + Enviar WhatsApp
+                {editandoId ? "💾 Guardar cambios" : "💾 Crear + Enviar WhatsApp"}
               </button>
             </>
           }>

@@ -396,6 +396,13 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
               <div>
                 <span style={{fontWeight:700,fontSize:14,color:T.inkLt}}>{ti.label}</span>
                 {b.loteId && <span style={{marginLeft:8,fontSize:11,background:T.mist,padding:"2px 8px",borderRadius:10,color:T.fog,border:`1px solid ${T.line}`}}>{nomLotes(b)}</span>}
+                {b.origen === "orden_trabajo" && (
+                  <span title={`Generado automáticamente por orden de trabajo #${b.ordenId || ""}`}
+                    style={{marginLeft:8,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10,
+                      background:"#e8f4fd",color:"#1a6ea8",border:"1px solid #1a6ea844",letterSpacing:0.3}}>
+                    📋 Auto · Orden
+                  </span>
+                )}
               </div>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <span className="font-mono" style={{fontSize:11,color:T.fog}}>{b.fecha}</span>

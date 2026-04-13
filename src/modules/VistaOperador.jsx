@@ -48,7 +48,7 @@ export default function VistaOperador({ usuario, onLogout }) {
       horaFin: new Date().toISOString(),
     };
     dispatch({ type: "UPD_ORDEN_TRABAJO", payload });
-    // Registra en bitácora automáticamente
+    // Registra en bitácora automáticamente, etiquetado con origen + ordenId
     dispatch({ type: "ADD_BITACORA", payload: {
       tipo: orden.tipo || "reporte",
       loteId: orden.loteId,
@@ -58,6 +58,8 @@ export default function VistaOperador({ usuario, onLogout }) {
       maquinariaId: orden.maquinariaId || "",
       horas: orden.horasEstimadas || 0,
       notas: `Completado desde orden #${orden.id}`,
+      origen: "orden_trabajo",
+      ordenId: orden.id,
       data: { titulo: orden.descripcion || "Trabajo completado" },
     }});
   };

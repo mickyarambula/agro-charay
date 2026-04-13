@@ -25,19 +25,10 @@ function resolveProductorId(row, productoresRows) {
 
 export async function loadStateFromSupabase() {
   try {
-    // Si ya hay datos locales, no cargar
-    const existing = localStorage.getItem('agroSistemaState');
-    if (existing) {
-      try {
-        const parsed = JSON.parse(existing);
-        if (parsed.productores && parsed.productores.length > 0) {
-          console.log('[Supabase] localStorage OK, skip');
-          return { skipped: true };
-        }
-      } catch {}
-    }
-
-    console.log('[Supabase] Cargando datos...');
+    // Siempre recargar datos frescos de Supabase al login. Si el fetch falla
+    // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
+    // app sigue con lo que ya haya en localStorage.
+    console.log('[Supabase] Cargando datos frescos...');
     const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
@@ -127,12 +118,63 @@ export async function loadStateFromSupabase() {
     let estadoExistente = {};
     try { const s = localStorage.getItem('agroSistemaState'); if (s) estadoExistente = JSON.parse(s); } catch {}
 
+    // ─── Preservar SOLO configuración y UI-state local; NO mezclar arrays
+    //     operativos con los de Supabase (evita duplicados).
+    const configPreservada = {
+      // Parámetros y configuración
+      alertaParams:       estadoExistente.alertaParams       || {},
+      creditoParams:      estadoExistente.creditoParams      || undefined,
+      creditoLimites:     estadoExistente.creditoLimites     || {},
+      paramsCultivo:      estadoExistente.paramsCultivo      || {},
+      tarifaStd:          estadoExistente.tarifaStd          || undefined,
+      // Permisos y roles
+      permisosUsuario:    estadoExistente.permisosUsuario    || {},
+      permisosGranulares: estadoExistente.permisosGranulares || {},
+      rolesPersonalizados:estadoExistente.rolesPersonalizados|| {},
+      usuariosExtra:      estadoExistente.usuariosExtra      || [],
+      usuariosBaseEdit:   estadoExistente.usuariosBaseEdit   || {},
+      // UI local (último productor/cultivo visto, alertas leídas)
+      productorActivo:    estadoExistente.productorActivo    || null,
+      cultivoActivo:      estadoExistente.cultivoActivo      || null,
+      alertasLeidas:      estadoExistente.alertasLeidas      || [],
+      // Datos operativos que NO están aún en Supabase — se preservan locales
+      bitacora:           estadoExistente.bitacora           || [],
+      trabajos:           estadoExistente.trabajos           || [],
+      asistencias:        estadoExistente.asistencias        || [],
+      pagosSemana:        estadoExistente.pagosSemana        || [],
+      horasMaq:           estadoExistente.horasMaq           || [],
+      capital:            estadoExistente.capital            || undefined,
+      creditosRef:        estadoExistente.creditosRef        || [],
+      activos:            estadoExistente.activos            || [],
+      rentas:             estadoExistente.rentas             || [],
+      personal:           estadoExistente.personal           || [],
+      cosecha:            estadoExistente.cosecha            || undefined,
+      proyeccion:         estadoExistente.proyeccion         || [],
+      inventario:         estadoExistente.inventario         || { items:[], movimientos:[] },
+      // Workflow local (solicitudes, órdenes de compra, notificaciones, etc.)
+      solicitudesCompra:  estadoExistente.solicitudesCompra  || [],
+      solicitudesGasto:   estadoExistente.solicitudesGasto   || [],
+      recomendaciones:    estadoExistente.recomendaciones    || [],
+      ordenesCompra:      estadoExistente.ordenesCompra      || [],
+      ordenesTrabajo:     estadoExistente.ordenesTrabajo     || [],
+      notificaciones:     estadoExistente.notificaciones     || [],
+      delegaciones:       estadoExistente.delegaciones       || [],
+      invCampo:           estadoExistente.invCampo           || [],
+      colaOffline:        estadoExistente.colaOffline        || [],
+      expedientes:        estadoExistente.expedientes        || [],
+    };
+    // Quitar undefined para que `{ ...initState, ...savedState }` no sobrescriba defaults
+    Object.keys(configPreservada).forEach(k => {
+      if (configPreservada[k] === undefined) delete configPreservada[k];
+    });
+
     const estadoNuevo = {
-      ...estadoExistente,
+      ...configPreservada,
+      // ── Datos operativos: SIEMPRE frescos de Supabase (reemplazo total) ──
       productores, lotes, ciclos, operadores, maquinaria,
       insumos, diesel, egresosManual, dispersiones,
       cicloActivoId: predCiclo ? predCiclo.id : (estadoExistente.cicloActivoId || 1),
-      cicloActual: predCiclo ? predCiclo.nombre : (estadoExistente.cicloActual || 'OI 2025-2026'),
+      cicloActual:   predCiclo ? predCiclo.nombre : (estadoExistente.cicloActual || 'OI 2025-2026'),
       _supabaseCargado: Date.now(),
     };
 
