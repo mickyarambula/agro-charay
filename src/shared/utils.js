@@ -1,0 +1,645 @@
+// ─── shared/utils.js ────────────────────────────────────────────────────────
+// Paleta de colores, estilos globales, helpers de dominio, constantes.
+// Importar este módulo inyecta CSS en el <head> (efecto lateral).
+
+export const T = {
+  soil:    "#4a3728",
+  field:   "#2d5a1b",
+  fieldLt: "#4a8c2a",
+  straw:   "#c8a84b",
+  strawLt: "#f0d87a",
+  sky:     "#d4e9f7",
+  cream:   "#faf8f3",
+  paper:   "#f2ede3",
+  sand:    "#e8dfc8",
+  mist:    "#f7f5f0",
+  rust:    "#b85c2c",
+  leaf:    "#5a8a3a",
+  fog:     "#8a8070",
+  ink:     "#1e1a14",
+  inkLt:   "#3d3525",
+  line:    "#ddd5c0",
+};
+
+
+export const css = `
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { height: 100%; }
+  body { font-family: 'DM Sans', sans-serif; background: ${T.cream}; color: ${T.ink}; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: ${T.paper}; }
+  ::-webkit-scrollbar-thumb { background: ${T.sand}; border-radius: 3px; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.6; transform: scale(0.85); }
+  }
+
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px; flex-shrink: 0;
+    background: ${T.soil};
+    display: flex; flex-direction: column;
+    box-shadow: 4px 0 20px rgba(74,55,40,0.18);
+    position: relative; z-index: 10;
+  }
+  .sidebar-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .logo-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; font-weight: 700;
+    color: ${T.strawLt}; letter-spacing: 0.02em;
+    line-height: 1.2;
+  }
+  .logo-sub {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.14em;
+    text-transform: uppercase; color: rgba(255,255,255,0.38);
+    margin-top: 3px;
+  }
+  .sidebar-section-label {
+    font-size: 9px; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; color: rgba(255,255,255,0.28);
+    padding: 18px 24px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 24px; cursor: pointer;
+    color: rgba(255,255,255,0.6);
+    font-size: 13.5px; font-weight: 400;
+    transition: all 0.18s; border-left: 3px solid transparent;
+    user-select: none;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.88); }
+  .nav-item.active {
+    color: ${T.strawLt}; background: rgba(200,168,75,0.12);
+    border-left-color: ${T.straw}; font-weight: 500;
+  }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-footer {
+    margin-top: auto; padding: 16px 24px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    font-size: 11px; color: rgba(255,255,255,0.25);
+  }
+  .cycle-badge {
+    display: inline-block; background: rgba(200,168,75,0.18);
+    color: ${T.strawLt}; font-family: 'DM Mono', monospace;
+    font-size: 10px; padding: 3px 9px; border-radius: 20px;
+    border: 1px solid rgba(200,168,75,0.3); margin-top: 5px;
+  }
+
+  /* MAIN */
+  .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; background: ${T.mist}; }
+  .topbar {
+    background: white; border-bottom: 1px solid ${T.line};
+    padding: 0 32px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0; position: sticky; top: 0; z-index: 5;
+  }
+  .topbar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; font-weight: 600; color: ${T.inkLt};
+  }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-date {
+    font-size: 12px; color: ${T.fog};
+    font-family: 'DM Mono', monospace;
+  }
+
+  .content { padding: 28px 32px; flex: 1; }
+
+  /* CARDS */
+  .card {
+    background: white; border-radius: 10px;
+    border: 1px solid ${T.line};
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  }
+  .card-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid ${T.line};
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px; font-weight: 600; color: ${T.inkLt};
+  }
+  .card-body { padding: 20px; }
+
+  /* STAT CARDS */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: white; border-radius: 10px; padding: 20px;
+    border: 1px solid ${T.line};
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 4px; height: 100%; border-radius: 2px 0 0 2px;
+  }
+  .stat-card.green::before { background: ${T.field}; }
+  .stat-card.gold::before { background: ${T.straw}; }
+  .stat-card.rust::before { background: ${T.rust}; }
+  .stat-card.purple::before { background: #8e44ad; }
+  .stat-card.sky::before { background: #5b9fd6; }
+  .stat-icon { font-size: 22px; margin-bottom: 10px; }
+  .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: ${T.fog}; }
+  .stat-value { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: ${T.inkLt}; margin-top: 4px; line-height: 1; }
+  .stat-unit { font-size: 13px; font-weight: 400; color: ${T.fog}; margin-left: 3px; }
+  .stat-sub { font-size: 11px; color: ${T.fog}; margin-top: 6px; }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+
+  /* BADGES */
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+  }
+  .badge-green { background: #e8f4e1; color: ${T.field}; }
+  .badge-gold  { background: #fdf3d4; color: #8a6e10; }
+  .badge-rust  { background: #fdeee8; color: ${T.rust}; }
+  .badge-gray  { background: #f0ece4; color: ${T.fog}; }
+  .badge-blue  { background: #e6f2fb; color: #2a6fa8; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 18px; border-radius: 7px; border: none;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.16s; text-decoration: none;
+  }
+  .btn-primary { background: ${T.field}; color: white; }
+  .btn-primary:hover { background: ${T.fieldLt}; }
+  .btn-secondary { background: white; color: ${T.inkLt}; border: 1px solid ${T.line}; }
+  .btn-secondary:hover { background: ${T.paper}; }
+  .btn-danger { background: #fdeee8; color: ${T.rust}; }
+  .btn-danger:hover { background: #f9dbd0; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-gold { background: ${T.straw}; color: white; }
+  .btn-gold:hover { background: #b89030; }
+
+  /* TABLES */
+  .table-wrap { overflow-x: auto; }
+  .table-wrap-scroll { overflow-x: auto; overflow-y: auto; max-height: 480px; scrollbar-width: thin; scrollbar-color: ${T.straw} ${T.sand}; }
+  .table-wrap-scroll::-webkit-scrollbar { width: 16px; height: 16px; }
+  .table-wrap-scroll::-webkit-scrollbar-track { background: ${T.sand}; border-radius: 4px; }
+  .table-wrap-scroll::-webkit-scrollbar-thumb { background: ${T.straw}; border-radius: 4px; }
+  .table-wrap-scroll::-webkit-scrollbar-corner { background: ${T.sand}; }
+  .table-wrap-scroll thead th { position: sticky; top: 0; z-index: 1; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead th {
+    text-align: left; padding: 10px 14px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: ${T.fog}; border-bottom: 2px solid ${T.line};
+    background: ${T.mist};
+  }
+  tbody tr { border-bottom: 1px solid ${T.line}; transition: filter 0.12s; }
+  tbody tr:hover { filter: brightness(0.91); }
+  tbody td { padding: 12px 14px; color: ${T.inkLt}; vertical-align: middle; }
+  tbody tr:last-child { border-bottom: none; }
+
+  /* FORMS */
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; color: ${T.inkLt}; margin-bottom: 6px; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 9px 13px; border-radius: 7px;
+    border: 1.5px solid ${T.line}; background: white;
+    font-family: 'DM Sans', sans-serif; font-size: 13.5px; color: ${T.inkLt};
+    transition: border-color 0.15s; outline: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: ${T.fieldLt}; }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(30,26,20,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; backdrop-filter: blur(3px);
+    animation: fadeIn 0.18s ease;
+  }
+  .modal {
+    background: white; border-radius: 14px; width: 540px; max-width: 95vw;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    animation: slideUp 0.22s ease;
+  }
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid ${T.line};
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: ${T.inkLt}; }
+  .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: ${T.fog}; padding: 4px; }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid ${T.line}; display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* PROGRESS */
+  .progress-bar { height: 7px; background: ${T.sand}; border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+  .progress-green { background: ${T.fieldLt}; }
+  .progress-gold  { background: ${T.straw}; }
+  .progress-rust  { background: ${T.rust}; }
+
+  /* LOTE CARD */
+  .lote-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .lote-card {
+    background: white; border-radius: 10px; border: 1px solid ${T.line};
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04); overflow: hidden;
+    transition: box-shadow 0.18s, transform 0.18s; cursor: pointer;
+  }
+  .lote-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+  .lote-card-top {
+    padding: 16px 18px 12px;
+    background: linear-gradient(135deg, ${T.field} 0%, ${T.fieldLt} 100%);
+    color: white; position: relative;
+  }
+  .lote-hectareas {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px; font-weight: 700; line-height: 1;
+  }
+  .lote-ha-label { font-size: 12px; opacity: 0.75; margin-left: 3px; }
+  .lote-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .lote-card-body { padding: 14px 18px; }
+  .lote-stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .lote-stat-label { font-size: 11px; color: ${T.fog}; }
+  .lote-stat-value { font-size: 12.5px; font-weight: 600; color: ${T.inkLt}; font-family: 'DM Mono', monospace; }
+
+  /* BITACORA */
+  .bitacora-item {
+    display: flex; gap: 14px; padding: 14px 0;
+    border-bottom: 1px solid ${T.line};
+  }
+  .bitacora-item:last-child { border-bottom: none; }
+  .bitacora-dot {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0; margin-top: 2px;
+  }
+  .bitacora-content { flex: 1; }
+  .bitacora-title { font-size: 13.5px; font-weight: 600; color: ${T.inkLt}; }
+  .bitacora-meta { font-size: 11.5px; color: ${T.fog}; margin-top: 3px; }
+  .bitacora-detail { font-size: 12px; color: ${T.inkLt}; margin-top: 5px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid ${T.line}; padding-bottom: 0; }
+  .tab {
+    padding: 9px 18px; font-size: 13px; font-weight: 500;
+    color: ${T.fog}; cursor: pointer; border-bottom: 2px solid transparent;
+    margin-bottom: -2px; transition: all 0.15s; border-radius: 6px 6px 0 0;
+  }
+  .tab:hover { color: ${T.inkLt}; background: ${T.mist}; }
+  .tab.active { color: ${T.field}; border-bottom-color: ${T.field}; font-weight: 600; }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 48px 24px; color: ${T.fog}; }
+  .empty-icon { font-size: 44px; margin-bottom: 14px; }
+  .empty-title { font-family: 'Playfair Display', serif; font-size: 17px; color: ${T.inkLt}; margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; margin-bottom: 20px; }
+
+  /* CHART BARS (CSS only) */
+  .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 120px; padding: 0 4px; }
+  .bar-col { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.5s ease; min-height: 4px; }
+  .bar-label { font-size: 10px; color: ${T.fog}; font-family: 'DM Mono', monospace; }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
+  .animate-pulse { animation: pulse 2s infinite; }
+
+  /* UTILITIES */
+  .flex { display: flex; } .flex-col { flex-direction: column; }
+  .items-center { align-items: center; } .justify-between { justify-content: space-between; }
+  .gap-2 { gap: 8px; } .gap-3 { gap: 12px; }
+  .mt-1 { margin-top: 4px; } .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; } .mt-4 { margin-top: 16px; }
+  .mb-4 { margin-bottom: 16px; } .mb-3 { margin-bottom: 12px; }
+  .text-sm { font-size: 12px; } .text-xs { font-size: 11px; }
+  .font-mono { font-family: 'DM Mono', monospace; }
+  .text-fog { color: ${T.fog}; } .text-field { color: ${T.field}; }
+  .fw-600 { font-weight: 600; }
+  .w-full { width: 100%; }
+  .divider { height: 1px; background: ${T.line}; margin: 16px 0; }
+
+  /* ─── HAMBURGER (solo móvil) ─── */
+  .hamburger {
+    display: none;
+    background: none; border: none; cursor: pointer;
+    padding: 8px 10px; margin-right: 4px;
+    border-radius: 8px; transition: background 0.15s;
+    font-size: 22px; line-height: 1; color: ${T.inkLt};
+  }
+  .hamburger:hover { background: ${T.paper}; }
+  .hamburger:active { background: ${T.sand}; }
+
+  /* Backdrop para drawer en móvil */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(30,25,20,0.55);
+    z-index: 99;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.28s ease;
+    backdrop-filter: blur(2px);
+  }
+  .sidebar-backdrop.open { opacity: 1; pointer-events: auto; }
+
+  /* ═════════ MOBILE (<768px) ═════════ */
+  @media (max-width: 767px) {
+    .hamburger { display: inline-flex; align-items: center; justify-content: center; }
+    .sidebar-backdrop { display: block; }
+
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 280px; max-width: 85vw;
+      transform: translateX(-100%);
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 100;
+      box-shadow: 6px 0 24px rgba(0,0,0,0.35);
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    .main { width: 100%; }
+
+    .topbar {
+      padding: 0 12px;
+      height: 56px;
+      gap: 8px;
+    }
+    .topbar-title {
+      font-size: 15px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      flex: 1;
+    }
+    .topbar-right { gap: 6px; flex-shrink: 0; }
+    .topbar-right > .topbar-date,
+    .topbar-right > .badge,
+    .topbar-right > .mobile-hide { display: none !important; }
+
+    .content { padding: 14px 12px; }
+
+    /* Stats: 2 columnas en móvil, luego 1 en muy angosto */
+    .stat-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; margin-bottom: 16px; }
+    .stat-card { padding: 14px; }
+    .stat-value { font-size: 22px; }
+    .stat-icon { font-size: 18px; margin-bottom: 6px; }
+    .stat-label { font-size: 10px; }
+
+    /* Grids de 2 y 3 columnas colapsan a 1 */
+    .grid-2, .grid-3 { grid-template-columns: 1fr !important; gap: 14px; }
+
+    /* Colapsa también los grids inline style={{display:"grid",gridTemplateColumns:"..."}} */
+    [style*="grid-template-columns: 1fr 1fr"],
+    [style*="grid-template-columns: 1fr 1fr 1fr"],
+    [style*="grid-template-columns:repeat(2"],
+    [style*="grid-template-columns: repeat(2"],
+    [style*="grid-template-columns:repeat(3"],
+    [style*="grid-template-columns: repeat(3"] {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* Contenedor de 3 tarjetas de Crédito (flex row) → apilar en columna */
+    .credito-cards-row {
+      flex-direction: column !important;
+    }
+    .credito-cards-row > * { flex: 1 1 auto !important; width: 100%; }
+
+    .card-header { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+    .card-title { font-size: 14px; }
+    .card-body { padding: 14px; }
+
+    /* Tabs scrolleables horizontalmente */
+    .tabs { overflow-x: auto; flex-wrap: nowrap !important; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { white-space: nowrap; flex-shrink: 0; }
+
+    /* Tablas scrollean horizontal */
+    .table-wrap, .table-wrap-scroll { -webkit-overflow-scrolling: touch; }
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 8px 10px !important; }
+
+    /* Formularios: filas colapsan */
+    .form-row { grid-template-columns: 1fr !important; }
+
+    /* Modal fullscreen-friendly */
+    .modal { width: calc(100vw - 24px) !important; max-width: 100% !important; max-height: calc(100vh - 40px) !important; }
+
+    /* Botones más pequeños en móvil */
+    .btn { padding: 8px 14px; font-size: 13px; }
+    .btn-sm { padding: 6px 10px; font-size: 11px; }
+  }
+
+  /* Muy angosto (<420px): stat-grid a 1 columna */
+  @media (max-width: 419px) {
+    .stat-grid { grid-template-columns: 1fr !important; }
+    .topbar-title { font-size: 14px; }
+  }
+`;
+
+// ─── Inyección de estilos (side effect al importar) ─────────────────────────
+if (typeof document !== 'undefined') {
+  if (!document.getElementById('agro-fonts')) {
+    const fontLink = document.createElement('link');
+    fontLink.id = 'agro-fonts';
+    fontLink.rel = 'stylesheet';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap';
+    document.head.appendChild(fontLink);
+  }
+  if (!document.getElementById('agro-styles')) {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'agro-styles';
+    styleEl.textContent = css;
+    document.head.appendChild(styleEl);
+  }
+}
+
+// ─── Confirmación de eliminación + helpers de protección ───────────────────
+export const confirmarEliminar = (mensaje, callback) => {
+  if (window.confirm(mensaje || "¿Estás seguro que deseas eliminar este registro? Esta acción no se puede deshacer.")) {
+    callback();
+  }
+};
+
+export const puedeEliminarLote = (loteId, state) => {
+  const id = String(loteId);
+  const razones = [];
+
+  // En asignaciones de ciclos
+  const enCiclo = (state.ciclos||[]).some(c =>
+    (c.asignaciones||[]).some(a => String(a.loteId) === id)
+  );
+  if (enCiclo) razones.push("está asignado en un ciclo agrícola");
+
+  // En insumos
+  if ((state.insumos||[]).some(i => String(i.loteId) === id))
+    razones.push("tiene registros de insumos asociados");
+
+  // En diesel
+  if ((state.diesel||[]).some(d => String(d.loteId) === id))
+    razones.push("tiene registros de diesel asociados");
+
+  // En rentas
+  if ((state.rentas||[]).some(r => String(r.loteId) === id))
+    razones.push("tiene rentas registradas");
+
+  // En egresos
+  if ((state.egresosManual||[]).some(e => String(e.loteId) === id))
+    razones.push("tiene egresos registrados");
+
+  return razones;
+};
+
+
+export const puedeEliminarProductor = (prodId, state) => {
+  const id = String(prodId);
+  const razones = [];
+
+  // En ciclos (productores del ciclo + asignaciones)
+  const enCiclo = (state.ciclos||[]).some(c =>
+    (c.productores||[]).some(p => String(p) === id) ||
+    (c.asignaciones||[]).some(a => String(a.productorId) === id)
+  );
+  if (enCiclo) razones.push("está registrado en ciclos agrícolas");
+
+  // En expedientes de crédito
+  if ((state.expedientes||[]).some(e => String(e.productorId) === id))
+    razones.push("tiene expedientes de crédito");
+
+  // En insumos
+  if ((state.insumos||[]).some(i => String(i.productorId) === id))
+    razones.push("tiene registros de insumos");
+
+  // En dispersiones
+  if ((state.dispersiones||[]).some(d => String(d.productorId) === id))
+    razones.push("tiene dispersiones de crédito");
+
+  // En egresos
+  if ((state.egresosManual||[]).some(e => String(e.productorId) === id))
+    razones.push("tiene egresos registrados");
+
+  // En rentas
+  if ((state.rentas||[]).some(r => String(r.productorId) === id))
+    razones.push("tiene rentas registradas");
+
+  return razones;
+};
+
+
+export const puedeEliminarMaquina = (maqId, state) => {
+  const razones = [];
+  if ((state.horasMaq||[]).some(h => h.maquinariaId === maqId || h.maqId === maqId))
+    razones.push("tiene registros de horas de trabajo");
+  if ((state.bitacora||[]).some(b => b.maquinariaId === maqId))
+    razones.push("aparece en registros de bitácora");
+  return razones;
+};
+
+
+export const puedeEliminarOperador = (opId, state) => {
+  const razones = [];
+  if ((state.bitacora||[]).some(b => String(b.operadorId) === String(opId) || b.operador === opId))
+    razones.push("aparece en registros de bitácora");
+  if ((state.horasMaq||[]).some(h => String(h.operadorId) === String(opId)))
+    razones.push("tiene registros de horas de trabajo");
+  return razones;
+};
+
+
+export const MOTIVOS_CANCELACION = [
+  "Error en captura",
+  "Cancelación de solicitud",
+  "Devolución",
+  "Duplicado",
+  "Otro",
+];
+
+// ─── Constantes de dominio ─────────────────────────────────────────────────
+export const CULTIVOS = ["Maíz Blanco","Maíz Dulce","Ejote","Papa","Garbanzo","Trigo","Sorgo"];
+export const ESTADOS_FENOL = ["Preparación","Siembra","Emergencia","Vegetativo","Floración","Llenado","Cosecha","Barbecho"];
+export const TIPOS_TRABAJO = ["Barbecho","Rastreo","Nivelación","Surcado","Siembra","Fertilización","Riego","Aplicación herbicida","Aplicación fungicida","Aplicación insecticida","Cosecha","Transporte","Mantenimiento","Otro"];
+export const CAT_INSUMO = ["Semilla","Fertilizante","Herbicida","Fungicida","Insecticida","Foliar","Adherente","Otro"];
+export const UNIDADES   = ["BOLSA","KG","TON","LT","PIEZA","PEIZAS"];
+export const CAT_GASTO  = ["Insumos","Diesel","Mano de Obra","Maquinaria Rentada","Fletes","Agua / Riego","Análisis de Suelo","Administración","Otro"];
+
+// ─── Filtro por productor + helpers de ordenamiento ───────────────────────
+export function filtrarPorProductor(state) {
+  const pid = state.productorActivo;
+  if (!pid) return state; // Consolidado — sin filtro
+  return {
+    ...state,
+    lotes:    (((state.ciclos||[]).find(c=>c.id===state.cicloActivoId)||(state.ciclos||[]).find(c=>c.predeterminado))?.asignaciones||[]).filter(a=>String(a.productorId)===String(pid)).map(a=>(state.lotes||[]).find(l=>l.id===a.loteId)).filter(Boolean),
+    gastos:   state.gastos.filter(g => !g.productorId || g.productorId === pid),
+    diesel:   state.diesel.filter(d => (!d.productorId || d.productorId === pid)&&((d.cicloId||1)===(state.cicloActivoId||1))),
+    insumos:  state.insumos,   // insumos son generales
+    credito: {
+      institucion: state.credito?.institucion||"Almacenes Santa Rosa",
+      noContrato: state.credito?.noContrato||"",
+      fechaVencimiento: state.credito?.fechaVencimiento||"",
+      lineaAutorizada: state.credito?.lineaAutorizada||0,
+      tasaAnual: state.credito?.tasaAnual||0,
+      ministraciones: (state.dispersiones||[]).filter(d=>String(d.productorId)===String(pid)),
+      pagos: state.credito?.pagos||[],
+    },
+  };
+}
+
+
+
+export const PROD_COLORES = ["#2d7a3a","#1a6ea8","#c8a84b","#b85c2c","#8e44ad","#16a085","#d35400","#2980b9","#27ae60","#e74c3c","#f39c12","#546e7a","#c0392b","#7f8c8d","#1abc9c","#9b59b6","#e67e22","#34495e"];
+
+export function ordenarProductores(lista) {
+  return [...lista].sort((a, b) => {
+    if (a.tipo === "moral" && b.tipo !== "moral") return -1;
+    if (b.tipo === "moral" && a.tipo !== "moral") return 1;
+    const pa = (a.apPat||a.nombres||"").localeCompare(b.apPat||b.nombres||"", "es", {sensitivity:"base"});
+    if (pa !== 0) return pa;
+    const ma = (a.apMat||"").localeCompare(b.apMat||"", "es", {sensitivity:"base"});
+    if (ma !== 0) return ma;
+    return (a.nombres||"").localeCompare(b.nombres||"", "es", {sensitivity:"base"});
+  });
+}
+
+export function nomCompleto(p) {
+  if (p.tipo === "moral") return p.nombres || "";
+  return [p.apPat, p.apMat, p.nombres].filter(Boolean).join(" ");
+}
+
+// ─── Helpers de formato comunes ────────────────────────────────────────────
+export const mxnFmt = (n) =>
+  (parseFloat(n) || 0).toLocaleString('es-MX', {
+    style: 'currency', currency: 'MXN',
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
+
+export const fmt = (n, dec = 1) =>
+  typeof n === 'number'
+    ? n.toLocaleString('es-MX', { minimumFractionDigits: dec, maximumFractionDigits: dec })
+    : n;
+
+export const today = () =>
+  new Date().toLocaleDateString('es-MX', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+
+export const fenologiaColor = (f) => {
+  const map = {
+    'Preparación': '#8a8070', 'Siembra': '#c8a84b', 'Emergencia': '#5a8a3a',
+    'Vegetativo': '#4a8c2a', 'Floración': '#e67e22', 'Llenado': '#c0392b',
+    'Cosecha': '#856404', 'Barbecho': '#bbb'
+  };
+  return map[f] || '#8a8070';
+};
+
+export const estadoColor = (e) =>
+  ({ activo: 'green', cosechando: 'gold', barbecho: 'gray' }[e] || 'gray');

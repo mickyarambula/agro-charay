@@ -1,5 +1,7 @@
 import React, { useState, useReducer, createContext, useContext, useCallback, useRef, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";import { loadStateFromSupabase } from "./supabaseLoader.js";
+import { createClient } from "@supabase/supabase-js";
+import { loadStateFromSupabase } from "./supabaseLoader.js";
+import { ROLES, ACCESO, USUARIOS, getRolPermisos, getRolesDisponibles, getRolInfo, getPermisosUsuario } from "./shared/roles.js";
 
 // ─── SUPABASE REALTIME SYNC ───────────────────────────────────────────────────
 // Canal único para sincronizar en tiempo real entre sesiones conectadas.
@@ -23,35 +25,7 @@ try {
 }
 
 // ─── ROLES Y USUARIOS ─────────────────────────────────────────────────────────
-const ROLES = {
-  admin:      { label:"Administrador",        icon:"👑", color:"#2d7a3a" },
-  socio:      { label:"Socio / Dirección",    icon:"🤝", color:"#1a6ea8" },
-  encargado:  { label:"Encargado de Campo",   icon:"🌾", color:"#c8a84b" },
-  ingeniero:  { label:"Ingeniero de Campo",   icon:"🌿", color:"#27ae60" },
-  compras:    { label:"Compras / Admin",       icon:"🛒", color:"#8e44ad" },
-  campo:      { label:"Operador de Campo",    icon:"👷", color:"#e67e22" },
-};
-
-// Módulos visibles por rol
-const ACCESO = {
-  admin:      ["dashboard","flujos","productores","ciclos","lotes","bitacora","maquinaria","operadores","insumos","diesel","inventario","capital","credito","creditosref","rentas","gastos","costos","activos","personal","cosecha","proyeccion","asistente","edo_resultados","balance","flujo_caja","reportes","configuracion"],
-  socio:      ["dashboard","flujos","lotes","bitacora","maquinaria","operadores","insumos","diesel","costos","cosecha","rentas","proyeccion","asistente","reportes"],
-  encargado:  ["dashboard","flujos","bitacora","lotes","maquinaria","operadores","insumos","diesel","inventario"],
-  ingeniero:  ["dashboard","flujos","bitacora","lotes","insumos","inventario"],
-  compras:    ["dashboard","flujos","insumos","diesel","inventario","gastos"],
-  campo:      ["dashboard","bitacora","lotes"],
-};
-
-// Usuarios hardcoded (en producción real sería backend)
-const USUARIOS = [
-  { id:1, nombre:"Miguel",              usuario:"admin",   password:"123123",     rol:"admin" },
-  { id:2, nombre:"Agrofraga",           usuario:"socio",   password:"agro2025",   rol:"socio" },
-  { id:3, nombre:"Encargado",           usuario:"campo",   password:"campo2025",  rol:"campo" },
-  { id:4, nombre:"DANIELA GONZALEZ PEREZ", usuario:"daniela",    password:"871005",    rol:"admin" },
-  { id:5, nombre:"Encargado de Campo",     usuario:"encargado",   password:"charay25",  rol:"encargado" },
-  { id:6, nombre:"Ingeniero Campo",        usuario:"ingeniero",   password:"ing2025",   rol:"ingeniero" },
-  { id:7, nombre:"Compras / Admin",        usuario:"compras",     password:"compras25", rol:"compras" },
-];
+// ROLES, ACCESO, USUARIOS → movidos a ./shared/roles.js
 
 // ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
 // ─── CONFIRMACIÓN DE ELIMINACIÓN ─────────────────────────────────────────────
@@ -1431,64 +1405,7 @@ function reducer(s, a) {
 
 function useData() { return useContext(Ctx); }
 
-// ─── ROLES — resolver permisos por rol (incluyendo personalizados) ──────────
-function getRolPermisos(state, rolId) {
-  if (rolId === "admin") {
-    const r = {};
-    (ACCESO.admin || []).forEach(m => { r[m] = "editar"; });
-    return r;
-  }
-  // Si el rol tiene override personalizado (base o custom) úsalo
-  const custom = state.rolesPersonalizados?.[rolId];
-  if (custom?.permisos) return { ...custom.permisos };
-  // Fallback a ACCESO[rol] con nivel "ver"
-  const modulos = ACCESO[rolId] || [];
-  const r = {};
-  modulos.forEach(m => { r[m] = "ver"; });
-  return r;
-}
-
-// ─── ROLES DISPONIBLES — base (con overrides) + custom ──────────────────────
-function getRolesDisponibles(state) {
-  const baseIds = Object.keys(ROLES);
-  const custom = state.rolesPersonalizados || {};
-  const baseRoles = baseIds.map(id => {
-    const info = ROLES[id];
-    const ovr = custom[id];
-    return {
-      id,
-      nombre: ovr?.nombre || info.label,
-      icon:   ovr?.icon   || info.icon,
-      color:  ovr?.color  || info.color,
-      esBase: true,
-    };
-  });
-  const customRoles = Object.values(custom)
-    .filter(r => !baseIds.includes(r.id))
-    .map(r => ({ id:r.id, nombre:r.nombre, icon:r.icon, color:r.color, esBase:false }));
-  return [...baseRoles, ...customRoles];
-}
-
-// ─── INFO DE UN ROL (base o custom) ────────────────────────────────────────
-function getRolInfo(state, rolId) {
-  const disp = getRolesDisponibles(state).find(r => r.id === rolId);
-  if (disp) return { label: disp.nombre, icon: disp.icon, color: disp.color, esBase: disp.esBase };
-  return { label: rolId, icon: "?", color: "#888", esBase: false };
-}
-
-// ─── PERMISOS EFECTIVOS POR USUARIO ─────────────────────────────────────────
-function getPermisosUsuario(state, userId, rol) {
-  if (rol === "admin") {
-    const r = {};
-    (ACCESO.admin || []).forEach(m => { r[m] = "editar"; });
-    return r;
-  }
-  // Override por usuario (si existe)
-  const granulares = state.permisosGranulares?.[userId];
-  if (granulares && Object.keys(granulares).length > 0) return granulares;
-  // Por defecto: permisos del rol
-  return getRolPermisos(state, rol);
-}
+// getRolPermisos, getRolesDisponibles, getRolInfo, getPermisosUsuario → ./shared/roles.js
 
 // ─── FILTRAR ESTADO POR PRODUCTOR ─────────────────────────────────────────────
 // Devuelve una "vista" del estado filtrada por productorActivo (null = todos)
