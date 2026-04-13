@@ -76,7 +76,7 @@ async function completarOrdenEnSupabase(orden) {
       },
       body: JSON.stringify({
         estatus: 'completado',
-        hora_fin: new Date().toISOString(),
+        hora_fin: new Date().toISOString().slice(0,19),
       }),
     });
   } catch (e) { console.warn('[Supabase] orden update failed:', e.message); }
@@ -660,7 +660,7 @@ export default function OrdenDia({ userRol, usuario }) {
                 value={form.insumoId}
                 onChange={e => setForm(f => ({ ...f, insumoId: e.target.value }))}>
                 <option value="">— Ninguno —</option>
-                {insumosArr.filter(i => !i.cancelado).slice(0, 100).map(i => (
+                {[...new Map(insumosArr.filter(i => !i.cancelado).map(i => [i.insumo, i])).values()].map(i => (
                   <option key={i.id} value={i.id}>🌱 {i.insumo}</option>
                 ))}
               </select>
