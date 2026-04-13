@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .vercel
 .claude/
+
+# Backups locales de App.jsx
+src/App.jsx.bak-*
