@@ -357,7 +357,7 @@ const MUNICIPIOS_SINALOA = [
   "CULIACÁN","MAZATLÁN"
 ];
 // Municipios únicos ordenados
-const MUNICIPIOS_SIN = [...new Set(MUNICIPIOS_SINALOA)].sort();
+export const MUNICIPIOS_SIN = [...new Set(MUNICIPIOS_SINALOA)].sort();
 
 export function useComboDinamico(inicial) {
   const [opciones, setOpciones] = useState(inicial);
@@ -368,7 +368,7 @@ export function useComboDinamico(inicial) {
   return [opciones, agregar];
 }
 
-function calcSupCredito(sc, sm) {
+export function calcSupCredito(sc, sm) {
   const a = parseFloat(sc) || 0;
   const b = parseFloat(sm) || 0;
   if (a > 0 && b > 0) return Math.min(a, b);
@@ -474,7 +474,7 @@ export function ComboConNuevo({label, value, opts, onSelect, placeholder}) {
 
 // ─── AI ASSISTANT MODULE ───────────────────────────────────────────────────────
 // ─── ASISTENTE IA INTELIGENTE ─────────────────────────────────────────────────
-const CAPTURE_SYSTEM = (state) => {
+export const CAPTURE_SYSTEM = (state) => {
   const F = calcularFinancieros(state);
   const vcto = calcularVencimiento(state.credito);
   const haTot = F.ha;
@@ -617,7 +617,7 @@ Si NO hay nada capturable: { "capturas": [], "texto": "tu respuesta" }
 Responde siempre en español.`;
 };
 
-const QUICK_PROMPTS = [
+export const QUICK_PROMPTS = [
   { label:"💊 Registrar fertilizante", text:"Apliqué fertilizante hoy" },
   { label:"⛽ Carga de diesel", text:"Cargué diesel hoy" },
   { label:"🌱 Análisis de suelo", text:"Interpreta mi análisis de suelo" },
@@ -626,7 +626,7 @@ const QUICK_PROMPTS = [
   { label:"💧 Registro de riego", text:"Regué el lote " },
 ];
 
-const MODULO_INFO = {
+export const MODULO_INFO = {
   gasto:       { icon:"💸", label:"Gasto del Ciclo",     color:"#b85c2c" },
   diesel:      { icon:"⛽", label:"Diesel / Combustible", color:"#e67e22" },
   insumo:      { icon:"📦", label:"Insumo / Inventario",  color:"#2d5a1b" },
@@ -635,7 +635,7 @@ const MODULO_INFO = {
   ministracion:{ icon:"🏦", label:"Ministración Crédito", color:"#5b9fd6" },
 };
 
-function TarjetaConfirmacion({ captura, lotes, onConfirm, onEdit, onDiscard }) {
+export function TarjetaConfirmacion({ captura, lotes, onConfirm, onEdit, onDiscard }) {
   const [editado, setEditado] = useState({ ...captura });
   const [modoEdicion, setModoEdicion] = useState(false);
   const info = MODULO_INFO[captura.modulo] || { icon:"📋", label:captura.modulo, color:"#666" };
@@ -760,8 +760,8 @@ export function calcInteresExp(exp) {
 
 
 // ─── PERSONAL Y HONORARIOS MODULE ────────────────────────────────────────────
-const TIPOS_PERSONAL = ["Empleado Fijo","Honorarios por Ciclo","Consultoría / Servicio","Eventual"];
-const PUESTOS_SUGERIDOS = ["Asesor Agrónomo","Administrador","Contador","Gerente General","Técnico de Campo","Guardián / Velador","Chofer","Otro"];
+export const TIPOS_PERSONAL = ["Empleado Fijo","Honorarios por Ciclo","Consultoría / Servicio","Eventual"];
+export const PUESTOS_SUGERIDOS = ["Asesor Agrónomo","Administrador","Contador","Gerente General","Técnico de Campo","Guardián / Velador","Chofer","Otro"];
 
 
 // ─── COSECHA Y MAQUILA MODULE ─────────────────────────────────────────────────
@@ -815,7 +815,7 @@ const CATS_PROY   = ["Insumos","Diesel","Mano de Obra","Maquinaria","Renta","Agu
 
 
 // ─── MÓDULO CONFIGURACIÓN (solo Admin) ───────────────────────────────────────
-const TODOS_MODULOS = [
+export const TODOS_MODULOS = [
   { id:"dashboard",     label:"Dashboard",            section:"Principal" },
   { id:"flujos",        label:"Flujos / Aprobaciones",section:"Principal" },
   { id:"productores",   label:"Productores",          section:"Principal" },

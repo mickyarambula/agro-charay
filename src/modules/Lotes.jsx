@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { useComboDinamico, ComboConNuevo } from "../App.jsx";
+import { MUNICIPIOS_SIN, calcSupCredito } from "../App.jsx";
 
 
 export default function LotesModule({ userRol, puedeEditar }) {
