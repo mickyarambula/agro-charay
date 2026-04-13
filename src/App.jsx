@@ -714,6 +714,22 @@ const css = `
     /* Grids de 2 y 3 columnas colapsan a 1 */
     .grid-2, .grid-3 { grid-template-columns: 1fr !important; gap: 14px; }
 
+    /* Colapsa también los grids inline style={{display:"grid",gridTemplateColumns:"..."}} */
+    [style*="grid-template-columns: 1fr 1fr"],
+    [style*="grid-template-columns: 1fr 1fr 1fr"],
+    [style*="grid-template-columns:repeat(2"],
+    [style*="grid-template-columns: repeat(2"],
+    [style*="grid-template-columns:repeat(3"],
+    [style*="grid-template-columns: repeat(3"] {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* Contenedor de 3 tarjetas de Crédito (flex row) → apilar en columna */
+    .credito-cards-row {
+      flex-direction: column !important;
+    }
+    .credito-cards-row > * { flex: 1 1 auto !important; width: 100%; }
+
     .card-header { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
     .card-title { font-size: 14px; }
     .card-body { padding: 14px; }
@@ -13053,8 +13069,8 @@ function CreditoModule({ userRol, puedeEditar, onNavigate, navFiltro = {} }) {
           {puedeEditar&&<button className="btn btn-sm btn-secondary" onClick={()=>{setFormParams(params);setEditParams(true);}}>⚙️ Editar parámetros</button>}
         </div>
 
-        {/* Resumen global — 3 columnas */}
-        <div style={{display:"flex",gap:14,marginBottom:20}}>
+        {/* Resumen global — 3 columnas (colapsa a 1 en móvil) */}
+        <div className="credito-cards-row" style={{display:"flex",gap:14,marginBottom:20}}>
           <TarjetaLinea titulo="Crédito Parafinanciero" color="#1a6ea8" icono="🏦"
             data={G.rPara}
             extraRows={[["Asist. Técnica", mxnFmt(G.rPara.asistBase||0),"#2d5a1b"]]}/>
