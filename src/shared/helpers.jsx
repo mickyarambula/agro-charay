@@ -4,6 +4,7 @@
 // Importa T, mxnFmt, helpers de format desde utils.js.
 
 import React, { useState } from 'react';
+import { useData } from '../core/DataContext.jsx';
 import {
   T, mxnFmt, fmt, today, fenologiaColor, estadoColor,
   CULTIVOS, ESTADOS_FENOL, TIPOS_TRABAJO, CAT_INSUMO, UNIDADES, CAT_GASTO,
