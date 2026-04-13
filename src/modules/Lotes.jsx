@@ -23,6 +23,7 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { useComboDinamico, ComboConNuevo } from "../App.jsx";
 
 
 export default function LotesModule({ userRol, puedeEditar }) {

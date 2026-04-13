@@ -23,6 +23,7 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { WidgetCBOTDashboard } from "../App.jsx";
 
 
 export default function Dashboard({ userRol, onNavigate }) {

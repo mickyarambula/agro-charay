@@ -231,7 +231,7 @@ function WidgetCBOTCompact(){
   );
 }
 
-function WidgetCBOTDashboard(){
+export function WidgetCBOTDashboard(){
   const m=useMercadoGlobal();
   const [abierto,setAbierto]=useState(!m.precioMXN);
   const [inCBOT,setInCBOT]=useState("");
@@ -359,7 +359,7 @@ const MUNICIPIOS_SINALOA = [
 // Municipios únicos ordenados
 const MUNICIPIOS_SIN = [...new Set(MUNICIPIOS_SINALOA)].sort();
 
-function useComboDinamico(inicial) {
+export function useComboDinamico(inicial) {
   const [opciones, setOpciones] = useState(inicial);
   const agregar = (val) => {
     const v = (val||"").trim().toUpperCase();
@@ -378,7 +378,7 @@ function calcSupCredito(sc, sm) {
 }
 
 // ─── COMBO AUTOCOMPLETE (componente independiente) ────────────────────────────
-function ComboConNuevo({label, value, opts, onSelect, placeholder}) {
+export function ComboConNuevo({label, value, opts, onSelect, placeholder}) {
   const [texto, setTexto]     = useState(value||"");
   const [abierto, setAbierto] = useState(false);
   const [destacado, setDest]  = useState(-1);
@@ -737,7 +737,7 @@ const mxn = n => (typeof n==="number" ? n.toLocaleString("es-MX",{style:"currenc
 
 // ─── CRÉDITO HABILITACIÓN MODULE — EXPEDIENTES POR RESICO ─────────────────────
 // Helpers locales
-function calcInteresExp(exp) {
+export function calcInteresExp(exp) {
   // Interés acumulado por ministración con días exactos
   const hoy = new Date();
   let capital = 0, interes = 0;
@@ -776,7 +776,7 @@ const PUESTOS_SUGERIDOS = ["Asesor Agrónomo","Administrador","Contador","Gerent
 // ─── REPORTES DEL CICLO ───────────────────────────────────────────────────────
 
 // ─── BANNER DE ALERTA DE VENCIMIENTO ─────────────────────────────────────────
-function VencimientoAlert({ credito, onIrCredito }) {
+export function VencimientoAlert({ credito, onIrCredito }) {
   const v = calcularVencimiento(credito);
   if (!v || v.nivel === "ok") return null;
   return (
