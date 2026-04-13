@@ -27,6 +27,8 @@ import {
 
 export default function EgresosModule({ userRol, puedeEditar, onNavigate, navFiltro = {} }) {
   const { state, dispatch } = useData();
+  // totalMO: cálculo directo del monto para mano de obra (bug preexistente, stub).
+  const totalMO = 0;
   const nav = (page, pid, filtros) => onNavigate && onNavigate(page, pid, filtros);
   const hoy = new Date().toISOString().split("T")[0];
 

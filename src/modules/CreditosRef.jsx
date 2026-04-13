@@ -23,7 +23,14 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { mxn } from "../App.jsx";
 
+
+// Stub temporal — función original nunca fue definida en el código base.
+// TODO: implementar cálculo real de interés refaccionario.
+function calcularInteresRef(credito) {
+  return { saldoCapital: 0, interesTotal: 0, detalle: [] };
+}
 
 export default function CreditosRefModule() {
   const { state, dispatch } = useData();

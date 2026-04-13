@@ -706,7 +706,7 @@ export function TarjetaConfirmacion({ captura, lotes, onConfirm, onEdit, onDisca
 }
 
 // ─── IA KEY (ofuscada) ───────────────────────────────────────────────────────
-const _gk = () => atob("QUl6YVN5QXNVbXNYcy1LeV9yZEpaOHpnVDNzX25VQUUxWFRadzJR");
+export const _gk = () => atob("QUl6YVN5QXNVbXNYcy1LeV9yZEpaOHpnVDNzX25VQUUxWFRadzJR");
 
 
 // ─── PLACEHOLDER MODULES ──────────────────────────────────────────────────────
@@ -724,7 +724,7 @@ function Placeholder({ icon, title, desc }) {
 }
 
 // ─── MXN FORMATTER ────────────────────────────────────────────────────────────
-const mxn = n => (typeof n==="number" ? n.toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2}) : "$0.00");
+export const mxn = n => (typeof n==="number" ? n.toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2}) : "$0.00");
 
 // ─── INSUMOS MODULE ───────────────────────────────────────────────────────────
 

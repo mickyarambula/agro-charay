@@ -23,10 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { mxn } from "../App.jsx";
 
 
 export default function ReportesModule() {
   const { state } = useData();
+  const params = { para_tasaAnual:1.38, dir_tasaAnual:1.8, ...(state.creditoParams||{}) };
   const F = calcularFinancieros(state);
   const [seccion, setSeccion] = useState("resumen");
 

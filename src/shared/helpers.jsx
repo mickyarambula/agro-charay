@@ -1,3 +1,4 @@
+/* global XLSX */
 // ─── shared/helpers.jsx ─────────────────────────────────────────────────────
 // Helpers financieros, exportadores Excel/HTML, cálculo de alertas, y
 // componentes auxiliares (FiltroSelect, PanelAlertas, navRowProps).
@@ -898,6 +899,7 @@ export function calcularAlertas(state) {
   const hoy = new Date();
   const cid  = state.cicloActivoId || 1;
   const ciclo = (state.ciclos||[]).find(c=>c.id===cid) || (state.ciclos||[])[0];
+  const cicloPred = ciclo;  // alias para referencias legacy
   const asigs = ciclo?.asignaciones || [];
   const productores = state.productores || [];
   const params = { para_tasaAnual:1.38, dir_tasaAnual:1.8, ...( state.creditoParams||{}) };

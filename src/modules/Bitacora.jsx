@@ -23,10 +23,19 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { mxn } from "../App.jsx";
 
 
 export default function BitacoraModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
+  const cargarXLSX = () => new Promise((resolve, reject) => {
+    if (typeof XLSX !== "undefined") { resolve(window.XLSX); return; }
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = () => resolve(window.XLSX);
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
   const [vista, setVista] = useState("feed");       // feed | porLote
   const [tipoModal, setTipoModal] = useState(null); // null | tipo de registro
   const [filtroLote, setFiltroLote] = useState("");

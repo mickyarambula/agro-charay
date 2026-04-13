@@ -23,7 +23,7 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
-import { MODULO_INFO, CAPTURE_SYSTEM, QUICK_PROMPTS, TarjetaConfirmacion } from "../App.jsx";
+import { MODULO_INFO, CAPTURE_SYSTEM, QUICK_PROMPTS, TarjetaConfirmacion, _gk } from "../App.jsx";
 
 
 export default function AsisteModule() {
