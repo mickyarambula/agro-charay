@@ -1222,6 +1222,22 @@ export default function App() {
   const navFiltrosRef = React.useRef({});
   const [pageStack, setPageStack] = React.useState([]); // historial de navegación
 
+  // Restaurar sesión después del reload post-login (handleLogin guarda en sessionStorage)
+  React.useEffect(() => {
+    const saved = sessionStorage.getItem('agroLoginUser');
+    if (saved && !usuario) {
+      try {
+        const u = JSON.parse(saved);
+        sessionStorage.removeItem('agroLoginUser');
+        setUsuario(u);
+        if (u.rol === "campo") setPage("operador");
+        else if (["encargado","ingeniero"].includes(u.rol)) setPage("dashboard");
+        else if (u.rol === "compras") setPage("flujos");
+        else setPage("dashboard");
+      } catch(e) {}
+    }
+  }, []);
+
   // ─── Supabase realtime: suscripción al canal al iniciar sesión ──────────────
   useEffect(() => {
     if (!usuario || !supabaseClient) return;
@@ -1302,33 +1318,9 @@ export default function App() {
   }, [state.solicitudesGasto, state.solicitudesCompra, state.recomendaciones, state.ordenesCompra, state.notificaciones, state.delegaciones, usuario]);
 
   const handleLogin = async (u) => {
-    // Cargar datos frescos de Supabase y sincronizar estado en memoria.
-    try {
-      await loadStateFromSupabase();
-    } catch(e) { console.warn('Supabase skip:', e); }
-    try {
-      const s = localStorage.getItem('agroSistemaState');
-      if (s) {
-        const fresh = JSON.parse(s);
-        dispatch({ type: 'SYNC_STATE', payload: {
-          productores:    fresh.productores    || [],
-          lotes:          fresh.lotes          || [],
-          insumos:        fresh.insumos        || [],
-          diesel:         fresh.diesel         || [],
-          egresosManual:  fresh.egresosManual  || [],
-          dispersiones:   fresh.dispersiones   || [],
-          operadores:     fresh.operadores     || [],
-          maquinaria:     fresh.maquinaria     || [],
-          ciclos:         fresh.ciclos         || [],
-          ordenesTrabajo: fresh.ordenesTrabajo || [],
-        }});
-      }
-    } catch(e) { console.warn('Sync state failed:', e); }
-    setUsuario(u);
-    if (u.rol === "campo") setPage("operador");
-    else if (["encargado","ingeniero"].includes(u.rol)) setPage("dashboard");
-    else if (u.rol === "compras") setPage("flujos");
-    else setPage("dashboard");
+    try { await loadStateFromSupabase(); } catch(e) { console.warn('Supabase skip:', e); }
+    sessionStorage.setItem('agroLoginUser', JSON.stringify(u));
+    window.location.reload();
   };
 
   if (!usuario) return <LoginScreen onLogin={handleLogin} />;
