@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { ACCESO } from '../shared/roles.js';
+import { SYNC_KEYS } from './supabase.js';
 
 const PRODUCTORES_INIT = [];
 const LOTES_INIT = [];
