@@ -29,16 +29,15 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 
 async function guardarOrdenEnSupabase(orden, operador, lote, maquina) {
   try {
-    await fetch(`${SUPA_URL}/rest/v1/ordenes_trabajo`, {
+    const res = await fetch(`${SUPA_URL}/rest/v1/ordenes_trabajo`, {
       method: 'POST',
       headers: {
         apikey: SUPA_KEY,
         Authorization: `Bearer ${SUPA_KEY}`,
         'Content-Type': 'application/json',
-        Prefer: 'return=minimal',
+        Prefer: 'return=representation',
       },
       body: JSON.stringify({
-        id: String(orden.id),
         fecha: orden.fecha,
         tipo: orden.tipoTrabajo,
         estatus: orden.estatus || 'pendiente',
@@ -52,12 +51,18 @@ async function guardarOrdenEnSupabase(orden, operador, lote, maquina) {
         creado_por:        orden.creadoPor || '',
       }),
     });
-  } catch (e) { console.warn('[Supabase] orden save failed:', e.message); }
+    if (!res.ok) throw new Error('status ' + res.status);
+    const rows = await res.json();
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return row?.id || null;
+  } catch (e) { console.warn('[Supabase] orden save failed:', e.message); return null; }
 }
 
-async function completarOrdenEnSupabase(ordenId) {
+async function completarOrdenEnSupabase(orden) {
   try {
-    await fetch(`${SUPA_URL}/rest/v1/ordenes_trabajo?id=eq.${encodeURIComponent(String(ordenId))}`, {
+    const wid = orden?.supabaseId || orden?.id;
+    if (!wid) return;
+    await fetch(`${SUPA_URL}/rest/v1/ordenes_trabajo?id=eq.${encodeURIComponent(String(wid))}`, {
       method: 'PATCH',
       headers: {
         apikey: SUPA_KEY,
@@ -75,7 +80,9 @@ async function completarOrdenEnSupabase(ordenId) {
 
 async function actualizarOrdenEnSupabase(orden, operador, lote, maquina) {
   try {
-    await fetch(`${SUPA_URL}/rest/v1/ordenes_trabajo?id=eq.${encodeURIComponent(String(orden.id))}`, {
+    const wid = orden?.supabaseId || orden?.id;
+    if (!wid) return;
+    await fetch(`${SUPA_URL}/rest/v1/ordenes_trabajo?id=eq.${encodeURIComponent(String(wid))}`, {
       method: 'PATCH',
       headers: {
         apikey: SUPA_KEY,
@@ -282,8 +289,10 @@ export default function OrdenDia({ userRol, usuario }) {
         creadoPor: usuario?.usuario || userRol,
       };
       dispatch({ type: "ADD_ORDEN_TRABAJO", payload });
-      // Sync a Supabase (fire-and-forget)
-      guardarOrdenEnSupabase(payload, op, lot, maq);
+      // Sync a Supabase: captura UUID para futuros PATCH
+      guardarOrdenEnSupabase(payload, op, lot, maq).then(supaId => {
+        if (supaId) dispatch({ type: "UPD_ORDEN_TRABAJO", payload: { ...payload, supabaseId: supaId } });
+      });
       dispatch({ type: "ADD_NOTIF", payload: {
         para: op?.usuario || "campo",
         tipo: "info",
@@ -303,7 +312,7 @@ export default function OrdenDia({ userRol, usuario }) {
       horaFin: new Date().toISOString(),
     }});
     // Sync a Supabase (fire-and-forget)
-    completarOrdenEnSupabase(orden.id);
+    completarOrdenEnSupabase(orden);
     // Crear registro automático en bitácora, etiquetado con origen=orden_trabajo
     // y ordenId para correlación inversa (evita doble captura manual).
     dispatch({ type: "ADD_BITACORA", payload: {

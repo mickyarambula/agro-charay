@@ -1303,6 +1303,26 @@ export default function App() {
   }, [state.solicitudesGasto, state.solicitudesCompra, state.recomendaciones, state.ordenesCompra, state.notificaciones, state.delegaciones, usuario]);
 
   const handleLogin = (u) => {
+    // Sincronizar estado en memoria con lo que el loader guardó en localStorage.
+    // El reducer se inicializó antes del login con datos posiblemente viejos.
+    try {
+      const s = localStorage.getItem('agroSistemaState');
+      if (s) {
+        const fresh = JSON.parse(s);
+        dispatch({ type: 'SYNC_STATE', payload: {
+          productores:    fresh.productores    || [],
+          lotes:          fresh.lotes          || [],
+          insumos:        fresh.insumos        || [],
+          diesel:         fresh.diesel         || [],
+          egresosManual:  fresh.egresosManual  || [],
+          dispersiones:   fresh.dispersiones   || [],
+          operadores:     fresh.operadores     || [],
+          maquinaria:     fresh.maquinaria     || [],
+          ciclos:         fresh.ciclos         || [],
+          ordenesTrabajo: fresh.ordenesTrabajo || [],
+        }});
+      }
+    } catch(e) { console.warn('Sync state failed:', e); }
     setUsuario(u);
     if (u.rol === "campo") setPage("operador");
     else if (["encargado","ingeniero"].includes(u.rol)) setPage("dashboard");

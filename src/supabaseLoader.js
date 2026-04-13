@@ -122,6 +122,7 @@ export async function loadStateFromSupabase() {
     // (uuid o Date.now() serializado al crear). Se normalizan a la forma local.
     const ordenesTrabajo = (ordenesRows || []).map(r => ({
       id:               r.id,
+      supabaseId:       r.id,
       fecha:            r.fecha,
       tipoTrabajo:      r.tipo,
       estatus:          r.estatus || 'pendiente',
