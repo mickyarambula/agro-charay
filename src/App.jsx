@@ -1238,6 +1238,29 @@ export default function App() {
     }
   }, []);
 
+  React.useEffect(() => {
+    loadStateFromSupabase().then(() => {
+      try {
+        const s = localStorage.getItem('agroSistemaState');
+        if (s) {
+          const fresh = JSON.parse(s);
+          dispatch({ type: 'SYNC_STATE', payload: {
+            productores:   fresh.productores   || [],
+            lotes:         fresh.lotes         || [],
+            insumos:       fresh.insumos       || [],
+            diesel:        fresh.diesel        || [],
+            egresosManual: fresh.egresosManual || [],
+            dispersiones:  fresh.dispersiones  || [],
+            operadores:    fresh.operadores    || [],
+            maquinaria:    fresh.maquinaria    || [],
+            ciclos:        fresh.ciclos        || [],
+            ordenesTrabajo:fresh.ordenesTrabajo|| [],
+          }});
+        }
+      } catch(e) {}
+    });
+  }, []);
+
   // ─── Supabase realtime: suscripción al canal al iniciar sesión ──────────────
   useEffect(() => {
     if (!usuario || !supabaseClient) return;
