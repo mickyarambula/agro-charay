@@ -100,7 +100,6 @@ function LoginScreen({ onLogin }) {
 
   const handleLogin = async () => {
     setLoading(true);
-    try { await loadStateFromSupabase(); } catch(e) { console.warn("Supabase skip:", e); }
     const baseOvr = window.__agroBaseOverrides || {};
     const todosU = [...USUARIOS.map(u => baseOvr[u.id] ? {...u,...baseOvr[u.id]} : u), ...(window.__agroExtraUsers||[])];
     const u = todosU.find(u => u.usuario === user.trim().toLowerCase() && u.password === pass && u.activo!==false);
@@ -1302,9 +1301,11 @@ export default function App() {
     } catch (e) { console.warn("broadcast falló:", e); }
   }, [state.solicitudesGasto, state.solicitudesCompra, state.recomendaciones, state.ordenesCompra, state.notificaciones, state.delegaciones, usuario]);
 
-  const handleLogin = (u) => {
-    // Sincronizar estado en memoria con lo que el loader guardó en localStorage.
-    // El reducer se inicializó antes del login con datos posiblemente viejos.
+  const handleLogin = async (u) => {
+    // Cargar datos frescos de Supabase y sincronizar estado en memoria.
+    try {
+      await loadStateFromSupabase();
+    } catch(e) { console.warn('Supabase skip:', e); }
     try {
       const s = localStorage.getItem('agroSistemaState');
       if (s) {

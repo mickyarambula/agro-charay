@@ -51,7 +51,11 @@ async function guardarOrdenEnSupabase(orden, operador, lote, maquina) {
         creado_por:        orden.creadoPor || '',
       }),
     });
-    if (!res.ok) throw new Error('status ' + res.status);
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('[Supabase] orden POST failed:', res.status, errText);
+      throw new Error('status ' + res.status + ': ' + errText);
+    }
     const rows = await res.json();
     const row = Array.isArray(rows) ? rows[0] : rows;
     return row?.id || null;
