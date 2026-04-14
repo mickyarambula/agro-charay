@@ -10,7 +10,8 @@ export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 export const SYNC_CHANNEL = 'agro-charay-sync';
 export const SYNC_KEYS = [
   'solicitudesGasto', 'solicitudesCompra', 'recomendaciones',
-  'ordenesCompra', 'notificaciones', 'delegaciones'
+  'ordenesCompra', 'notificaciones', 'delegaciones',
+  'ordenesTrabajo'
 ];
 
 let _client = null;
