@@ -767,6 +767,45 @@ export default function LotesModule({ userRol, puedeEditar }) {
           💡 Toca una fila para ver el detalle · Desliza → para ver todas las columnas
         </div>
 
+        {isMobile ? (
+          <div style={{display:"flex",flexDirection:"column",gap:10,padding:"0 16px 16px"}}>
+            {lotesFiltrados.map(l=>(
+              <div key={l.id}
+                onClick={()=>{setSel(l);setModo("detalle");}}
+                style={{
+                  background:"#ffffff",
+                  border:"1px solid #e5e7eb",
+                  borderLeft:`4px solid ${l.activo!==false?"#15803D":"#9ca3af"}`,
+                  borderRadius:12,
+                  padding:14,
+                  boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
+                  cursor:"pointer",
+                  touchAction:"manipulation",
+                }}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,marginBottom:6}}>
+                  <div style={{fontSize:18,fontWeight:700,color:"#14532D",lineHeight:1.2}}>
+                    {l.apodo && l.apodo!=="NO DEFINIDO" ? l.apodo : (l.folioCorto||"Sin nombre")}
+                  </div>
+                  <span style={{fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:999,
+                    background:l.activo!==false?"#dcfce7":"#f3f4f6",
+                    color:l.activo!==false?"#15803D":"#6b7280"}}>
+                    {l.activo!==false?"ACTIVO":"INACTIVO"}
+                  </span>
+                </div>
+                <div style={{fontSize:13,color:"#374151",marginBottom:4}}>
+                  👤 {l.propietario||"—"}
+                </div>
+                <div style={{display:"flex",gap:14,flexWrap:"wrap",fontSize:13,color:"#6b7280"}}>
+                  <span>📐 <strong style={{color:"#15803D"}}>{l.supCredito>0?fmt2(l.supCredito):l.supModulo>0?fmt2(l.supModulo):"—"} ha</strong></span>
+                  {l.ejido && <span>🏘 {l.ejido}</span>}
+                </div>
+              </div>
+            ))}
+            {lotesFiltrados.length===0 && (
+              <div style={{textAlign:"center",padding:32,color:"#8a8070",fontSize:14}}>Sin lotes</div>
+            )}
+          </div>
+        ) : (
         <div className="table-wrap-scroll">
           <table style={{minWidth:1100}}>
             <thead>
@@ -819,7 +858,34 @@ export default function LotesModule({ userRol, puedeEditar }) {
             </tbody>
           </table>
         </div>
+        )}
       </div>
+
+      {/* Botón flotante "+" móvil */}
+      {isMobile && puedeEditar && (
+        <button
+          onClick={()=>abrirForm()}
+          aria-label="Agregar lote"
+          style={{
+            position:"fixed",
+            bottom:24,
+            right:20,
+            width:56,
+            height:56,
+            borderRadius:"50%",
+            border:"none",
+            background:"#15803D",
+            color:"#ffffff",
+            fontSize:32,
+            fontWeight:300,
+            lineHeight:1,
+            boxShadow:"0 6px 16px rgba(21, 128, 61, 0.35)",
+            cursor:"pointer",
+            zIndex:900,
+            touchAction:"manipulation",
+          }}
+        >＋</button>
+      )}
     </div>
   );
 }

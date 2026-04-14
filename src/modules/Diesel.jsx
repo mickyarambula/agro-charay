@@ -358,6 +358,51 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
           </div>
         );
       })()}
+      {isMobile ? (
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+          {dieselFiltrado.sort((a,b)=>String(b.fechaSolicitud).localeCompare(String(a.fechaSolicitud))).map(d=>{
+            const opaco = d.cancelado?{opacity:0.55}:{};
+            return (
+              <div key={d.id} style={{
+                background:"#ffffff",
+                border:"1px solid #e5e7eb",
+                borderLeft:`4px solid ${d.esAjuste?"#f59e0b":"#e67e22"}`,
+                borderRadius:12,
+                padding:14,
+                boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
+                ...opaco,
+              }}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,marginBottom:8}}>
+                  <div style={{fontSize:18,fontWeight:700,color:"#14532D"}}>{d.fechaSolicitud||"—"}</div>
+                  <span style={{fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:999,
+                    background:d.esAjuste?"#fff3cd":"#fef5ed",
+                    color:d.esAjuste?"#856404":"#e67e22"}}>
+                    {d.esAjuste?"🔧 Ajuste":"⛽ Carga"}
+                  </span>
+                </div>
+                <div style={{fontSize:14,color:"#374151",marginBottom:4}}>
+                  👤 <strong>{nomProd(d.productorId)}</strong>
+                </div>
+                {!d.esAjuste && (
+                  <div style={{fontSize:16,fontWeight:700,color:"#e67e22",marginBottom:4}}>
+                    {parseFloat(d.cantidad).toLocaleString("es-MX")} {d.unidad||"L"}
+                  </div>
+                )}
+                {d.proveedor && (
+                  <div style={{fontSize:13,color:"#6b7280"}}>🏪 {d.proveedor}</div>
+                )}
+                {verPrecios && !d.esAjuste && (
+                  <div style={{fontSize:13,color:"#c0392b",fontWeight:600,marginTop:4}}>{mxnFmt(d.importe)}</div>
+                )}
+                {d.cancelado && <div style={{marginTop:6,fontSize:11,color:"#991b1b",fontWeight:600}}>🚫 Cancelado</div>}
+              </div>
+            );
+          })}
+          {dieselFiltrado.length===0 && (
+            <div style={{textAlign:"center",padding:32,color:"#8a8070",fontSize:14}}>Sin registros</div>
+          )}
+        </div>
+      ) : (
       <div className="card">
         <div className="table-wrap-scroll">
           <table style={{minWidth:900}}>
@@ -425,6 +470,7 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
           </table>
         </div>
       </div>
+      )}
       {cancelModal&&(
         cancelModal.action==="cancelar"
         ?<ModalCancelacion titulo={`Sol.${cancelModal.rec?.numSolicitud||"?"}`} onCerrar={()=>setCancelModal(null)}

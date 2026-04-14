@@ -733,6 +733,68 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
         );
       })()}
 
+      {isMobile ? (
+        <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:16}}>
+          {(()=>{
+            const sortedIns = [...insumosFiltrados].sort((a,b)=>String(b.fechaSolicitud).localeCompare(String(a.fechaSolicitud)));
+            const grupos = {};
+            sortedIns.forEach(x=>{
+              const cat = x.categoria||"Otros";
+              (grupos[cat] = grupos[cat]||[]).push(x);
+            });
+            const categorias = Object.keys(grupos);
+            if (categorias.length===0) {
+              return <div style={{textAlign:"center",padding:32,color:"#8a8070",fontSize:14}}>Sin insumos</div>;
+            }
+            return categorias.map(cat=>{
+              const color = CAT_COLORS[cat]||"#6b7280";
+              const icon = CAT_ICONS[cat]||"📦";
+              return (
+                <div key={cat}>
+                  <div style={{
+                    fontSize:11,fontWeight:700,color,
+                    textTransform:"uppercase",letterSpacing:1,
+                    marginBottom:8,paddingLeft:4,
+                  }}>{icon} {cat} · {grupos[cat].length}</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    {grupos[cat].map(ins=>{
+                      const opaco = ins.cancelado?{opacity:0.55}:{};
+                      return (
+                        <div key={ins.id} style={{
+                          background:"#ffffff",
+                          border:"1px solid #e5e7eb",
+                          borderLeft:`4px solid ${color}`,
+                          borderRadius:12,
+                          padding:14,
+                          boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
+                          ...opaco,
+                        }}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,marginBottom:6}}>
+                            <div style={{fontSize:16,fontWeight:700,color:"#14532D",lineHeight:1.2,flex:1,minWidth:0}}>
+                              {ins.insumo||"Sin nombre"}
+                            </div>
+                            {badgeEstatus(ins)}
+                          </div>
+                          <div style={{fontSize:13,color:"#374151",marginBottom:4}}>
+                            👤 {nomProd(ins.productorId)}
+                          </div>
+                          <div style={{fontSize:14,fontWeight:600,color}}>
+                            {ins.cantidad} {ins.unidad}
+                          </div>
+                          {ins.proveedor && (
+                            <div style={{fontSize:12,color:"#6b7280",marginTop:4}}>🏪 {ins.proveedor}</div>
+                          )}
+                          {ins.cancelado && <div style={{marginTop:6,fontSize:11,color:"#991b1b",fontWeight:600}}>🚫 Cancelado</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            });
+          })()}
+        </div>
+      ) : (
       <div className="card">
         <div className="table-wrap-scroll">
           <table style={{minWidth:900}}>
@@ -788,6 +850,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
           </table>
         </div>
       </div>
+      )}
     </div>
 
       {recibirModal&&(
