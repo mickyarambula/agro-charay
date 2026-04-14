@@ -1334,11 +1334,13 @@ export default function App() {
             ordenesCompra:     state.ordenesCompra     || [],
             notificaciones:    state.notificaciones    || [],
             delegaciones:      state.delegaciones      || [],
+            ordenesTrabajo:    state.ordenesTrabajo    || [],
+            bitacora:          state.bitacora          || [],
           },
         },
       });
     } catch (e) { console.warn("broadcast falló:", e); }
-  }, [state.solicitudesGasto, state.solicitudesCompra, state.recomendaciones, state.ordenesCompra, state.notificaciones, state.delegaciones, usuario]);
+  }, [state.solicitudesGasto, state.solicitudesCompra, state.recomendaciones, state.ordenesCompra, state.notificaciones, state.delegaciones, state.ordenesTrabajo, state.bitacora, usuario]);
 
   const handleLogin = async (u) => {
     try { await loadStateFromSupabase(); } catch(e) { console.warn('Supabase skip:', e); }
