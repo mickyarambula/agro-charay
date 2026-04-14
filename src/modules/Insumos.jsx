@@ -362,7 +362,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
 
       {/* Accesos */}
       <div style={{display:"flex",gap:10,marginBottom:20,flexWrap:"wrap"}}>
-        <button className="btn btn-primary" onClick={()=>setVista("nuevo")}>＋ Registrar Insumo</button>
+        {verPrecios && <button className="btn btn-primary" onClick={()=>setVista("nuevo")}>＋ Registrar Insumo</button>}
         <button className="btn btn-secondary" onClick={()=>setVista("import")}>📥 Importar Excel</button>
         <button className="btn btn-secondary" onClick={()=>{setFiltroCat("todas");setVista("tabla");}}>📋 Ver todos ({insumos.filter(i=>!i.cancelado).length})</button>
       </div>
@@ -590,7 +590,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
             i.categoria,i.insumo,i.cantidad,i.unidad,parseFloat(i.importe)||0,i.estatus
           ])
         }])}/>
-        <button className="btn btn-primary" onClick={()=>setVista("nuevo")}>＋ Nuevo Registro</button>
+        {verPrecios && <button className="btn btn-primary" onClick={()=>setVista("nuevo")}>＋ Nuevo Registro</button>}
       </div>
       <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
         <select className="form-select" style={{width:180}} value={filtroCat} onChange={e=>{setFiltroCat(e.target.value);setFiltroConcepto("");}}>
@@ -687,15 +687,17 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                   {provData && ` · ${provData.conceptos} conceptos`}
                 </div>
               </div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:"#c0392b"}}>{mxnFmt(totalImporte)}</div>
+              {verPrecios && <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:"#c0392b"}}>{mxnFmt(totalImporte)}</div>}
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",background:"white"}}>
               {[
                 {icon:"📦", label:"Total Cantidad", valor:`${totalCantidad.toLocaleString("es-MX",{maximumFractionDigits:2})} ${unidades.join("/")||""}`, sub:"suma pedidos"},
-                {icon:"💰", label:"Importe Total",  valor:mxnFmt(totalImporte), sub:`${activos.length} pedidos`, clr:"#c0392b"},
-                {icon:"💲", label:"Precio Prom.",   valor:precioProm>0?`$${precioProm.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2})}`:"—", sub:precioProm>0?`${preciosProm.length} refs`:"—"},
-                {icon:"🌾", label:"Costo / Ha",     valor:haTotales>0?mxnFmt(totalImporte/haTotales):"—", sub:haTotales>0?`${haTotales.toFixed(1)} ha`:"—"},
-                ...(provData ? [{icon:"📊",label:"% Gasto Total",valor:`${provData.pct.toFixed(1)}%`,sub:"del total insumos"}] : []),
+                ...(verPrecios ? [
+                  {icon:"💰", label:"Importe Total",  valor:mxnFmt(totalImporte), sub:`${activos.length} pedidos`, clr:"#c0392b"},
+                  {icon:"💲", label:"Precio Prom.",   valor:precioProm>0?`$${precioProm.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2})}`:"—", sub:precioProm>0?`${preciosProm.length} refs`:"—"},
+                  {icon:"🌾", label:"Costo / Ha",     valor:haTotales>0?mxnFmt(totalImporte/haTotales):"—", sub:haTotales>0?`${haTotales.toFixed(1)} ha`:"—"},
+                ] : []),
+                ...(verPrecios && provData ? [{icon:"📊",label:"% Gasto Total",valor:`${provData.pct.toFixed(1)}%`,sub:"del total insumos"}] : []),
               ].map(({icon,label,valor,sub,clr})=>(
                 <div key={label} style={{padding:"12px 14px",borderRight:`1px solid ${T.line}`,borderBottom:`1px solid ${T.line}`}}>
                   <div style={{fontSize:10,color:T.fog,marginBottom:3}}>{icon} {label}</div>
@@ -729,7 +731,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                     <div key={nom} style={{padding:"5px 12px",borderRadius:20,background:`${color}10`,border:`1px solid ${color}33`,fontSize:11}}>
                       <span style={{fontWeight:600,color}}>{nom}</span>
                       {unidades[0] && <span style={{color:T.fog,marginLeft:6}}>{d.cant.toLocaleString("es-MX",{maximumFractionDigits:1})} {unidades[0]}</span>}
-                      <span style={{fontFamily:"monospace",fontWeight:700,color:"#c0392b",marginLeft:8}}>{mxnFmt(d.importe)}</span>
+                      {verPrecios && <span style={{fontFamily:"monospace",fontWeight:700,color:"#c0392b",marginLeft:8}}>{mxnFmt(d.importe)}</span>}
                     </div>
                   ))}
                 </div>
@@ -969,22 +971,25 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                 {UNIDADES.map(u=><option key={u} value={u}>{u}</option>)}
               </select>
             </div>
+            {verPrecios && (
+              <div className="form-group">
+                <label className="form-label">Precio Unitario $</label>
+                <input className="form-input" type="number" value={form.precioUnitario} onChange={e=>{
+                  const precio=parseFloat(e.target.value)||0;
+                  const imp=(parseFloat(form.cantidad)||0)*precio;
+                  setForm(f=>({...f,precioUnitario:e.target.value,importe:imp>0?imp.toFixed(2):f.importe}));
+                }} placeholder="0"/>
+              </div>
+            )}
+          </div>
+          {verPrecios && (
             <div className="form-group">
-              <label className="form-label">Precio Unitario $</label>
-              <input className="form-input" type="number" value={form.precioUnitario} onChange={e=>{
-                const precio=parseFloat(e.target.value)||0;
-                const imp=(parseFloat(form.cantidad)||0)*precio;
-                setForm(f=>({...f,precioUnitario:e.target.value,importe:imp>0?imp.toFixed(2):f.importe}));
-              }} placeholder="0"/>
+              <label className="form-label">Importe Total $ * <span style={{fontSize:10,color:"#8a8070"}}>(se calcula automático, puedes ajustar)</span></label>
+              <input className="form-input" type="number" value={form.importe}
+                style={{fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}
+                onChange={e=>setForm(f=>({...f,importe:e.target.value}))} placeholder="0.00"/>
             </div>
-          </div>
-          {/* Importe (calculado o manual) */}
-          <div className="form-group">
-            <label className="form-label">Importe Total $ * <span style={{fontSize:10,color:"#8a8070"}}>(se calcula automático, puedes ajustar)</span></label>
-            <input className="form-input" type="number" value={form.importe}
-              style={{fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}
-              onChange={e=>setForm(f=>({...f,importe:e.target.value}))} placeholder="0.00"/>
-          </div>
+          )}
           <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
             <button className="btn btn-secondary" onClick={()=>setVista("tabla")}>Cancelar</button>
             <button className="btn btn-primary" onClick={guardarInsumo}>💾 Guardar</button>
