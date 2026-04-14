@@ -1,11 +1,6 @@
-// TODO: las llamadas a api.anthropic.com/v1/messages desde el navegador fallarán
-// por CORS + falta de x-api-key. Migrar a una Supabase Edge Function (o Vercel
-// API route) que reenvíe el request con la API key del servidor. Mientras tanto
-// el componente muestra el estado loading y cae en el catch con el mensaje
-// "No se pudo conectar con el asistente IA."
-
 import React, { useState } from 'react';
 
+const SUPABASE_URL = 'https://oryixvodfqojunnqbkln.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yeWl4dm9kZnFvanVubnFia2xuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4ODUzMjAsImV4cCI6MjA5MTQ2MTMyMH0.03nXDh5qj7N-RiCqXxGKvhfZSVWDmuV4hFwTOZ66ZCQ';
 
 export default function AIInsight({ contexto, modulo }) {
@@ -18,23 +13,17 @@ export default function AIInsight({ contexto, modulo }) {
     setLoading(true);
     setAbierto(true);
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/ai-insight`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 200,
-          messages: [{
-            role: 'user',
-            content: `Eres un asistente agrícola experto para Almacenes Santa Rosa en Charay, Sinaloa.
-Analiza estos datos del módulo ${modulo} y da UN insight accionable en máximo 2 oraciones en español.
-Sé directo y específico. Sin saludos ni introducciones.
-Datos: ${JSON.stringify(contexto)}`
-          }]
-        })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ contexto, modulo }),
       });
       const data = await res.json();
-      setInsight(data.content?.[0]?.text || 'Sin datos suficientes para analizar.');
+      setInsight(data.insight || 'Sin datos suficientes.');
     } catch (e) {
       setInsight('No se pudo conectar con el asistente IA.');
     }
