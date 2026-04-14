@@ -550,10 +550,10 @@ export default function OrdenDia({ userRol, usuario }) {
                       {orden.tipoTrabajo || "Trabajo"}
                     </div>
                     <div style={{ fontSize: 13, color: "#5a5040", display: "flex", flexDirection: "column", gap: 3 }}>
-                      <div>👷 <strong>{op?.nombre || "Operador desconocido"}</strong></div>
-                      <div>📍 Lote: <strong style={{ color: "#2d5a1b" }}>{nombreLote(lot)}</strong></div>
-                      <div>🚜 Máquina: <strong>{maq?.nombre || "—"}</strong></div>
-                      {ins && <div>🌱 Insumo: <strong>{ins.insumo}</strong></div>}
+                      <div>👷 <strong>{op?.nombre || orden.operadorNombre || "Operador desconocido"}</strong></div>
+                      <div>📍 Lote: <strong style={{ color: "#2d5a1b" }}>{lot ? nombreLote(lot) : (orden.loteNombre || "—")}</strong></div>
+                      <div>🚜 Máquina: <strong>{maq?.nombre || orden.maquinariaNombre || "—"}</strong></div>
+                      {(ins || orden.insumoNombre) && <div>🌱 Insumo: <strong>{ins?.insumo || orden.insumoNombre}</strong></div>}
                       {orden.horasEstimadas > 0 && <div>⏱ Duración: <strong>{orden.horasEstimadas}h</strong></div>}
                       {orden.notas && <div style={{ fontStyle: "italic", color: "#8a8070", marginTop: 4 }}>"{orden.notas}"</div>}
                     </div>

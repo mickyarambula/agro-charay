@@ -16,7 +16,6 @@ import {
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SYNC_CHANNEL, SYNC_KEYS, supabaseClient
 } from "./core/supabase.js";
-import { initRealtime, subscribeToOrdenes } from "./core/realtime.js";
 import { initState, reducer, Ctx, useData } from "./core/DataContext.jsx";
 import {
   calcularInteresCredito, calcularInteresCargosCredito, calcularFinancieros,
@@ -1102,6 +1101,8 @@ export default function App() {
     }
   })();
   const [state, dispatch] = useReducer(reducer, { ...initState, ...savedState });
+  const stateRef = React.useRef(state);
+  React.useEffect(() => { stateRef.current = state; }, [state]);
   // Persistir estado completo en localStorage en cada cambio
   React.useEffect(() => {
     try {
@@ -1221,43 +1222,6 @@ export default function App() {
   }, []);
   const [usuario, setUsuario] = useState(null);
 
-  React.useEffect(() => {
-    if (!supabaseClient) return;
-    const reloadOrdenes = () => {
-      fetch(`${SUPABASE_URL}/rest/v1/ordenes_trabajo?select=*&order=created_at.desc&limit=200`, {
-        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
-      })
-      .then(r => r.json())
-      .then(rows => {
-        if (!Array.isArray(rows)) return;
-        const mapped = rows.map(r => ({
-          id: r.id, supabaseId: r.id,
-          fecha: r.fecha, tipoTrabajo: r.tipo,
-          estatus: r.estatus || 'pendiente',
-          operadorNombre: r.operador_nombre || '',
-          loteNombre: r.lote_nombre || '',
-          maquinariaNombre: r.maquinaria_nombre || '',
-          insumoNombre: r.insumo_nombre || '',
-          horaInicio: r.hora_inicio || '',
-          horasEstimadas: parseFloat(r.horas_estimadas) || 0,
-          notas: r.notas || '',
-          creadoPor: r.creado_por || '',
-          creadoEn: r.created_at,
-          origen: 'supabase',
-        }));
-        dispatch({ type: 'SYNC_STATE', payload: { ordenesTrabajo: mapped } });
-      })
-      .catch(e => console.warn('reloadOrdenes:', e));
-    };
-    initRealtime();
-    const unsub = subscribeToOrdenes('app-root', () => reloadOrdenes());
-    const polling = setInterval(reloadOrdenes, 10000);
-    return () => {
-      unsub();
-      clearInterval(polling);
-    };
-  }, [usuario]);
-
   const navFiltrosRef = React.useRef({});
   const [pageStack, setPageStack] = React.useState([]); // historial de navegación
 
@@ -1343,21 +1307,32 @@ export default function App() {
 
     syncChannelRef.current = channel;
 
-    const mapOrdenRow = (r) => ({
-      id: r.id, supabaseId: r.id,
-      fecha: r.fecha, tipoTrabajo: r.tipo,
-      estatus: r.estatus || 'pendiente',
-      operadorNombre: r.operador_nombre || '',
-      loteNombre: r.lote_nombre || '',
-      maquinariaNombre: r.maquinaria_nombre || '',
-      insumoNombre: r.insumo_nombre || '',
-      horaInicio: r.hora_inicio || '',
-      horasEstimadas: parseFloat(r.horas_estimadas) || 0,
-      notas: r.notas || '',
-      creadoPor: r.creado_por || '',
-      creadoEn: r.created_at,
-      origen: 'supabase',
-    });
+    const mapOrdenRow = (r) => {
+      const s = stateRef.current || {};
+      const op = (s.operadores || []).find(x => x.id === r.operador_id);
+      const lo = (s.lotes || []).find(x => x.id === r.lote_id);
+      const mq = (s.maquinaria || []).find(x => x.id === r.maquinaria_id);
+      const ins = (s.insumos || []).find(x => x.id === r.insumo_id);
+      return {
+        id: r.id, supabaseId: r.id,
+        fecha: r.fecha, tipoTrabajo: r.tipo,
+        estatus: r.estatus || 'pendiente',
+        operadorId: r.operador_id || null,
+        loteId: r.lote_id || null,
+        maquinariaId: r.maquinaria_id || null,
+        insumoId: r.insumo_id || null,
+        operadorNombre: r.operador_nombre || op?.nombre || '',
+        loteNombre: r.lote_nombre || lo?.nombre || '',
+        maquinariaNombre: r.maquinaria_nombre || mq?.nombre || '',
+        insumoNombre: r.insumo_nombre || ins?.nombre || '',
+        horaInicio: r.hora_inicio || '',
+        horasEstimadas: parseFloat(r.horas_estimadas) || 0,
+        notas: r.notas || '',
+        creadoPor: r.creado_por || '',
+        creadoEn: r.created_at,
+        origen: 'supabase',
+      };
+    };
     const ordenesChannel = supabaseClient
       .channel('ordenes-db-changes')
       .on('postgres_changes', {
