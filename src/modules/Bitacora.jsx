@@ -624,13 +624,14 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
         ultimosTipos: bitacora?.slice(0,5)?.map(b => b.tipo) || [],
       }} />
 
-      {/* Botones de acción rápida */}
-      <div style={{
+      {/* Botones de acción rápida — grid explícito 2 cols en móvil */}
+      <div className="bitacora-tipos" style={{
         display: isMobile ? "grid" : "flex",
-        gridTemplateColumns: isMobile ? "repeat(auto-fit, minmax(140px, 1fr))" : undefined,
+        gridTemplateColumns: isMobile ? "1fr 1fr" : undefined,
         gap:10,
-        flexWrap:"wrap",
-        marginBottom:20
+        flexWrap: isMobile ? undefined : "wrap",
+        marginBottom:20,
+        width: isMobile ? "100%" : undefined,
       }}>
         {TIPOS.map(t=>(
           <button key={t.id} onClick={()=>{setFotoPreview(null);setTipoModal(t.id);}}
@@ -639,21 +640,25 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
               alignItems:"center",
               justifyContent: isMobile ? "center" : "flex-start",
               gap:8,
-              padding: isMobile ? "14px 16px" : "10px 16px",
-              minHeight: isMobile ? 48 : undefined,
+              padding: isMobile ? "14px 12px" : "10px 16px",
+              minHeight: isMobile ? 56 : undefined,
+              width: isMobile ? "100%" : undefined,
               background:T.card,
               border:`1.5px solid ${t.color}`,
               borderRadius:10,
               cursor:"pointer",
-              fontSize: isMobile ? 14 : 13,
+              fontSize: isMobile ? 13 : 13,
               fontWeight:600,
               color:t.color,
               transition:"all 0.15s",
-              touchAction:"manipulation"
+              touchAction:"manipulation",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
             onMouseOver={e=>{e.currentTarget.style.background=`${t.color}12`}}
             onMouseOut={e=>{e.currentTarget.style.background=T.card}}>
-            <span style={{fontSize:18}}>{t.icon}</span>{t.label}
+            <span style={{fontSize:18,flexShrink:0}}>{t.icon}</span><span style={{overflow:"hidden",textOverflow:"ellipsis"}}>{t.label}</span>
           </button>
         ))}
       </div>
