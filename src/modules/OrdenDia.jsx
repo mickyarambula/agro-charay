@@ -159,6 +159,36 @@ export function enviarWhatsApp(orden, operador, lote, maquina) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function OrdenDia({ userRol, usuario }) {
   const { state, dispatch } = useData();
+
+  const SUPA_URL2 = 'https://oryixvodfqojunnqbkln.supabase.co';
+  const SUPA_KEY2 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yeWl4dm9kZnFvanVubnFia2xuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4ODUzMjAsImV4cCI6MjA5MTQ2MTMyMH0.03nXDh5qj7N-RiCqXxGKvhfZSVWDmuV4hFwTOZ66ZCQ';
+
+  React.useEffect(() => {
+    fetch(`${SUPA_URL2}/rest/v1/ordenes_trabajo?select=*&order=created_at.desc&limit=200`, {
+      headers: { apikey: SUPA_KEY2, Authorization: `Bearer ${SUPA_KEY2}` }
+    })
+    .then(r => r.json())
+    .then(rows => {
+      if (!Array.isArray(rows)) return;
+      const mapped = rows.map(r => ({
+        id: r.id, supabaseId: r.id,
+        fecha: r.fecha, tipoTrabajo: r.tipo,
+        estatus: r.estatus || 'pendiente',
+        operadorNombre: r.operador_nombre || '',
+        loteNombre: r.lote_nombre || '',
+        maquinariaNombre: r.maquinaria_nombre || '',
+        insumoNombre: r.insumo_nombre || '',
+        horaInicio: r.hora_inicio || '',
+        horasEstimadas: parseFloat(r.horas_estimadas) || 0,
+        notas: r.notas || '',
+        creadoPor: r.creado_por || '',
+        creadoEn: r.created_at,
+        origen: 'supabase',
+      }));
+      dispatch({ type: 'SYNC_STATE', payload: { ordenesTrabajo: mapped } });
+    })
+    .catch(e => console.warn('OrdenDia fetch:', e));
+  }, []);
   const hoy = (() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
