@@ -7,6 +7,11 @@ import React, { useState } from 'react';
 import { useData } from '../core/DataContext.jsx';
 import { T } from '../shared/utils.js';
 import { Modal } from '../shared/Modal.jsx';
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
+import MobileCard from '../components/mobile/MobileCard.jsx';
+import BottomSheet from '../components/mobile/BottomSheet.jsx';
+import SkeletonCard from '../components/mobile/SkeletonCard.jsx';
+import ToastContainer, { showToast } from '../components/mobile/Toast.jsx';
 
 const TIPOS_TRABAJO = [
   "Barbecho", "Rastreo", "Nivelación", "Surcado", "Siembra", "Fertilización",
@@ -158,13 +163,19 @@ export function enviarWhatsApp(orden, operador, lote, maquina) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function OrdenDia({ userRol, usuario }) {
+  const isMobile = useIsMobile();
   const { state, dispatch } = useData();
+  const [cargando, setCargando] = useState(true);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const pullStartRef = React.useRef(null);
+  const PULL_THRESHOLD = 100;
 
   const SUPA_URL2 = 'https://oryixvodfqojunnqbkln.supabase.co';
   const SUPA_KEY2 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yeWl4dm9kZnFvanVubnFia2xuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4ODUzMjAsImV4cCI6MjA5MTQ2MTMyMH0.03nXDh5qj7N-RiCqXxGKvhfZSVWDmuV4hFwTOZ66ZCQ';
 
-  React.useEffect(() => {
-    fetch(`${SUPA_URL2}/rest/v1/ordenes_trabajo?select=*&order=created_at.desc&limit=200`, {
+  const recargarOrdenes = React.useCallback(() => {
+    return fetch(`${SUPA_URL2}/rest/v1/ordenes_trabajo?select=*&order=created_at.desc&limit=200`, {
       headers: { apikey: SUPA_KEY2, Authorization: `Bearer ${SUPA_KEY2}` }
     })
     .then(r => r.json())
@@ -186,9 +197,55 @@ export default function OrdenDia({ userRol, usuario }) {
         origen: 'supabase',
       }));
       dispatch({ type: 'SYNC_STATE', payload: { ordenesTrabajo: mapped } });
-    })
-    .catch(e => console.warn('OrdenDia fetch:', e));
-  }, []);
+    });
+  }, [dispatch]);
+
+  React.useEffect(() => {
+    recargarOrdenes()
+      .then(() => setCargando(false))
+      .catch(e => { console.warn('OrdenDia fetch:', e); setCargando(false); });
+  }, [recargarOrdenes]);
+
+  // ── Pull-to-refresh (solo móvil) ─────────────────────────────
+  React.useEffect(() => {
+    if (!isMobile) return;
+    const onTouchStart = (e) => {
+      if (window.scrollY > 0 || refreshing) return;
+      pullStartRef.current = e.touches[0].clientY;
+    };
+    const onTouchMove = (e) => {
+      if (pullStartRef.current == null) return;
+      const dy = e.touches[0].clientY - pullStartRef.current;
+      if (dy > 0 && window.scrollY === 0) {
+        setPullDistance(Math.min(dy, 160));
+      }
+    };
+    const onTouchEnd = () => {
+      if (pullStartRef.current == null) { setPullDistance(0); return; }
+      if (pullDistance >= PULL_THRESHOLD && !refreshing) {
+        setRefreshing(true);
+        recargarOrdenes()
+          .then(() => showToast('✅ Órdenes actualizadas', 'success'))
+          .catch(() => showToast('❌ Error al recargar', 'error'))
+          .finally(() => {
+            setRefreshing(false);
+            setPullDistance(0);
+            pullStartRef.current = null;
+          });
+      } else {
+        setPullDistance(0);
+        pullStartRef.current = null;
+      }
+    };
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd);
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [isMobile, pullDistance, refreshing, recargarOrdenes]);
   const hoy = (() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -307,6 +364,7 @@ export default function OrdenDia({ userRol, usuario }) {
       dispatch({ type: "UPD_ORDEN_TRABAJO", payload: updated });
       // Sync a Supabase (fire-and-forget)
       actualizarOrdenEnSupabase(updated, op, lot, maq);
+      showToast('✅ Orden actualizada', 'success');
       dispatch({ type: "ADD_NOTIF", payload: {
         para: op?.usuario || "campo",
         tipo: "info",
@@ -328,7 +386,12 @@ export default function OrdenDia({ userRol, usuario }) {
       dispatch({ type: "ADD_ORDEN_TRABAJO", payload });
       // Sync a Supabase: captura UUID para futuros PATCH
       guardarOrdenEnSupabase(payload, op, lot, maq).then(supaId => {
-        if (supaId) dispatch({ type: "UPD_ORDEN_TRABAJO", payload: { ...payload, supabaseId: supaId } });
+        if (supaId) {
+          dispatch({ type: "UPD_ORDEN_TRABAJO", payload: { ...payload, supabaseId: supaId } });
+          showToast('✅ Orden creada', 'success');
+        } else {
+          showToast('❌ Error al guardar en Supabase', 'error');
+        }
       });
       dispatch({ type: "ADD_NOTIF", payload: {
         para: op?.usuario || "campo",
@@ -350,6 +413,7 @@ export default function OrdenDia({ userRol, usuario }) {
     }});
     // Sync a Supabase (fire-and-forget)
     completarOrdenEnSupabase(orden);
+    showToast('✅ Orden completada', 'success');
     // Crear registro automático en bitácora, etiquetado con origen=orden_trabajo
     // y ordenId para correlación inversa (evita doble captura manual).
     dispatch({ type: "ADD_BITACORA", payload: {
@@ -387,6 +451,36 @@ export default function OrdenDia({ userRol, usuario }) {
 
   return (
     <div>
+      {/* Pull-to-refresh indicator (solo móvil) */}
+      {isMobile && (pullDistance > 0 || refreshing) && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: Math.min(pullDistance, 80),
+          background: '#F0FDF4',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 14,
+          fontWeight: 600,
+          color: '#15803D',
+          zIndex: 9000,
+          borderBottom: '1px solid #d1d5db',
+          transition: refreshing ? 'height 200ms ease' : 'none',
+        }}>
+          {refreshing
+            ? '⟳ Actualizando...'
+            : pullDistance >= PULL_THRESHOLD
+              ? '⬆ Suelta para recargar'
+              : '⬇ Desliza para recargar'}
+        </div>
+      )}
+
+      {/* Toast container (solo móvil) */}
+      {isMobile && <ToastContainer />}
+
       {/* Header */}
       <div style={{
         padding: "20px 24px",
@@ -471,7 +565,9 @@ export default function OrdenDia({ userRol, usuario }) {
       </div>
 
       {/* Lista de órdenes */}
-      {ordenes.length === 0 ? (
+      {isMobile && cargando && ordenes.length === 0 ? (
+        <SkeletonCard count={3} />
+      ) : ordenes.length === 0 ? (
         <div style={{
           background: "white",
           borderRadius: 14,
@@ -524,6 +620,24 @@ export default function OrdenDia({ userRol, usuario }) {
             const maq = getMaquina(orden.maquinariaId);
             const ins = getInsumo(orden.insumoId);
             const est = ESTATUS_COLORES[orden.estatus] || ESTATUS_COLORES.pendiente;
+            if (isMobile) {
+              return (
+                <MobileCard
+                  key={orden.id}
+                  orden={{
+                    tipoTrabajo: orden.tipoTrabajo,
+                    operadorNombre: op?.nombre || orden.operadorNombre || '',
+                    loteNombre: lot ? nombreLote(lot) : (orden.loteNombre || ''),
+                    maquinariaNombre: maq?.nombre || orden.maquinariaNombre || '',
+                    horasEstimadas: orden.horasEstimadas,
+                    estatus: orden.estatus,
+                    horaInicio: orden.horaInicio,
+                  }}
+                  onCompletar={() => marcarCompletada(orden)}
+                  onEditar={() => abrirEditar(orden)}
+                />
+              );
+            }
             return (
               <div key={orden.id} style={{
                 background: "white",
@@ -614,8 +728,146 @@ export default function OrdenDia({ userRol, usuario }) {
         </div>
       )}
 
-      {/* Modal Nueva Orden / Editar */}
-      {modalNew && (
+      {/* BottomSheet móvil: formulario simplificado */}
+      {modalNew && isMobile && (
+        <BottomSheet
+          isOpen={modalNew}
+          onClose={cerrarModal}
+          title={editandoId ? "✏️ Editar orden" : "📋 Nueva orden"}
+          footer={
+            <button
+              onClick={guardarOrden}
+              disabled={!form.operadorId || !form.loteId || !form.tipoTrabajo}
+              style={{
+                width: '100%',
+                minHeight: 52,
+                marginTop: 8,
+                borderRadius: 10,
+                border: 'none',
+                background: '#15803D',
+                color: '#ffffff',
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: (!form.operadorId || !form.loteId || !form.tipoTrabajo) ? 'not-allowed' : 'pointer',
+                opacity: (!form.operadorId || !form.loteId || !form.tipoTrabajo) ? 0.55 : 1,
+                touchAction: 'manipulation',
+              }}
+            >
+              {editandoId ? '💾 Guardar cambios' : '💾 Crear Orden'}
+            </button>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>👷 Tractorista *</label>
+              <select
+                value={form.operadorId}
+                onChange={e => handleOperadorChange(e.target.value)}
+                style={{ width: '100%', minHeight: 52, fontSize: 16, padding: '0 14px', borderRadius: 10, border: '1.5px solid #d1d5db', background: '#ffffff' }}
+              >
+                <option value="">— Seleccionar tractorista —</option>
+                {operadores.map(o => (
+                  <option key={o.id} value={o.id}>👷 {o.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>📍 Lote *</label>
+              <select
+                value={form.loteId}
+                onChange={e => setForm(f => ({ ...f, loteId: e.target.value }))}
+                style={{ width: '100%', minHeight: 52, fontSize: 16, padding: '0 14px', borderRadius: 10, border: '1.5px solid #d1d5db', background: '#ffffff' }}
+              >
+                <option value="">— Seleccionar lote —</option>
+                {lotes.filter(l => l.activo !== false).map(l => (
+                  <option key={l.id} value={l.id}>📍 {nombreLote(l)}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>🔧 Tipo de trabajo *</label>
+              <select
+                value={form.tipoTrabajo}
+                onChange={e => setForm(f => ({ ...f, tipoTrabajo: e.target.value }))}
+                style={{ width: '100%', minHeight: 52, fontSize: 16, padding: '0 14px', borderRadius: 10, border: '1.5px solid #d1d5db', background: '#ffffff' }}
+              >
+                <option value="">— Seleccionar tipo —</option>
+                {TIPOS_TRABAJO.map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>🚜 Máquina (opcional)</label>
+              <select
+                value={form.maquinariaId}
+                onChange={e => setForm(f => ({ ...f, maquinariaId: e.target.value }))}
+                style={{ width: '100%', minHeight: 52, fontSize: 16, padding: '0 14px', borderRadius: 10, border: '1.5px solid #d1d5db', background: '#ffffff' }}
+              >
+                <option value="">— Sin especificar —</option>
+                {maquinaria.map(m => (
+                  <option key={m.id} value={m.id}>🚜 {m.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>🌱 Insumo relacionado (opcional)</label>
+              <select
+                value={form.insumoId}
+                onChange={e => setForm(f => ({ ...f, insumoId: e.target.value }))}
+                style={{ width: '100%', minHeight: 52, fontSize: 16, padding: '0 14px', borderRadius: 10, border: '1.5px solid #d1d5db', background: '#ffffff' }}
+              >
+                <option value="">— Ninguno —</option>
+                {[...new Map(insumosArr.filter(i => !i.cancelado).map(i => [i.insumo, i])).values()].map(i => (
+                  <option key={i.id} value={i.id}>🌱 {i.insumo}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>⏱ Hora inicio</label>
+                <input
+                  type="time"
+                  value={form.horaInicio}
+                  onChange={e => setForm(f => ({ ...f, horaInicio: e.target.value }))}
+                  style={{ width: '100%', minHeight: 52, fontSize: 16, padding: '0 14px', borderRadius: 10, border: '1.5px solid #d1d5db', background: '#ffffff' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>⏱ Duración (h)</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  placeholder="4"
+                  value={form.horasEstimadas}
+                  onChange={e => setForm(f => ({ ...f, horasEstimadas: e.target.value }))}
+                  style={{ width: '100%', minHeight: 52, fontSize: 16, padding: '0 14px', borderRadius: 10, border: '1.5px solid #d1d5db', background: '#ffffff' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>📝 Notas adicionales</label>
+              <textarea
+                rows={3}
+                value={form.notas}
+                onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
+                placeholder="Instrucciones específicas, observaciones..."
+                style={{ width: '100%', minHeight: 96, fontSize: 16, padding: '12px 14px', borderRadius: 10, border: '1.5px solid #d1d5db', background: '#ffffff', fontFamily: 'inherit', resize: 'vertical' }}
+              />
+            </div>
+          </div>
+        </BottomSheet>
+      )}
+
+      {/* Modal Nueva Orden / Editar (escritorio) */}
+      {modalNew && !isMobile && (
         <Modal title={editandoId ? "✏️ Editar orden de trabajo" : "📋 Nueva orden de trabajo"}
           onClose={cerrarModal}
           footer={

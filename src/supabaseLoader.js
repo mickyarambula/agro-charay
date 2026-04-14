@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -41,6 +41,10 @@ export async function loadStateFromSupabase() {
       supaFetch('maquinaria', 'order=legacy_id'),
       supaFetch('ordenes_trabajo', 'order=created_at.desc&limit=200').catch(e => {
         console.warn('[Supabase] ordenes_trabajo fetch falló (tabla puede no existir aún):', e.message);
+        return [];
+      }),
+      supaFetch('ciclo_asignaciones', 'order=created_at').catch(e => {
+        console.warn('[Supabase] ciclo_asignaciones fetch falló:', e.message);
         return [];
       }),
     ]);
@@ -65,7 +69,17 @@ export async function loadStateFromSupabase() {
     const ciclos = ciclosRows.map(r => ({
       id: r.legacy_id, nombre: r.nombre, fechaInicio: r.fecha_inicio,
       fechaFin: r.fecha_fin, predeterminado: r.es_predeterminado,
-      notas: r.notas||'', asignaciones: [], _uuid: r.id,
+      notas: r.notas||'',
+      asignaciones: asignacionesRows
+        .filter(a => a.ciclo_id === r.id)
+        .map(a => ({
+          loteId: lotesRows.find(l => l.id === a.lote_id)?.legacy_id || null,
+          productorId: productoresRows.find(p => p.id === a.productor_id)?.legacy_id || null,
+          cultivoId: 1,
+          variedad: a.variedad || 'Blanco',
+          supAsignada: parseFloat(a.sup_asignada) || 0,
+        })),
+      _uuid: r.id,
     }));
 
     const insumos = insumosRows.map(r => ({
