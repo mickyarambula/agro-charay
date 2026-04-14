@@ -1304,9 +1304,44 @@ export default function App() {
 
     syncChannelRef.current = channel;
 
+    const ordenesChannel = supabaseClient
+      .channel('ordenes-db-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'ordenes_trabajo'
+      }, () => {
+        fetch(`${SUPABASE_URL}/rest/v1/ordenes_trabajo?select=*&order=created_at.desc&limit=200`, {
+          headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+        })
+        .then(r => r.json())
+        .then(rows => {
+          if (!Array.isArray(rows)) return;
+          const mapped = rows.map(r => ({
+            id: r.id, supabaseId: r.id,
+            fecha: r.fecha, tipoTrabajo: r.tipo,
+            estatus: r.estatus || 'pendiente',
+            operadorNombre: r.operador_nombre || '',
+            loteNombre: r.lote_nombre || '',
+            maquinariaNombre: r.maquinaria_nombre || '',
+            insumoNombre: r.insumo_nombre || '',
+            horaInicio: r.hora_inicio || '',
+            horasEstimadas: parseFloat(r.horas_estimadas) || 0,
+            notas: r.notas || '',
+            creadoPor: r.creado_por || '',
+            creadoEn: r.created_at,
+            origen: 'supabase',
+          }));
+          dispatch({ type: 'SYNC_STATE', payload: { ordenesTrabajo: mapped } });
+        })
+        .catch(e => console.warn('Postgres Changes ordenes:', e));
+      })
+      .subscribe();
+
     return () => {
       try { channel.unsubscribe(); } catch {}
       try { supabaseClient.removeChannel(channel); } catch {}
+      try { supabaseClient.removeChannel(ordenesChannel); } catch {}
       syncChannelRef.current = null;
       syncSenderIdRef.current = null;
       setConnectedUsers(0);
