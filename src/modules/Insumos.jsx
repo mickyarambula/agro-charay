@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
+import AIInsight from '../components/AIInsight.jsx';
 
 
 export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFiltro = {} }) {
@@ -327,6 +328,11 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
   if (vista==="resumen") return (
     <div>
       {/* Stat cards — clickeables para filtrar */}
+      <AIInsight modulo="Insumos" contexto={{
+        totalInsumos: state.insumos?.length || 0,
+        categorias: [...new Set((state.insumos||[]).map(i => i.categoria).filter(Boolean))],
+        totalDispersado: (state.dispersiones||[]).reduce((s,d) => s + (parseFloat(d.monto)||0), 0),
+      }} />
       <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:20}}>
         <div className="stat-card gold" style={{cursor:"pointer"}} onClick={()=>{setFiltroCat("todas");setVista("tabla");}} title="Ver todos">
           <div className="stat-icon">💰</div>

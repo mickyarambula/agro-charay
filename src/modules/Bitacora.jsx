@@ -25,6 +25,7 @@ import {
 } from '../shared/helpers.jsx';
 import { mxn } from "../App.jsx";
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
+import AIInsight from '../components/AIInsight.jsx';
 
 
 export default function BitacoraModule({ userRol, puedeEditar }) {
@@ -618,6 +619,11 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
 
   return (
     <div>
+      <AIInsight modulo="Bitácora" contexto={{
+        totalRegistros: bitacora?.length || 0,
+        ultimosTipos: bitacora?.slice(0,5)?.map(b => b.tipo) || [],
+      }} />
+
       {/* Botones de acción rápida */}
       <div style={{
         display: isMobile ? "grid" : "flex",

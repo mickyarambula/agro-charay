@@ -25,6 +25,7 @@ import {
 } from '../shared/helpers.jsx';
 import { WidgetCBOTDashboard } from "../App.jsx";
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
+import AIInsight from '../components/AIInsight.jsx';
 
 
 export default function Dashboard({ userRol, onNavigate }) {
@@ -104,6 +105,16 @@ export default function Dashboard({ userRol, onNavigate }) {
 
   return (
     <div>
+      <AIInsight modulo="Dashboard" contexto={{
+        ha: F?.ha || 0,
+        costoTotal: F?.costoTotal || 0,
+        ingresoEstimado: F?.ingresoEstimado || 0,
+        utilidad: F?.utilidad || 0,
+        diasTranscurridos: 0,
+        diasRestantes: 0,
+        costoPorHa: F?.costoPorHa || 0,
+      }} />
+
       {/* ── Panel de Alertas ── */}
       <PanelAlertas alertas={alertas} onNavigate={onNavigate} />
 

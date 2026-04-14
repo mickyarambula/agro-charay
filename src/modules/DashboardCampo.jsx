@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
+import AIInsight from '../components/AIInsight.jsx';
 
 
 export default function DashboardCampo({ userRol, usuario, onNavigate }) {
@@ -179,38 +180,82 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
   return (
     <div>
       {/* ═══ HEADER — saludo ═══ */}
-      <div style={{
-        marginBottom:18,
-        padding:"22px 22px 20px",
-        background:"linear-gradient(135deg,#2d5a1b 0%,#4a8c2a 60%,#6ba83a 100%)",
-        borderRadius:14,
-        color:"white",
-        boxShadow:"0 4px 16px rgba(45,90,27,0.25)",
-        position:"relative",
-        overflow:"hidden"
-      }}>
-        <div style={{position:"absolute",right:-20,top:-20,fontSize:120,opacity:0.08}}>🌾</div>
-        <div style={{position:"relative"}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,lineHeight:1.2}}>
-            {saludo}, {nombrePila} 👋
+      {isMobile ? (
+        <div style={{
+          marginBottom:16,
+          padding:16,
+          background:"#1a3a0f",
+          borderRadius:12,
+          display:"flex",
+          alignItems:"center",
+          justifyContent:"space-between",
+          gap:12,
+        }}>
+          <div style={{minWidth:0,flex:1}}>
+            <div style={{color:"#ffffff",fontSize:20,fontWeight:500,lineHeight:1.2}}>
+              {saludo}, {nombrePila} 👋
+            </div>
+            <div style={{color:"#7ab87a",fontSize:11,marginTop:4,textTransform:"capitalize"}}>
+              {new Date().toLocaleDateString("es-MX",{weekday:"long",day:"2-digit",month:"long"})} · Día {diaDelCiclo} del ciclo
+            </div>
           </div>
-          <div style={{fontSize:13,opacity:0.92,marginTop:6,textTransform:"capitalize"}}>
-            {new Date().toLocaleDateString("es-MX",{weekday:"long",day:"2-digit",month:"long"})}
-          </div>
-          <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
-            <span style={{padding:"4px 12px",borderRadius:12,background:"rgba(255,255,255,0.2)",
-              fontSize:11,fontWeight:700,letterSpacing:0.3}}>
-              📅 Día {diaDelCiclo} del ciclo
+          {cicloPred?.nombre && (
+            <span style={{
+              padding:"6px 12px",
+              borderRadius:999,
+              background:"#2d5a1b",
+              color:"#e8f5e2",
+              fontSize:10,
+              fontWeight:500,
+              letterSpacing:0.5,
+              whiteSpace:"nowrap",
+              border:"0.5px solid #7ab87a33",
+            }}>
+              🌾 {cicloPred.nombre}
             </span>
-            {cicloPred?.nombre && (
-              <span style={{padding:"4px 12px",borderRadius:12,background:"rgba(255,255,255,0.12)",
-                fontSize:11,fontWeight:600,letterSpacing:0.3}}>
-                🌾 {cicloPred.nombre}
+          )}
+        </div>
+      ) : (
+        <div style={{
+          marginBottom:18,
+          padding:"22px 22px 20px",
+          background:"linear-gradient(135deg,#2d5a1b 0%,#4a8c2a 60%,#6ba83a 100%)",
+          borderRadius:14,
+          color:"white",
+          boxShadow:"0 4px 16px rgba(45,90,27,0.25)",
+          position:"relative",
+          overflow:"hidden"
+        }}>
+          <div style={{position:"absolute",right:-20,top:-20,fontSize:120,opacity:0.08}}>🌾</div>
+          <div style={{position:"relative"}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,lineHeight:1.2}}>
+              {saludo}, {nombrePila} 👋
+            </div>
+            <div style={{fontSize:13,opacity:0.92,marginTop:6,textTransform:"capitalize"}}>
+              {new Date().toLocaleDateString("es-MX",{weekday:"long",day:"2-digit",month:"long"})}
+            </div>
+            <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
+              <span style={{padding:"4px 12px",borderRadius:12,background:"rgba(255,255,255,0.2)",
+                fontSize:11,fontWeight:700,letterSpacing:0.3}}>
+                📅 Día {diaDelCiclo} del ciclo
               </span>
-            )}
+              {cicloPred?.nombre && (
+                <span style={{padding:"4px 12px",borderRadius:12,background:"rgba(255,255,255,0.12)",
+                  fontSize:11,fontWeight:600,letterSpacing:0.3}}>
+                  🌾 {cicloPred.nombre}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      <AIInsight modulo="Campo" contexto={{
+        ordenesHoy: (state.ordenesTrabajo || []).filter(o => o.fecha === hoy).length,
+        trabajosHoy: bitHoy?.length || 0,
+        dieselHoy: diesHoy?.length || 0,
+        lotesActivos: state.lotes?.filter(l => l.activo !== false)?.length || 0,
+      }} />
 
       {/* ═══ ÓRDENES DEL DÍA (HOY) ═══ */}
       {(() => {

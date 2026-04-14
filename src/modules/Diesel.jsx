@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
+import AIInsight from '../components/AIInsight.jsx';
 
 
 export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
@@ -204,6 +205,10 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   // ─────────────────────────────────────────────────────────────────────────────
   if (vista==="resumen") return (
     <div>
+      <AIInsight modulo="Diesel" contexto={{
+        totalRegistros: state.diesel?.length || 0,
+        totalLitros: (state.diesel||[]).reduce((s,d) => s + (parseFloat(d.cantidad)||0), 0),
+      }} />
       <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:20}}>
         <div className="stat-card gold">
           <div className="stat-icon">⛽</div>
