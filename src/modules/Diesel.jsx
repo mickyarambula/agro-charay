@@ -44,6 +44,7 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   const [formRecepDie, setFormRecepDie]       = useState(emptyRecepDie);
   const [filtroCancelados, setFiltroCancelados] = useState("activos");
   const [filtroProd,       setFiltroProd]       = useState(navFiltro.productor || "todos");
+  const [filtroTipoMov,    setFiltroTipoMov]    = useState("todos");
   const [filtroActividad,  setFiltroActividad]  = useState("");
   const [importLog, setImportLog]             = useState([]);
   const [importando, setImportando]           = useState(false);
@@ -120,6 +121,7 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   // ── Filtrado tabla ────────────────────────────────────────────────────────────
   const dieselFiltrado = diesel
     .filter(d => filtroCancelados==="todos" ? true : filtroCancelados==="cancelados" ? d.cancelado : !d.cancelado)
+    .filter(d => filtroTipoMov==="todos" || tipoMov(d)===filtroTipoMov)
     .filter(d => filtroProd==="todos" || String(d.productorId)===String(filtroProd))
     .filter(d => !filtroActividad || (d.unidad||"").toLowerCase().includes(filtroActividad.toLowerCase()) || (d.concepto||"").toLowerCase().includes(filtroActividad.toLowerCase()) || (d.numSolicitud||"").includes(filtroActividad));
 
@@ -128,6 +130,17 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
     const importe  = parseFloat(form.importe)||0;
     const cantidad = parseFloat(form.cantidad)||0;
     const esSalidaInterna = form.tipoMovimiento === 'salida_interna';
+    // Validar saldo antes de salida interna
+    if (esSalidaInterna) {
+      if (saldoCilindro <= 0) {
+        alert('El cilindro está vacío. Contacta a compras para reabastecer.');
+        return;
+      }
+      if (cantidad > saldoCilindro) {
+        alert(`No hay suficiente diesel en el cilindro. Saldo actual: ${saldoCilindro.toLocaleString('es-MX')} L`);
+        return;
+      }
+    }
     // Salida interna (cilindro → tractor): no requiere importe
     if (!esSalidaInterna && !importe) return;
     if (!form.fechaSolicitud) return;
@@ -221,14 +234,114 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // VISTA RESUMEN
+  // Totales por tipo (para vista simplificada y card del cilindro)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const salidasExternas = dieselActivo.filter(d => tipoMov(d) === 'salida_externa').reduce((s,d)=>s+(parseFloat(d.cantidad)||0),0);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // VISTA ENCARGADO — simplificada, solo cilindro + sus cargas
+  // ─────────────────────────────────────────────────────────────────────────────
+  if (vista==="resumen" && userRol === 'encargado') {
+    const misSalidas = [...dieselActivo]
+      .filter(d => tipoMov(d) === 'salida_interna')
+      .sort((a,b)=>String(b.fechaSolicitud||'').localeCompare(String(a.fechaSolicitud||'')))
+      .slice(0,10);
+    const nomMaq = id => (state.maquinaria||[]).find(m=>String(m.id)===String(id))?.nombre || '—';
+    return (
+      <div>
+        <AIInsight modulo="Diesel" contexto={{
+          saldoCilindro, entradas, salidasInternas,
+        }} />
+
+        {/* Card grande del cilindro */}
+        <div style={{
+          background:'#ffffff',
+          border:'1px solid #e5e7eb',
+          borderLeft:`6px solid ${saldoColor}`,
+          borderRadius:14,
+          padding:'20px 20px 18px',
+          marginBottom:16,
+          boxShadow:'0 2px 8px rgba(0,0,0,0.08)',
+        }}>
+          <div style={{fontSize:11,fontWeight:700,color:'#6b7280',letterSpacing:0.8,textTransform:'uppercase',marginBottom:6}}>🛢 Cilindro diesel</div>
+          <div style={{fontSize:36,fontWeight:700,color:saldoColor,lineHeight:1}}>
+            {saldoCilindro.toLocaleString('es-MX',{maximumFractionDigits:0})}
+            <span style={{fontSize:15,fontWeight:500,color:'#6b7280',marginLeft:8}}>/ {CILINDRO_CAPACIDAD.toLocaleString('es-MX')} L</span>
+          </div>
+          <div style={{height:14,borderRadius:8,background:'#e5e7eb',overflow:'hidden',marginTop:14}}>
+            <div style={{height:'100%',width:`${nivelPct}%`,background:saldoColor,transition:'width 300ms ease'}} />
+          </div>
+          {saldoCilindro < 200 && (
+            <div style={{marginTop:10,fontSize:12,color:'#991b1b',fontWeight:600}}>⚠ Cilindro casi vacío. Contacta a compras para reabastecer.</div>
+          )}
+          {saldoCilindro >= 200 && saldoCilindro <= 1000 && (
+            <div style={{marginTop:10,fontSize:12,color:'#92400e',fontWeight:600}}>⚠ Saldo bajo. Considera avisar a compras.</div>
+          )}
+        </div>
+
+        {/* Botón principal */}
+        <button
+          onClick={()=>{setForm({...emptyForm,tipoMovimiento:'salida_interna'});setVista("nuevo");}}
+          disabled={saldoCilindro<=0}
+          style={{
+            width:'100%',
+            minHeight:56,
+            borderRadius:12,
+            border:'none',
+            background: saldoCilindro>0 ? '#e67e22' : '#9ca3af',
+            color:'#ffffff',
+            fontSize:17,
+            fontWeight:700,
+            cursor: saldoCilindro>0 ? 'pointer' : 'not-allowed',
+            boxShadow: saldoCilindro>0 ? '0 3px 12px rgba(230,126,34,0.28)' : 'none',
+            marginBottom:20,
+            touchAction:'manipulation',
+          }}
+        >
+          ＋ Carga de Tractor
+        </button>
+
+        {/* Historial simple */}
+        <div style={{marginBottom:8,fontSize:11,fontWeight:700,color:'#8a8070',letterSpacing:1,textTransform:'uppercase'}}>
+          Últimas cargas
+        </div>
+        {misSalidas.length === 0 ? (
+          <div style={{textAlign:'center',padding:32,color:'#8a8070',fontSize:13,background:'#ffffff',borderRadius:12,border:'1px dashed #e5e7eb'}}>
+            Sin cargas registradas
+          </div>
+        ) : (
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {misSalidas.map(d => (
+              <div key={d.id} style={{
+                background:'#ffffff',
+                border:'1px solid #e5e7eb',
+                borderLeft:'4px solid #e67e22',
+                borderRadius:10,
+                padding:'12px 14px',
+              }}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                  <div style={{fontSize:14,fontWeight:700,color:'#14532D'}}>{d.fechaSolicitud||'—'}</div>
+                  <div style={{fontSize:15,fontWeight:700,color:'#e67e22'}}>{parseFloat(d.cantidad||0).toLocaleString('es-MX')} L</div>
+                </div>
+                <div style={{fontSize:12,color:'#6b7280'}}>🚜 {nomMaq(d.maquinariaId)}</div>
+                {d.notas && <div style={{fontSize:11,color:'#6b7280',marginTop:3,fontStyle:'italic'}}>{d.notas}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // VISTA RESUMEN (admin / compras)
   // ─────────────────────────────────────────────────────────────────────────────
   if (vista==="resumen") return (
     <div>
       <AIInsight modulo="Diesel" contexto={{
         totalRegistros: state.diesel?.length || 0,
         totalLitros: (state.diesel||[]).reduce((s,d) => s + (parseFloat(d.cantidad)||0), 0),
-        saldoCilindro,
+        saldoCilindro, entradas, salidasInternas, salidasExternas,
       }} />
 
       {/* ── Cilindro 5,000L ── */}
@@ -282,9 +395,20 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
             transition:'width 300ms ease',
           }} />
         </div>
-        <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#8a8070',marginTop:4}}>
-          <span>Entradas: {entradas.toLocaleString('es-MX',{maximumFractionDigits:0})} L</span>
-          <span>Salidas internas: {salidasInternas.toLocaleString('es-MX',{maximumFractionDigits:0})} L</span>
+        {/* 3 totales por tipo */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginTop:12}}>
+          <div style={{textAlign:'center',padding:'6px 4px',background:'#dcfce7',borderRadius:8,border:'1px solid #15803D22'}}>
+            <div style={{fontSize:9,fontWeight:700,color:'#15803D',letterSpacing:0.3,textTransform:'uppercase'}}>📥 Entradas</div>
+            <div style={{fontSize:14,fontWeight:700,color:'#15803D',marginTop:2,fontFamily:'monospace'}}>{entradas.toLocaleString('es-MX',{maximumFractionDigits:0})} L</div>
+          </div>
+          <div style={{textAlign:'center',padding:'6px 4px',background:'#fef5ed',borderRadius:8,border:'1px solid #e67e2222'}}>
+            <div style={{fontSize:9,fontWeight:700,color:'#e67e22',letterSpacing:0.3,textTransform:'uppercase'}}>🛢 Salidas cil.</div>
+            <div style={{fontSize:14,fontWeight:700,color:'#e67e22',marginTop:2,fontFamily:'monospace'}}>{salidasInternas.toLocaleString('es-MX',{maximumFractionDigits:0})} L</div>
+          </div>
+          <div style={{textAlign:'center',padding:'6px 4px',background:'#fee2e2',borderRadius:8,border:'1px solid #ef444422'}}>
+            <div style={{fontSize:9,fontWeight:700,color:'#991b1b',letterSpacing:0.3,textTransform:'uppercase'}}>🏪 Gasolinera</div>
+            <div style={{fontSize:14,fontWeight:700,color:'#991b1b',marginTop:2,fontFamily:'monospace'}}>{salidasExternas.toLocaleString('es-MX',{maximumFractionDigits:0})} L</div>
+          </div>
         </div>
       </div>
 
@@ -403,6 +527,35 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
         const totalImp = dieselFiltrado.reduce((s,d)=>s+(parseFloat(d.importe)||0),0);
         const activeF  = [filtroProd!=="todos",filtroCancelados!=="activos",!!filtroActividad].filter(Boolean).length;
         return (
+          {/* Pills: filtro por tipo de movimiento */}
+          <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
+            {[
+              {id:"todos", label:"Todos", bg:"#f3f4f6", fg:"#374151"},
+              {id:"entrada", label:"📥 Entradas", bg:"#dcfce7", fg:"#15803D"},
+              {id:"salida_interna", label:"🛢 Salidas cilindro", bg:"#fef5ed", fg:"#e67e22"},
+              {id:"salida_externa", label:"🏪 Gasolinera", bg:"#fee2e2", fg:"#991b1b"},
+            ].map(opt => {
+              const sel = filtroTipoMov === opt.id;
+              return (
+                <button key={opt.id}
+                  onClick={()=>setFiltroTipoMov(opt.id)}
+                  style={{
+                    padding: isMobile ? "10px 14px" : "6px 12px",
+                    minHeight: isMobile ? 44 : undefined,
+                    borderRadius: 999,
+                    border: `1.5px solid ${sel ? opt.fg : "#d1d5db"}`,
+                    background: sel ? opt.bg : "#ffffff",
+                    color: sel ? opt.fg : "#6b7280",
+                    fontSize: 12,
+                    fontWeight: sel ? 700 : 500,
+                    cursor: "pointer",
+                    touchAction: "manipulation",
+                  }}>
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
           <div style={{marginBottom:12}}>
             <div style={{
               display: isMobile ? "grid" : "flex",
@@ -500,10 +653,10 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
       ) : (
       <div className="card">
         <div className="table-wrap-scroll">
-          <table style={{minWidth:900}}>
+          <table style={{minWidth:960}}>
             <thead><tr>
               <th>Solicitud</th><th>Orden</th><th>Fecha Sol.</th>
-              <th>Productor</th><th>Tipo</th>
+              <th>Productor</th><th>Movimiento</th><th>Tipo</th>
               <th style={{textAlign:"right"}}>Cantidad</th><th>Unidad</th>
               <th>IEPS</th>
               {verPrecios && <th style={{textAlign:"right"}}>Importe</th>}
@@ -521,6 +674,15 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
                     <td style={{background:bg,fontFamily:"monospace",fontSize:12}}>{d.numOrden||"—"}</td>
                     <td style={{background:bg,fontSize:11}}>{d.fechaSolicitud||"—"}</td>
                     <td style={{background:bg,fontWeight:600,fontSize:12}}>{nomProd(d.productorId)}</td>
+                    <td style={{background:bg}}>
+                      {(() => {
+                        const tm = tipoMov(d);
+                        const cfg = tm==='entrada' ? {bg:'#dcfce7',fg:'#15803D',lbl:'📥 Entrada'}
+                                  : tm==='salida_externa' ? {bg:'#fee2e2',fg:'#991b1b',lbl:'🏪 Gasolinera'}
+                                  : {bg:'#fef5ed',fg:'#e67e22',lbl:'🛢 Cilindro'};
+                        return <span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:10,background:cfg.bg,color:cfg.fg}}>{cfg.lbl}</span>;
+                      })()}
+                    </td>
                     <td style={{background:bg}}>
                       {d.esAjuste
                         ? <span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:10,background:"#fff3cd",color:"#856404"}}>🔧 Ajuste</span>
