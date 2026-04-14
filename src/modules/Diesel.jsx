@@ -79,6 +79,7 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
     productorId:"", proveedor:"AUTO SERVICIO LA PIEDRERA SA DE C V",
     insumo:"TARJETA DIESEL", cantidad:"", unidad:"LT",
     ieps:"SIN IEPS", importe:"", esAjuste: false, notas:"",
+    tipoMovimiento:"entrada",
   };
   const [form, setForm] = useState(emptyForm);
 
@@ -99,6 +100,20 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   const totalImporte    = (dieselActivo||[]).reduce((s,d)=>s+(parseFloat(d.importe)||0),0);
   const totalAjustes    = dieselActivo.filter(d=>d.esAjuste).reduce((s,d)=>s+(parseFloat(d.importe)||0),0);
   const precioPromedio  = totalLitros>0 ? totalImporte/totalLitros : 0;
+
+  // ── Inventario del cilindro (5,000L) ──
+  // TODO Supabase: campo tipo_movimiento agregado vía migration (2026-04-14).
+  // Registros viejos sin tipo_movimiento: fallback usando esAjuste (true → entrada, false → salida_interna)
+  const CILINDRO_CAPACIDAD = 5000;
+  const tipoMov = (d) => d.tipoMovimiento || d.tipo_movimiento || (d.esAjuste ? 'entrada' : 'salida_interna');
+  const entradas = dieselActivo.filter(d => tipoMov(d) === 'entrada').reduce((s,d)=>s+(parseFloat(d.cantidad)||0),0);
+  const salidasInternas = dieselActivo.filter(d => tipoMov(d) === 'salida_interna').reduce((s,d)=>s+(parseFloat(d.cantidad)||0),0);
+  const saldoCilindro = Math.max(0, entradas - salidasInternas);
+  const nivelPct = Math.min(100, (saldoCilindro / CILINDRO_CAPACIDAD) * 100);
+  const saldoColor = saldoCilindro > 1000 ? '#15803D' : saldoCilindro >= 200 ? '#f59e0b' : '#ef4444';
+  const ultimaCarga = [...dieselActivo]
+    .filter(d => tipoMov(d) === 'entrada')
+    .sort((a,b) => String(b.fechaSolicitud||'').localeCompare(String(a.fechaSolicitud||'')))[0];
   const hasCiclo        = (state.ciclos||[]).find(c=>c.id===state.cicloActivoId)||(state.ciclos||[]).find(c=>c.id===state.cicloActivoId)||(state.ciclos||[]).find(c=>c.predeterminado);
   const hasTotales      = (hasCiclo?.asignaciones||[]).reduce((s,a)=>s+(parseFloat(a.supAsignada)||0),0);
 
@@ -112,12 +127,16 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   const guardarRegistro = () => {
     const importe  = parseFloat(form.importe)||0;
     const cantidad = parseFloat(form.cantidad)||0;
-    if (!importe || !form.fechaSolicitud) return;
+    const esSalidaInterna = form.tipoMovimiento === 'salida_interna';
+    // Salida interna (cilindro → tractor): no requiere importe
+    if (!esSalidaInterna && !importe) return;
+    if (!form.fechaSolicitud) return;
     dispatch({ type:"ADD_DIESEL", payload:{
       ...form, id: Date.now(),
-      cantidad, importe,
+      cantidad, importe: esSalidaInterna ? 0 : importe,
       productorId: form.productorId ? parseInt(form.productorId)||form.productorId : null,
-      esAjuste: form.esAjuste || cantidad===0,
+      esAjuste: form.esAjuste || (!esSalidaInterna && cantidad===0),
+      tipoMovimiento: form.tipoMovimiento || 'entrada',
     }});
     setForm(emptyForm);
     setVista("tabla");
@@ -209,7 +228,66 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
       <AIInsight modulo="Diesel" contexto={{
         totalRegistros: state.diesel?.length || 0,
         totalLitros: (state.diesel||[]).reduce((s,d) => s + (parseFloat(d.cantidad)||0), 0),
+        saldoCilindro,
       }} />
+
+      {/* ── Cilindro 5,000L ── */}
+      <div style={{
+        background:'#ffffff',
+        border:'1px solid #e5e7eb',
+        borderLeft:`4px solid ${saldoColor}`,
+        borderRadius:12,
+        padding:'14px 16px',
+        marginBottom:16,
+        boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
+      }}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap',marginBottom:10}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:'#6b7280',letterSpacing:0.6,textTransform:'uppercase'}}>🛢 Cilindro diesel</div>
+            <div style={{fontSize:24,fontWeight:700,color:saldoColor,marginTop:2}}>
+              {saldoCilindro.toLocaleString('es-MX',{maximumFractionDigits:0})} <span style={{fontSize:13,fontWeight:500,color:'#6b7280'}}>/ {CILINDRO_CAPACIDAD.toLocaleString('es-MX')} L</span>
+            </div>
+            {ultimaCarga && (
+              <div style={{fontSize:11,color:'#6b7280',marginTop:2}}>
+                Última carga: {ultimaCarga.fechaSolicitud} · {parseFloat(ultimaCarga.cantidad||0).toLocaleString('es-MX')} L
+              </div>
+            )}
+          </div>
+          {(userRol === 'admin' || userRol === 'encargado') && (
+            <button
+              onClick={()=>{setForm({...emptyForm,tipoMovimiento:'salida_interna'});setVista("nuevo");}}
+              style={{
+                minHeight:48,
+                padding:'0 16px',
+                borderRadius:10,
+                border:'none',
+                background:'#e67e22',
+                color:'#ffffff',
+                fontSize:14,
+                fontWeight:700,
+                cursor:'pointer',
+                touchAction:'manipulation',
+              }}
+            >
+              ＋ Carga de tractor
+            </button>
+          )}
+        </div>
+        {/* Barra de nivel */}
+        <div style={{height:10,borderRadius:6,background:'#e5e7eb',overflow:'hidden'}}>
+          <div style={{
+            height:'100%',
+            width:`${nivelPct}%`,
+            background:saldoColor,
+            transition:'width 300ms ease',
+          }} />
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#8a8070',marginTop:4}}>
+          <span>Entradas: {entradas.toLocaleString('es-MX',{maximumFractionDigits:0})} L</span>
+          <span>Salidas internas: {salidasInternas.toLocaleString('es-MX',{maximumFractionDigits:0})} L</span>
+        </div>
+      </div>
+
       <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : (verPrecios ? "repeat(4,1fr)" : "1fr"),marginBottom:20}}>
         <div className="stat-card gold">
           <div className="stat-icon">⛽</div>
@@ -374,11 +452,16 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
         <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
           {dieselFiltrado.sort((a,b)=>String(b.fechaSolicitud).localeCompare(String(a.fechaSolicitud))).map(d=>{
             const opaco = d.cancelado?{opacity:0.55}:{};
+            const tmov = tipoMov(d);
+            const borderCol = tmov === 'entrada' ? '#15803D' : tmov === 'salida_externa' ? '#ef4444' : '#e67e22';
+            const tipoLabel = tmov === 'entrada' ? '📥 Entrada' : tmov === 'salida_externa' ? '🏪 Salida externa' : '🛢 Salida cilindro';
+            const tipoBg = tmov === 'entrada' ? '#dcfce7' : tmov === 'salida_externa' ? '#fee2e2' : '#fef5ed';
+            const tipoColor = tmov === 'entrada' ? '#15803D' : tmov === 'salida_externa' ? '#991b1b' : '#e67e22';
             return (
               <div key={d.id} style={{
                 background:"#ffffff",
                 border:"1px solid #e5e7eb",
-                borderLeft:`4px solid ${d.esAjuste?"#f59e0b":"#e67e22"}`,
+                borderLeft:`4px solid ${borderCol}`,
                 borderRadius:12,
                 padding:14,
                 boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
@@ -387,9 +470,8 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,marginBottom:8}}>
                   <div style={{fontSize:18,fontWeight:700,color:"#14532D"}}>{d.fechaSolicitud||"—"}</div>
                   <span style={{fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:999,
-                    background:d.esAjuste?"#fff3cd":"#fef5ed",
-                    color:d.esAjuste?"#856404":"#e67e22"}}>
-                    {d.esAjuste?"🔧 Ajuste":"⛽ Carga"}
+                    background:tipoBg,color:tipoColor}}>
+                    {tipoLabel}
                   </span>
                 </div>
                 <div style={{fontSize:14,color:"#374151",marginBottom:4}}>
