@@ -159,7 +159,10 @@ export function enviarWhatsApp(orden, operador, lote, maquina) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function OrdenDia({ userRol, usuario }) {
   const { state, dispatch } = useData();
-  const hoy = new Date().toISOString().split("T")[0];
+  const hoy = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  })();
 
   const operadores  = (state.operadores || []).filter(o => o.activo !== false);
   const lotes       = state.lotes      || [];
