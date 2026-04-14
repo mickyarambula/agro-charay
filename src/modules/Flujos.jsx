@@ -23,10 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function FlujoModule({ userRol, usuario }) {
   const { state, dispatch } = useData();
+  const isMobile = useIsMobile();
   const hoy = new Date().toISOString().split("T")[0];
   const mxnFmt = n => (parseFloat(n)||0).toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2});
 
@@ -404,7 +406,7 @@ export default function FlujoModule({ userRol, usuario }) {
           ))}
         </div>
       ) : (
-        <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:16}}>
+        <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:16}}>
           {[
             {label:"Pendientes aprobación", val:totalPend,        color:"#e67e22", icon:"⏳"},
             {label:"Compras aprobadas",     val:solCompras.filter(s=>s.estatus==="aprobado").length, color:"#2d5a1b", icon:"✅"},

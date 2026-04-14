@@ -23,10 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFiltro = {} }) {
   const { state, dispatch } = useData();
+  const isMobile = useIsMobile();
   const nav = (page, pid, filtros) => onNavigate && onNavigate(page, pid, filtros);
   const [vista, setVista]         = useState(navFiltro.vista || "consolidado");
   const [prodSel, setProdSel]     = useState(navFiltro.prodId || null);

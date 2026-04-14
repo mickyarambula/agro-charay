@@ -23,10 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function EgresosModule({ userRol, puedeEditar, onNavigate, navFiltro = {} }) {
   const { state, dispatch } = useData();
+  const isMobile = useIsMobile();
   // totalMO: cálculo directo del monto para mano de obra (bug preexistente, stub).
   const totalMO = 0;
   const nav = (page, pid, filtros) => onNavigate && onNavigate(page, pid, filtros);
@@ -474,7 +476,7 @@ const fileEgresosRef    = useRef(null);
           </div>
         );
       })()}
-      <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:20}}>
+      <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:20}}>
         <div className="stat-card rust" style={{cursor:"pointer"}} onClick={()=>setVista("gastos")} title="Ver todos los gastos">
           <div className="stat-icon">💸</div>
           <div className="stat-label">Total Gastado del Ciclo</div>
@@ -669,13 +671,19 @@ const fileEgresosRef    = useRef(null);
         <button className="btn btn-primary" onClick={()=>setVista("nueva_disp")}>＋ Nueva Dispersión</button>
       </div>
       {/* Filtros */}
-      <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
-        <select className="form-select" style={{width:180}} value={filtroLinea} onChange={e=>setFiltroLinea(e.target.value)}>
+      <div style={{
+        display: isMobile ? "grid" : "flex",
+        gridTemplateColumns: isMobile ? "1fr" : undefined,
+        gap: isMobile ? 10 : 8,
+        marginBottom:12,
+        flexWrap:"wrap"
+      }}>
+        <select className="form-select" style={{width: isMobile ? "100%" : 180, minHeight: isMobile ? 48 : undefined, fontSize: isMobile ? 16 : undefined}} value={filtroLinea} onChange={e=>setFiltroLinea(e.target.value)}>
           <option value="todas">Todas las líneas</option>
           <option value="parafinanciero">Crédito Parafinanciero</option>
           <option value="directo">Crédito Directo</option>
         </select>
-        <select className="form-select" style={{width:180}} value={filtroProd} onChange={e=>setFiltroProd(e.target.value)}>
+        <select className="form-select" style={{width: isMobile ? "100%" : 180, minHeight: isMobile ? 48 : undefined, fontSize: isMobile ? 16 : undefined}} value={filtroProd} onChange={e=>setFiltroProd(e.target.value)}>
           <option value="todos">Todos los productores</option>
           {productores.map(p=><option key={p.id} value={p.id}>{p.alias||p.apPat}</option>)}
         </select>
@@ -1370,7 +1378,7 @@ const fileEgresosRef    = useRef(null);
           </div>
         </div>
         {/* Stats */}
-        <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:16}}>
+        <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:16}}>
           <div className="stat-card sky"><div className="stat-icon">🌾</div><div className="stat-label">Hectáreas</div><div className="stat-value" style={{fontSize:18}}>{fmt2(ha)} ha</div><div className="stat-sub">Ciclo activo</div></div>
           <div className="stat-card green">
             <div className="stat-icon">🏦</div>
