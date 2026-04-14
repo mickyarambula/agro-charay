@@ -492,10 +492,6 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
     return (
     <>
       <div className="form-group">
-        <label className="form-label">Fecha *</label>
-        <input className="form-input" type="date" value={form.fecha} onChange={e=>setForm(f=>({...f,fecha:e.target.value}))}/>
-      </div>
-      <div className="form-group">
         <label className="form-label">Lotes {required&&"*"} <span style={{fontSize:10,color:"#8a8070",fontWeight:400}}>(selecciona uno o varios)</span></label>
         {(()=>{
           const [busqLote, setBusqLote] = React.useState("");
@@ -576,15 +572,20 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
           </div>
         )}
       </div>
-      {/* Maquinaria y horas */}
+      {/* Maquinaria */}
+      <div className="form-group">
+        <label className="form-label">🚜 Maquinaria usada</label>
+        <select className="form-select" value={form.maquinariaId||""}
+          onChange={e=>setForm(f=>({...f,maquinariaId:e.target.value,tractorId:e.target.value}))}>
+          <option value="">— Ninguna / No aplica —</option>
+          {maquinaria.map(m=><option key={m.id} value={m.id}>🚜 {m.nombre} ({m.tipo})</option>)}
+        </select>
+      </div>
+      {/* Fecha y horas */}
       <div className="form-row">
         <div className="form-group">
-          <label className="form-label">🚜 Maquinaria usada</label>
-          <select className="form-select" value={form.maquinariaId||""}
-            onChange={e=>setForm(f=>({...f,maquinariaId:e.target.value,tractorId:e.target.value}))}>
-            <option value="">— Ninguna / No aplica —</option>
-            {maquinaria.map(m=><option key={m.id} value={m.id}>🚜 {m.nombre} ({m.tipo})</option>)}
-          </select>
+          <label className="form-label">Fecha *</label>
+          <input className="form-input" type="date" value={form.fecha} onChange={e=>setForm(f=>({...f,fecha:e.target.value}))}/>
         </div>
         <div className="form-group">
           <label className="form-label">⏱ Horas de uso
