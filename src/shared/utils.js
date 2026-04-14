@@ -399,13 +399,20 @@ export const css = `
     /* Grids de 2 y 3 columnas colapsan a 1 */
     .grid-2, .grid-3 { grid-template-columns: 1fr !important; gap: 14px; }
 
+    /* Excepciones: contenedores que deben mantener su grid en móvil */
+    .bitacora-tipos {
+      grid-template-columns: 1fr 1fr !important;
+      width: 100% !important;
+      display: grid !important;
+    }
+
     /* Colapsa también los grids inline style={{display:"grid",gridTemplateColumns:"..."}} */
-    [style*="grid-template-columns: 1fr 1fr"],
-    [style*="grid-template-columns: 1fr 1fr 1fr"],
-    [style*="grid-template-columns:repeat(2"],
-    [style*="grid-template-columns: repeat(2"],
-    [style*="grid-template-columns:repeat(3"],
-    [style*="grid-template-columns: repeat(3"] {
+    [style*="grid-template-columns: 1fr 1fr"]:not(.bitacora-tipos),
+    [style*="grid-template-columns: 1fr 1fr 1fr"]:not(.bitacora-tipos),
+    [style*="grid-template-columns:repeat(2"]:not(.bitacora-tipos),
+    [style*="grid-template-columns: repeat(2"]:not(.bitacora-tipos),
+    [style*="grid-template-columns:repeat(3"]:not(.bitacora-tipos),
+    [style*="grid-template-columns: repeat(3"]:not(.bitacora-tipos) {
       grid-template-columns: 1fr !important;
     }
 
