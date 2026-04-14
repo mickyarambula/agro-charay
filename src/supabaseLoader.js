@@ -115,7 +115,9 @@ export async function loadStateFromSupabase() {
       id: r.legacy_id, productorId: resolveProductorId(r, productoresRows),
       fecha: r.fecha||'', proveedor: r.proveedor||'',
       litros: r.litros_recibidos||0, precioLitro: r.precio_litro||0,
-      importe: r.importe||0, concepto: r.concepto||'', _uuid: r.id,
+      importe: r.importe||0, concepto: r.concepto||'',
+      tipoMovimiento: r.tipo_movimiento || null,
+      _uuid: r.id,
     }));
 
     const operadores = operadoresRows.map(r => ({

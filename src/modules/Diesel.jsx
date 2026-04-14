@@ -328,7 +328,8 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
         marginBottom:20,
         flexWrap:"wrap"
       }}>
-        {puedeRegistrar && <button className="btn btn-primary"   onClick={()=>setVista("nuevo")} style={isMobile?{minHeight:48,width:"100%"}:undefined}>＋ Registrar Carga</button>}
+        {puedeRegistrar && <button className="btn btn-primary"   onClick={()=>{setForm({...emptyForm,tipoMovimiento:'entrada'});setVista("nuevo");}} style={isMobile?{minHeight:48,width:"100%"}:undefined}>📥 Compra de diesel</button>}
+        {puedeRegistrar && <button className="btn btn-secondary" onClick={()=>{setForm({...emptyForm,tipoMovimiento:'salida_externa'});setVista("nuevo");}} style={isMobile?{minHeight:48,width:"100%"}:undefined}>🏪 Gasolinera</button>}
         <button className="btn btn-secondary" onClick={()=>setVista("import")} style={isMobile?{minHeight:48,width:"100%"}:undefined}>📥 Importar Excel</button>
         <button className="btn btn-secondary" onClick={()=>setVista("tabla")} style={isMobile?{minHeight:48,width:"100%"}:undefined}>📋 Ver todos ({diesel.length})</button>
       </div>
@@ -608,109 +609,172 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   // ─────────────────────────────────────────────────────────────────────────────
   // VISTA NUEVO REGISTRO
   // ─────────────────────────────────────────────────────────────────────────────
-  if (vista==="nuevo") return (
+  if (vista==="nuevo") {
+    const tm = form.tipoMovimiento || 'entrada';
+    const tituloForm = tm === 'salida_interna' ? '⛽ Carga de Tractor del Cilindro'
+                    : tm === 'salida_externa' ? '🏪 Carga en Gasolinera'
+                    : '📥 Compra de Diesel';
+    const cant = parseFloat(form.cantidad) || 0;
+    const pxl  = parseFloat(form.precioLitro || form.ppl || 0) || 0;
+    // Calcular importe automático (entrada/externa)
+    const totalCalc = cant * pxl;
+    return (
     <div style={{maxWidth:660}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
-        <button className="btn btn-secondary" onClick={()=>setVista("tabla")}>← Volver</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>Registrar Diesel / Combustible</div>
+        <button className="btn btn-secondary" onClick={()=>setVista("resumen")}>← Volver</button>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>{tituloForm}</div>
       </div>
       <div className="card">
         <div className="card-body" style={{display:"flex",flexDirection:"column",gap:14}}>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label"># Solicitud</label>
-              <input className="form-input" value={form.numSolicitud} onChange={e=>setForm(f=>({...f,numSolicitud:e.target.value}))} placeholder="Ej. 6929"/>
-            </div>
-            <div className="form-group">
-              <label className="form-label"># Orden</label>
-              <input className="form-input" value={form.numOrden} onChange={e=>setForm(f=>({...f,numOrden:e.target.value}))} placeholder="Ej. 314"/>
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Fecha Solicitud</label>
-              <input className="form-input" type="date" value={form.fechaSolicitud} onChange={e=>setForm(f=>({...f,fechaSolicitud:e.target.value}))}/>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Fecha Orden</label>
-              <input className="form-input" type="date" value={form.fechaOrden} onChange={e=>setForm(f=>({...f,fechaOrden:e.target.value}))}/>
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Productor</label>
-            <select className="form-select" value={form.productorId} onChange={e=>setForm(f=>({...f,productorId:e.target.value}))}>
-              <option value="">— Seleccionar —</option>
-              {productores.map(p=><option key={p.id} value={p.id}>{p.alias||p.apPat}</option>)}
-            </select>
-          </div>
-          {/* Tipo de registro */}
-          <div className="form-group">
-            <label className="form-label">Tipo de registro</label>
-            <div style={{display:"flex",gap:10}}>
-              <div onClick={()=>setForm(f=>({...f,esAjuste:false}))}
-                style={{flex:1,padding:"10px 14px",borderRadius:8,cursor:"pointer",textAlign:"center",
-                  border:`2px solid ${!form.esAjuste?"#1a6ea8":"#ddd5c0"}`,
-                  background:!form.esAjuste?"#dbeafe":"white"}}>
-                <div style={{fontSize:18}}>⛽</div>
-                <div style={{fontSize:12,fontWeight:600,color:!form.esAjuste?"#1a6ea8":"#5a5040"}}>Carga de Diesel</div>
-              </div>
-              <div onClick={()=>setForm(f=>({...f,esAjuste:true,cantidad:"0"}))}
-                style={{flex:1,padding:"10px 14px",borderRadius:8,cursor:"pointer",textAlign:"center",
-                  border:`2px solid ${form.esAjuste?"#856404":"#ddd5c0"}`,
-                  background:form.esAjuste?"#fff3cd":"white"}}>
-                <div style={{fontSize:18}}>🔧</div>
-                <div style={{fontSize:12,fontWeight:600,color:form.esAjuste?"#856404":"#5a5040"}}>Ajuste de Precio</div>
-              </div>
-            </div>
-          </div>
-          <div className="form-row">
-            {!form.esAjuste&&(
+
+          {/* ═════ SALIDA INTERNA — Carga de tractor del cilindro ═════ */}
+          {tm === 'salida_interna' && (
+            <>
               <div className="form-group">
-                <label className="form-label">Cantidad (Litros) *</label>
+                <label className="form-label">Fecha *</label>
+                <input className="form-input" type="date" value={form.fechaSolicitud} onChange={e=>setForm(f=>({...f,fechaSolicitud:e.target.value,fechaOrden:e.target.value}))}/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">🚜 Equipo / Tractor *</label>
+                <select className="form-select" value={form.maquinariaId||""} onChange={e=>{
+                  const m = (state.maquinaria||[]).find(x=>String(x.id)===String(e.target.value));
+                  setForm(f=>({...f,maquinariaId:e.target.value,unidad: m?.nombre || "LT"}));
+                }}>
+                  <option value="">— Seleccionar equipo —</option>
+                  {(state.maquinaria||[]).map(m=>(
+                    <option key={m.id} value={m.id}>{m.nombre}{m.tipo?` (${m.tipo})`:""}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Litros cargados *</label>
                 <input className="form-input" type="number" value={form.cantidad}
                   onChange={e=>setForm(f=>({...f,cantidad:e.target.value}))} placeholder="0"/>
+                <div style={{fontSize:11,color:'#6b7280',marginTop:4}}>Saldo actual del cilindro: <strong style={{color:saldoColor}}>{saldoCilindro.toLocaleString('es-MX')} L</strong></div>
               </div>
-            )}
-            <div className="form-group">
-              <label className="form-label">Importe Total $ *</label>
-              <input className="form-input" type="number" value={form.importe}
-                onChange={e=>setForm(f=>({...f,importe:e.target.value}))} placeholder="0.00"/>
-            </div>
-          </div>
-          {!form.esAjuste&&parseFloat(form.cantidad)>0&&parseFloat(form.importe)>0&&(
-            <div style={{padding:"8px 12px",background:"#f0f8e8",borderRadius:6,fontSize:12,color:"#2d5a1b",fontFamily:"monospace"}}>
-              Precio por litro: ${(parseFloat(form.importe)/parseFloat(form.cantidad)).toFixed(4)}/L
-            </div>
+              <div className="form-group">
+                <label className="form-label">👷 Operador</label>
+                <select className="form-select" value={form.operadorId||""} onChange={e=>setForm(f=>({...f,operadorId:e.target.value}))}>
+                  <option value="">— Seleccionar —</option>
+                  {(state.operadores||[]).filter(o=>o.activo!==false).map(o=>(
+                    <option key={o.id} value={o.id}>{o.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Notas</label>
+                <input className="form-input" value={form.notas} onChange={e=>setForm(f=>({...f,notas:e.target.value}))} placeholder="Observaciones opcionales"/>
+              </div>
+            </>
           )}
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">IEPS</label>
-              <select className="form-select" value={form.ieps} onChange={e=>setForm(f=>({...f,ieps:e.target.value}))}>
-                <option value="SIN IEPS">SIN IEPS</option>
-                <option value="CON IEPS">CON IEPS</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Unidad</label>
-              <input className="form-input" value={form.unidad} onChange={e=>setForm(f=>({...f,unidad:e.target.value}))} placeholder="LT"/>
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Proveedor</label>
-            <input className="form-input" value={form.proveedor} onChange={e=>setForm(f=>({...f,proveedor:e.target.value}))}/>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Notas</label>
-            <input className="form-input" value={form.notas} onChange={e=>setForm(f=>({...f,notas:e.target.value}))} placeholder="Observaciones opcionales"/>
-          </div>
+
+          {/* ═════ ENTRADA — Compra que llena el cilindro ═════ */}
+          {tm === 'entrada' && (
+            <>
+              <div className="form-group">
+                <label className="form-label">Fecha *</label>
+                <input className="form-input" type="date" value={form.fechaSolicitud} onChange={e=>setForm(f=>({...f,fechaSolicitud:e.target.value,fechaOrden:e.target.value}))}/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Litros comprados *</label>
+                <input className="form-input" type="number" value={form.cantidad}
+                  onChange={e=>{
+                    const c = parseFloat(e.target.value)||0;
+                    const p = parseFloat(form.precioLitro)||0;
+                    setForm(f=>({...f,cantidad:e.target.value,importe: c&&p ? (c*p).toFixed(2) : f.importe}));
+                  }} placeholder="0"/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Proveedor *</label>
+                <input className="form-input" value={form.proveedor} onChange={e=>setForm(f=>({...f,proveedor:e.target.value}))}/>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Precio por litro $ *</label>
+                  <input className="form-input" type="number" value={form.precioLitro||""} onChange={e=>{
+                    const p = parseFloat(e.target.value)||0;
+                    const c = parseFloat(form.cantidad)||0;
+                    setForm(f=>({...f,precioLitro:e.target.value,importe: c&&p ? (c*p).toFixed(2) : f.importe}));
+                  }} placeholder="0.00"/>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Total $ (calculado)</label>
+                  <input className="form-input" type="number" value={form.importe}
+                    style={{fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}
+                    onChange={e=>setForm(f=>({...f,importe:e.target.value}))} placeholder="0.00"/>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Notas</label>
+                <input className="form-input" value={form.notas} onChange={e=>setForm(f=>({...f,notas:e.target.value}))} placeholder="# Factura, observaciones..."/>
+              </div>
+            </>
+          )}
+
+          {/* ═════ SALIDA EXTERNA — Gasolinera ═════ */}
+          {tm === 'salida_externa' && (
+            <>
+              <div className="form-group">
+                <label className="form-label">Fecha *</label>
+                <input className="form-input" type="date" value={form.fechaSolicitud} onChange={e=>setForm(f=>({...f,fechaSolicitud:e.target.value,fechaOrden:e.target.value}))}/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">🚜 Equipo / Vehículo *</label>
+                <select className="form-select" value={form.maquinariaId||""} onChange={e=>{
+                  const m = (state.maquinaria||[]).find(x=>String(x.id)===String(e.target.value));
+                  setForm(f=>({...f,maquinariaId:e.target.value,unidad: m?.nombre || "LT"}));
+                }}>
+                  <option value="">— Seleccionar (o escribir en notas) —</option>
+                  {(state.maquinaria||[]).map(m=>(
+                    <option key={m.id} value={m.id}>{m.nombre}{m.tipo?` (${m.tipo})`:""}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Litros cargados *</label>
+                <input className="form-input" type="number" value={form.cantidad}
+                  onChange={e=>{
+                    const c = parseFloat(e.target.value)||0;
+                    const p = parseFloat(form.precioLitro)||0;
+                    setForm(f=>({...f,cantidad:e.target.value,importe: c&&p ? (c*p).toFixed(2) : f.importe}));
+                  }} placeholder="0"/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Estación / Proveedor *</label>
+                <input className="form-input" value={form.proveedor} onChange={e=>setForm(f=>({...f,proveedor:e.target.value}))} placeholder="Ej. PEMEX, Gasolinera del Fuerte..."/>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Precio por litro $ *</label>
+                  <input className="form-input" type="number" value={form.precioLitro||""} onChange={e=>{
+                    const p = parseFloat(e.target.value)||0;
+                    const c = parseFloat(form.cantidad)||0;
+                    setForm(f=>({...f,precioLitro:e.target.value,importe: c&&p ? (c*p).toFixed(2) : f.importe}));
+                  }} placeholder="0.00"/>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Total $</label>
+                  <input className="form-input" type="number" value={form.importe}
+                    style={{fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}
+                    onChange={e=>setForm(f=>({...f,importe:e.target.value}))} placeholder="0.00"/>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Notas</label>
+                <input className="form-input" value={form.notas} onChange={e=>setForm(f=>({...f,notas:e.target.value}))} placeholder="# Ticket, observaciones..."/>
+              </div>
+            </>
+          )}
+
           <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-            <button className="btn btn-secondary" onClick={()=>setVista("tabla")}>Cancelar</button>
+            <button className="btn btn-secondary" onClick={()=>{setForm(emptyForm);setVista("resumen");}}>Cancelar</button>
             <button className="btn btn-primary" onClick={guardarRegistro}>💾 Guardar</button>
           </div>
         </div>
       </div>
     </div>
   );
+  }
 
   // ─────────────────────────────────────────────────────────────────────────────
   // VISTA IMPORTAR EXCEL
