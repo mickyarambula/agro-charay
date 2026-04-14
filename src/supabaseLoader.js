@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -47,6 +47,7 @@ export async function loadStateFromSupabase() {
         console.warn('[Supabase] ciclo_asignaciones fetch falló:', e.message);
         return [];
       }),
+      supaFetch('expedientes', 'order=productor_legacy_id').catch(() => []),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -204,18 +205,40 @@ export async function loadStateFromSupabase() {
       delegaciones:       estadoExistente.delegaciones       || [],
       invCampo:           estadoExistente.invCampo           || [],
       colaOffline:        estadoExistente.colaOffline        || [],
-      expedientes:        estadoExistente.expedientes        || [],
+      // expedientes: NO se preserva — siempre viene de Supabase (fresco)
     };
     // Quitar undefined para que `{ ...initState, ...savedState }` no sobrescriba defaults
     Object.keys(configPreservada).forEach(k => {
       if (configPreservada[k] === undefined) delete configPreservada[k];
     });
 
+    const expedientes = expedientesRows.map(r => ({
+      id: r.productor_legacy_id,
+      productorId: r.productor_legacy_id,
+      modalidad: r.modalidad || 'parafinanciera',
+      noContrato: r.no_contrato || '',
+      codigoCte: r.codigo_cte || 0,
+      fechaApertura: r.fecha_apertura || '',
+      fechaVencimiento: r.fecha_vencimiento || '',
+      montoAutorizado: parseFloat(r.monto_autorizado) || 0,
+      montoPorHa: parseFloat(r.monto_por_ha) || 0,
+      ha: parseFloat(r.ha) || 0,
+      banco: r.banco || '',
+      paquete: r.paquete || '',
+      descuento: r.descuento || '',
+      tasaAnual: parseFloat(r.tasa_anual) || 12,
+      garantia: r.garantia || '',
+      documentos: [],
+      ministraciones: [],
+      pagos: [],
+    }));
+
     const estadoNuevo = {
       ...configPreservada,
       // ── Datos operativos: SIEMPRE frescos de Supabase (reemplazo total) ──
       productores, lotes, ciclos, operadores, maquinaria,
       insumos, diesel, egresosManual, dispersiones,
+      expedientes,
       ordenesTrabajo,  // ← fresco de Supabase (tabla ordenes_trabajo)
       cicloActivoId: predCiclo ? predCiclo.id : (estadoExistente.cicloActivoId || 1),
       cicloActual:   predCiclo ? predCiclo.nombre : (estadoExistente.cicloActual || 'OI 2025-2026'),
