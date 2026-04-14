@@ -524,7 +524,13 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
                         }}
                         style={{accentColor:"#2d5a1b",width:14,height:14,flexShrink:0}}/>
                       <div style={{minWidth:0}}>
-                        <div style={{fontSize:12,fontWeight:sel?600:400,color:sel?"#2d5a1b":"#3d3525"}}>{nomLoteDisplay(l)}</div>
+                        <div style={{fontSize:12,fontWeight:sel?600:400,color:sel?"#2d5a1b":"#3d3525"}}>
+                          {nomLoteDisplay(l)}
+                          {(() => {
+                            const ha = parseFloat(l.hectareas || l.supCredito || l.supModulo || 0);
+                            return ha > 0 ? <span style={{color:"#8a8070",fontWeight:400,marginLeft:6}}>({ha.toFixed(1)} ha)</span> : null;
+                          })()}
+                        </div>
                         {l.propietario&&<div style={{fontSize:10,color:"#8a8070",marginTop:1}}>👤 {l.propietario}</div>}
                       </div>
                     </label>

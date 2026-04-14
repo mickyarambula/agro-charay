@@ -782,9 +782,18 @@ export default function OrdenDia({ userRol, usuario }) {
                 style={{ width: '100%', minHeight: 52, fontSize: 16, padding: '0 14px', borderRadius: 10, border: '1.5px solid #d1d5db', background: '#ffffff' }}
               >
                 <option value="">— Seleccionar lote —</option>
-                {lotes.filter(l => l.activo !== false).map(l => (
-                  <option key={l.id} value={l.id}>📍 {nombreLote(l)}</option>
-                ))}
+                {lotes
+                  .filter(l => l.activo !== false)
+                  .sort((a,b) => (nombreLote(a)||"").localeCompare(nombreLote(b)||""))
+                  .map(l => {
+                    const ha = parseFloat(l.hectareas || l.supCredito || l.supModulo || 0).toFixed(1);
+                    const prodTxt = l.propietario ? ` — ${l.propietario}` : "";
+                    return (
+                      <option key={l.id} value={l.id}>
+                        📍 {nombreLote(l)}{prodTxt} ({ha} ha)
+                      </option>
+                    );
+                  })}
               </select>
             </div>
 
@@ -909,11 +918,18 @@ export default function OrdenDia({ userRol, usuario }) {
                 value={form.loteId}
                 onChange={e => setForm(f => ({ ...f, loteId: e.target.value }))}>
                 <option value="">— Seleccionar lote —</option>
-                {lotes.filter(l => l.activo !== false).map(l => (
-                  <option key={l.id} value={l.id}>
-                    📍 {nombreLote(l)}{l.propietario ? ` · ${l.propietario}` : ""}
-                  </option>
-                ))}
+                {lotes
+                  .filter(l => l.activo !== false)
+                  .sort((a,b) => (nombreLote(a)||"").localeCompare(nombreLote(b)||""))
+                  .map(l => {
+                    const ha = parseFloat(l.hectareas || l.supCredito || l.supModulo || 0).toFixed(1);
+                    const prodTxt = l.propietario ? ` — ${l.propietario}` : "";
+                    return (
+                      <option key={l.id} value={l.id}>
+                        📍 {nombreLote(l)}{prodTxt} ({ha} ha)
+                      </option>
+                    );
+                  })}
               </select>
             </div>
 
