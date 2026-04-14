@@ -23,10 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function ProductoresModule({ userRol, puedeEditar, onNavigate }) {
   const { state, dispatch } = useData();
+  const isMobile = useIsMobile();
   const nav = (page, pid, filtros) => onNavigate && onNavigate(page, pid, filtros);
   const [modo, setModo]     = useState("lista");
   const [sel, setSel]       = useState(null);
@@ -215,7 +217,7 @@ export default function ProductoresModule({ userRol, puedeEditar, onNavigate }) 
             </div>
 
             {/* KPIs */}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:20}}>
+            <div style={{display:"grid",gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5,1fr)",gap:8,marginBottom:20}}>
               {[
                 ["Hectáreas",        fmt2(ha)+" ha",       "#2d5a1b"],
                 ["Dispersado",       mxnFmt(totalDisp),    "#1a6ea8"],
@@ -412,7 +414,7 @@ export default function ProductoresModule({ userRol, puedeEditar, onNavigate }) 
         </div>
 
         {/* KPIs principales */}
-        <div className="stat-grid" style={{gridTemplateColumns:"repeat(5,1fr)",marginBottom:16}}>
+        <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5,1fr)",marginBottom:16}}>
           <div className="stat-card green" style={{cursor:"pointer"}} onClick={()=>nav("lotes")} title="→ Lotes">
             <div className="stat-icon">🌾</div><div className="stat-label">Hectáreas</div>
             <div className="stat-value">{ha.toFixed(2)} ha</div>
@@ -816,7 +818,7 @@ export default function ProductoresModule({ userRol, puedeEditar, onNavigate }) 
 
   return (
     <div>
-      <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:20}}>
+      <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:20}}>
         <div className="stat-card green"><div className="stat-icon">👥</div><div className="stat-label">Productores</div><div className="stat-value">{productores.length}</div><div className="stat-sub">{productores.filter(p=>p.activo!==false).length} activos · {productores.filter(p=>p.activo===false).length} inactivos</div></div>
         <div className="stat-card sky"><div className="stat-icon">🌾</div><div className="stat-label">Total hectáreas</div><div className="stat-value">{asigsCiclo.length>0?fmt((asigsCiclo||[]).reduce((s,a)=>s+(parseFloat(a.supAsignada)||0),0),2):"—"}</div><div className="stat-sub">Ciclo {state.cicloActual||"—"}</div></div>
         <div className="stat-card rust"><div className="stat-icon">🏦</div><div className="stat-label">Crédito total</div><div className="stat-value" style={{fontSize:15}}>{totalCred>0?totalCred.toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2}):"—"}</div><div className="stat-sub">Autorizado total</div></div>

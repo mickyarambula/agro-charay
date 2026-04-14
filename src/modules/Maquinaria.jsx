@@ -23,10 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function MaquinariaModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
+  const isMobile = useIsMobile();
   const [modal, setModal]   = useState(false);
   const [modalH, setModalH] = useState(false);
   const [sel, setSel]       = useState(null);

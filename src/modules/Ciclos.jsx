@@ -23,10 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function CiclosModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
+  const isMobile = useIsMobile();
   const [vista, setVista]   = useState("lista");    // lista | detalle | editProds | editLotes | cultivos
   const [selCiclo, setSelCiclo] = useState(null);   // id del ciclo en edición/detalle
 
@@ -853,7 +855,7 @@ export default function CiclosModule({ userRol, puedeEditar }) {
         </div>
 
         {/* Stats */}
-        <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:20}}>
+        <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:20}}>
           <div className="stat-card green"><div className="stat-icon">📅</div><div className="stat-label">Ciclo</div><div className="stat-value" style={{fontSize:15}}>{c.nombre}</div><div className="stat-sub">{c.fechaInicio||"—"} → {c.fechaFin||"—"}</div></div>
           <div className="stat-card sky"><div className="stat-icon">👥</div><div className="stat-label">Productores</div><div className="stat-value">{(c.productores||[]).length}</div><div className="stat-sub">En este ciclo</div></div>
           <div className="stat-card gold"><div className="stat-icon">🌾</div><div className="stat-label">Ha Asignadas</div><div className="stat-value">{fmt2(totalHa)}</div><div className="stat-sub">{(c.asignaciones||[]).length} asignaciones</div></div>

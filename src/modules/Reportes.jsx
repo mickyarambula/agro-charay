@@ -24,10 +24,12 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { mxn } from "../App.jsx";
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function ReportesModule() {
   const { state } = useData();
+  const isMobile = useIsMobile();
   const params = { para_tasaAnual:1.38, dir_tasaAnual:1.8, ...(state.creditoParams||{}) };
   const F = calcularFinancieros(state);
   const [seccion, setSeccion] = useState("resumen");
@@ -140,7 +142,7 @@ export default function ReportesModule() {
       {seccion==="consolidado" && (
         <div>
           {/* KPIs consolidados */}
-          <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:16}}>
+          <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:16}}>
             {[
               {card:"green",  icon:"🌾", label:"Ha del Ciclo",        valor:`${TOTS.ha.toFixed(2)} ha`,   sub:`${datosProductores.length} productores`},
               {card:"sky",    icon:"🏦", label:"Total Dispersado",     valor:mxnFmt(TOTS.tDis),            sub:"crédito ejercido"},
