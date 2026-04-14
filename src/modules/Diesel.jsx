@@ -23,10 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   const { state, dispatch } = useData();
+  const isMobile = useIsMobile();
   // Visibilidad de precios: encargado e ingeniero NO ven importes.
   const verPrecios = ["admin", "socio", "compras"].includes(userRol);
   const hoy = new Date().toISOString().split("T")[0];
@@ -202,7 +204,7 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   // ─────────────────────────────────────────────────────────────────────────────
   if (vista==="resumen") return (
     <div>
-      <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:20}}>
+      <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:20}}>
         <div className="stat-card gold">
           <div className="stat-icon">⛽</div>
           <div className="stat-label">Total Litros</div>
@@ -229,10 +231,16 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
         </div>
       </div>
 
-      <div style={{display:"flex",gap:10,marginBottom:20,flexWrap:"wrap"}}>
-        <button className="btn btn-primary"   onClick={()=>setVista("nuevo")}>＋ Registrar Carga</button>
-        <button className="btn btn-secondary" onClick={()=>setVista("import")}>📥 Importar Excel</button>
-        <button className="btn btn-secondary" onClick={()=>setVista("tabla")}>📋 Ver todos ({diesel.length})</button>
+      <div style={{
+        display: isMobile ? "grid" : "flex",
+        gridTemplateColumns: isMobile ? "1fr" : undefined,
+        gap:10,
+        marginBottom:20,
+        flexWrap:"wrap"
+      }}>
+        <button className="btn btn-primary"   onClick={()=>setVista("nuevo")} style={isMobile?{minHeight:48,width:"100%"}:undefined}>＋ Registrar Carga</button>
+        <button className="btn btn-secondary" onClick={()=>setVista("import")} style={isMobile?{minHeight:48,width:"100%"}:undefined}>📥 Importar Excel</button>
+        <button className="btn btn-secondary" onClick={()=>setVista("tabla")} style={isMobile?{minHeight:48,width:"100%"}:undefined}>📋 Ver todos ({diesel.length})</button>
       </div>
 
       {/* Resumen por productor */}
@@ -305,17 +313,23 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
         const activeF  = [filtroProd!=="todos",filtroCancelados!=="activos",!!filtroActividad].filter(Boolean).length;
         return (
           <div style={{marginBottom:12}}>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:6}}>
-              <select className="form-select" style={{width:170}} value={filtroProd} onChange={e=>setFiltroProd(e.target.value)}>
+            <div style={{
+              display: isMobile ? "grid" : "flex",
+              gridTemplateColumns: isMobile ? "1fr" : undefined,
+              gap: isMobile ? 10 : 6,
+              flexWrap:"wrap",
+              marginBottom:6
+            }}>
+              <select className="form-select" style={{width: isMobile ? "100%" : 170, minHeight: isMobile ? 48 : undefined, fontSize: isMobile ? 16 : undefined}} value={filtroProd} onChange={e=>setFiltroProd(e.target.value)}>
                 <option value="todos">Todos los productores</option>
                 {productores.map(p=><option key={p.id} value={p.id}>{p.alias||p.apPat}</option>)}
               </select>
-              <select className="form-select" style={{width:130}} value={filtroCancelados} onChange={e=>setFiltroCancelados(e.target.value)}>
+              <select className="form-select" style={{width: isMobile ? "100%" : 130, minHeight: isMobile ? 48 : undefined, fontSize: isMobile ? 16 : undefined}} value={filtroCancelados} onChange={e=>setFiltroCancelados(e.target.value)}>
                 <option value="activos">✅ Activos</option>
                 <option value="cancelados">🚫 Cancelados</option>
                 <option value="todos">Todos</option>
               </select>
-              <input className="form-input" style={{width:180,fontSize:12}} placeholder="🔍 Tractor / Actividad..."
+              <input className="form-input" style={{width: isMobile ? "100%" : 180, minHeight: isMobile ? 48 : undefined, fontSize: isMobile ? 16 : 12}} placeholder="🔍 Tractor / Actividad..."
                 value={filtroActividad} onChange={e=>setFiltroActividad(e.target.value)}/>
               {activeF>0&&(
                 <button className="btn btn-secondary" style={{fontSize:11,padding:"4px 10px",color:"#c0392b",borderColor:"#c0392b"}}

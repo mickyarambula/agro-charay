@@ -23,10 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFiltro = {} }) {
   const { state, dispatch } = useData();
+  const isMobile = useIsMobile();
   // ─── Visibilidad de precios: admin, socio y compras ven importes.
   //     encargado e ingeniero NO ven precios (solo nombres y cantidades).
   const verPrecios = ["admin", "socio", "compras"].includes(userRol);
@@ -325,7 +327,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
   if (vista==="resumen") return (
     <div>
       {/* Stat cards — clickeables para filtrar */}
-      <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:20}}>
+      <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:20}}>
         <div className="stat-card gold" style={{cursor:"pointer"}} onClick={()=>{setFiltroCat("todas");setVista("tabla");}} title="Ver todos">
           <div className="stat-icon">💰</div>
           <div className="stat-label">Total Insumos</div>

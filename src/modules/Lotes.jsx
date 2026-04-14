@@ -25,10 +25,12 @@ import {
 } from '../shared/helpers.jsx';
 import { useComboDinamico, ComboConNuevo } from "../App.jsx";
 import { MUNICIPIOS_SIN, calcSupCredito } from "../App.jsx";
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function LotesModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
+  const isMobile = useIsMobile();
   const [modo, setModo]     = useState("lista");   // lista | detalle | form | analisis | fenologia
   const [sel, setSel]       = useState(null);
   const [editando, setEditando] = useState(false);
@@ -526,7 +528,7 @@ export default function LotesModule({ userRol, puedeEditar }) {
           {puedeEditar && <button className="btn btn-primary btn-sm" onClick={()=>abrirForm()}>＋ Nuevo lote</button>}
         </div>
         {/* KPIs */}
-        <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:20}}>
+        <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:20}}>
           {[
             {card:"green",  icon:"🌾", label:"Total Lotes",     valor:lotes.length,    sub:`${grupos.length} ${DIMENSIONES.find(d=>d.id===agruparPor)?.label}s`},
             {card:"sky",    icon:"💳", label:"Ha Crédito",      valor:fmtHa(totalHaCredito)+" ha",  sub:"base para crédito"},
@@ -691,7 +693,7 @@ export default function LotesModule({ userRol, puedeEditar }) {
   // ── LISTA ──────────────────────────────────────────────────────────────────
   return (
     <div>
-      <div className="stat-grid" style={{gridTemplateColumns:"repeat(5,1fr)",marginBottom:20}}>
+      <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5,1fr)",marginBottom:20}}>
         <div className="stat-card green">
           <div className="stat-icon">🌾</div><div className="stat-label">Total Lotes</div>
           <div className="stat-value">{lotes.length}</div>

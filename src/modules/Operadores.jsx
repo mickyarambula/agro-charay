@@ -23,10 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function OperadoresModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
+  const isMobile = useIsMobile();
   const hoy    = new Date().toISOString().split("T")[0];
   const mxnFmt = n => (parseFloat(n)||0).toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2});
 
@@ -167,7 +169,7 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
       <div>
         <TabBar/>
         {/* KPIs */}
-        <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:16}}>
+        <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:16}}>
           <div className="stat-card green">
             <div className="stat-icon">👷</div><div className="stat-label">Operadores Activos</div>
             <div className="stat-value">{operadores.filter(o=>o.activo).length}</div>
@@ -557,7 +559,7 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
         </div>
 
         {/* Estado + comparativo */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",gap:12,marginBottom:16}}>
           <div style={{padding:"12px 16px",borderRadius:10,
             background:pagadaSem?"#d4edda":"#fff8e1",
             border:`1px solid ${pagadaSem?"#c3e6cb":"#ffeaa7"}`,
