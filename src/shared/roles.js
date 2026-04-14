@@ -14,11 +14,11 @@ export const ROLES = {
 // Módulos visibles por rol
 export const ACCESO = {
   admin:      ["dashboard","flujos","ordenes","productores","ciclos","lotes","bitacora","maquinaria","operadores","insumos","diesel","inventario","capital","credito","creditosref","rentas","gastos","costos","activos","personal","cosecha","proyeccion","asistente","edo_resultados","balance","flujo_caja","reportes","configuracion"],
-  socio:      ["dashboard","flujos","lotes","bitacora","maquinaria","operadores","insumos","diesel","costos","cosecha","rentas","proyeccion","asistente","reportes"],
-  encargado:  ["dashboard","flujos","ordenes","bitacora","lotes","maquinaria","operadores","insumos","diesel","inventario"],
-  ingeniero:  ["dashboard","flujos","bitacora","lotes","insumos","inventario"],
-  compras:    ["dashboard","flujos","insumos","diesel","inventario","gastos"],
-  campo:      ["dashboard","bitacora","lotes"],
+  socio:      ["dashboard","flujos","lotes","bitacora","maquinaria","operadores","insumos","diesel","costos","cosecha","rentas","proyeccion","asistente","reportes","credito","egresos"],
+  encargado:  ["dashboard","flujos","ordenes","bitacora","lotes","maquinaria","operadores","insumos","diesel"],
+  ingeniero:  ["dashboard","flujos","ordenes","bitacora","lotes","insumos","inventario"],
+  compras:    ["dashboard","flujos","insumos","diesel","inventario","gastos","lotes","bitacora"],
+  campo:      ["dashboard","ordenes","bitacora","lotes","diesel"],
 };
 
 // Usuarios base hardcoded. Complementados por state.usuariosExtra en runtime.

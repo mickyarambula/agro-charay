@@ -499,20 +499,22 @@ export default function OrdenDia({ userRol, usuario }) {
               {fechaLarga}
             </div>
           </div>
-          <button onClick={abrirNueva}
-            style={{
-              background: "white",
-              color: "#2d5a1b",
-              border: "none",
-              padding: "12px 20px",
-              borderRadius: 10,
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-            }}>
-            + Nueva orden
-          </button>
+          {userRol !== "campo" && (
+            <button onClick={abrirNueva}
+              style={{
+                background: "white",
+                color: "#2d5a1b",
+                border: "none",
+                padding: "12px 20px",
+                borderRadius: 10,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              }}>
+              + Nueva orden
+            </button>
+          )}
         </div>
       </div>
 

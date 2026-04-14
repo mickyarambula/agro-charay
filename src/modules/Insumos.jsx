@@ -32,7 +32,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
   const isMobile = useIsMobile();
   // ─── Visibilidad de precios: admin, socio y compras ven importes.
   //     encargado e ingeniero NO ven precios (solo nombres y cantidades).
-  const verPrecios = ["admin", "socio", "compras"].includes(userRol);
+  const verPrecios = userRol === "admin" || userRol === "compras";
   const nav = (page, pid, filtros) => onNavigate && onNavigate(page, pid, filtros);
   const hoy = new Date().toISOString().split("T")[0];
   const productores = state.productores || [];

@@ -28,7 +28,9 @@ import { MUNICIPIOS_SIN, calcSupCredito } from "../App.jsx";
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
-export default function LotesModule({ userRol, puedeEditar }) {
+export default function LotesModule({ userRol, puedeEditar: _puedeEditar }) {
+  // Lotes: CRUD restringido a admin por política de negocio
+  const puedeEditar = userRol === "admin";
   const { state, dispatch } = useData();
   const isMobile = useIsMobile();
   const [modo, setModo]     = useState("lista");   // lista | detalle | form | analisis | fenologia

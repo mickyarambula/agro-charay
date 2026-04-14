@@ -26,7 +26,9 @@ import {
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
-export default function MaquinariaModule({ userRol, puedeEditar }) {
+export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar }) {
+  // Maquinaria: CRUD restringido a admin por política de negocio
+  const puedeEditar = userRol === "admin";
   const { state, dispatch } = useData();
   const isMobile = useIsMobile();
   const [modal, setModal]   = useState(false);
