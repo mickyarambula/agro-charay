@@ -31,7 +31,8 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   const { state, dispatch } = useData();
   const isMobile = useIsMobile();
   // Visibilidad de precios: encargado e ingeniero NO ven importes.
-  const verPrecios = ["admin", "socio", "compras"].includes(userRol);
+  const verPrecios = userRol === "admin" || userRol === "compras";
+  const puedeRegistrar = userRol === "admin" || userRol === "compras";
   const hoy = new Date().toISOString().split("T")[0];
   const productores = state.productores || [];
 
@@ -209,31 +210,37 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
         totalRegistros: state.diesel?.length || 0,
         totalLitros: (state.diesel||[]).reduce((s,d) => s + (parseFloat(d.cantidad)||0), 0),
       }} />
-      <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:20}}>
+      <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : (verPrecios ? "repeat(4,1fr)" : "1fr"),marginBottom:20}}>
         <div className="stat-card gold">
           <div className="stat-icon">⛽</div>
           <div className="stat-label">Total Litros</div>
           <div className="stat-value">{totalLitros.toLocaleString("es-MX",{maximumFractionDigits:0})}<span className="stat-unit"> L</span></div>
           <div className="stat-sub">{diesel.filter(d=>!d.cancelado&&!d.esAjuste).length} cargas</div>
         </div>
-        <div className="stat-card rust">
-          <div className="stat-icon">💵</div>
-          <div className="stat-label">Costo Total</div>
-          <div className="stat-value" style={{fontSize:18}}>{mxnFmt(totalImporte)}</div>
-          <div className="stat-sub">Incl. {mxnFmt(totalAjustes)} ajustes</div>
-        </div>
-        <div className="stat-card green">
-          <div className="stat-icon">💲</div>
-          <div className="stat-label">Precio Promedio</div>
-          <div className="stat-value" style={{fontSize:18}}>${precioPromedio.toFixed(2)}<span className="stat-unit">/L</span></div>
-          <div className="stat-sub">Ponderado ciclo</div>
-        </div>
-        <div className="stat-card sky">
-          <div className="stat-icon">🌾</div>
-          <div className="stat-label">Costo / Ha</div>
-          <div className="stat-value" style={{fontSize:18}}>{mxnFmt(hasTotales>0?totalImporte/hasTotales:0)}</div>
-          <div className="stat-sub">{hasTotales.toFixed(1)} ha ciclo activo</div>
-        </div>
+        {verPrecios && (
+          <div className="stat-card rust">
+            <div className="stat-icon">💵</div>
+            <div className="stat-label">Costo Total</div>
+            <div className="stat-value" style={{fontSize:18}}>{mxnFmt(totalImporte)}</div>
+            <div className="stat-sub">Incl. {mxnFmt(totalAjustes)} ajustes</div>
+          </div>
+        )}
+        {verPrecios && (
+          <div className="stat-card green">
+            <div className="stat-icon">💲</div>
+            <div className="stat-label">Precio Promedio</div>
+            <div className="stat-value" style={{fontSize:18}}>${precioPromedio.toFixed(2)}<span className="stat-unit">/L</span></div>
+            <div className="stat-sub">Ponderado ciclo</div>
+          </div>
+        )}
+        {verPrecios && (
+          <div className="stat-card sky">
+            <div className="stat-icon">🌾</div>
+            <div className="stat-label">Costo / Ha</div>
+            <div className="stat-value" style={{fontSize:18}}>{mxnFmt(hasTotales>0?totalImporte/hasTotales:0)}</div>
+            <div className="stat-sub">{hasTotales.toFixed(1)} ha ciclo activo</div>
+          </div>
+        )}
       </div>
 
       <div style={{
@@ -243,7 +250,7 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
         marginBottom:20,
         flexWrap:"wrap"
       }}>
-        <button className="btn btn-primary"   onClick={()=>setVista("nuevo")} style={isMobile?{minHeight:48,width:"100%"}:undefined}>＋ Registrar Carga</button>
+        {puedeRegistrar && <button className="btn btn-primary"   onClick={()=>setVista("nuevo")} style={isMobile?{minHeight:48,width:"100%"}:undefined}>＋ Registrar Carga</button>}
         <button className="btn btn-secondary" onClick={()=>setVista("import")} style={isMobile?{minHeight:48,width:"100%"}:undefined}>📥 Importar Excel</button>
         <button className="btn btn-secondary" onClick={()=>setVista("tabla")} style={isMobile?{minHeight:48,width:"100%"}:undefined}>📋 Ver todos ({diesel.length})</button>
       </div>
@@ -310,7 +317,7 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
             d.litros,d.precioPorLitro,parseFloat(d.importe)||0,d.estatus
           ])
         }])}/>
-        <button className="btn btn-primary" onClick={()=>setVista("nuevo")}>＋ Nuevo Registro</button>
+        {puedeRegistrar && <button className="btn btn-primary" onClick={()=>setVista("nuevo")}>＋ Nuevo Registro</button>}
       </div>
       {(()=>{
         const totalLts = dieselFiltrado.filter(d=>!d.esAjuste).reduce((s,d)=>s+(parseFloat(d.cantidad)||0),0);
