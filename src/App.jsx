@@ -16,6 +16,7 @@ import {
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SYNC_CHANNEL, SYNC_KEYS, supabaseClient
 } from "./core/supabase.js";
+import { initRealtime, subscribeToOrdenes } from "./core/realtime.js";
 import { initState, reducer, Ctx, useData } from "./core/DataContext.jsx";
 import {
   calcularInteresCredito, calcularInteresCargosCredito, calcularFinancieros,
@@ -1219,6 +1220,44 @@ export default function App() {
     return () => { window.removeEventListener("online", goOnline); window.removeEventListener("offline", goOffline); };
   }, []);
   const [usuario, setUsuario] = useState(null);
+
+  React.useEffect(() => {
+    if (!supabaseClient) return;
+    const reloadOrdenes = () => {
+      fetch(`${SUPABASE_URL}/rest/v1/ordenes_trabajo?select=*&order=created_at.desc&limit=200`, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+      })
+      .then(r => r.json())
+      .then(rows => {
+        if (!Array.isArray(rows)) return;
+        const mapped = rows.map(r => ({
+          id: r.id, supabaseId: r.id,
+          fecha: r.fecha, tipoTrabajo: r.tipo,
+          estatus: r.estatus || 'pendiente',
+          operadorNombre: r.operador_nombre || '',
+          loteNombre: r.lote_nombre || '',
+          maquinariaNombre: r.maquinaria_nombre || '',
+          insumoNombre: r.insumo_nombre || '',
+          horaInicio: r.hora_inicio || '',
+          horasEstimadas: parseFloat(r.horas_estimadas) || 0,
+          notas: r.notas || '',
+          creadoPor: r.creado_por || '',
+          creadoEn: r.created_at,
+          origen: 'supabase',
+        }));
+        dispatch({ type: 'SYNC_STATE', payload: { ordenesTrabajo: mapped } });
+      })
+      .catch(e => console.warn('reloadOrdenes:', e));
+    };
+    initRealtime();
+    const unsub = subscribeToOrdenes('app-root', () => reloadOrdenes());
+    const polling = setInterval(reloadOrdenes, 10000);
+    return () => {
+      unsub();
+      clearInterval(polling);
+    };
+  }, [usuario]);
+
   const navFiltrosRef = React.useRef({});
   const [pageStack, setPageStack] = React.useState([]); // historial de navegación
 
