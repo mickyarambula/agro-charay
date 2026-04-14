@@ -237,7 +237,7 @@ export const css = `
   }
   .modal-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: ${T.inkLt}; }
   .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: ${T.fog}; padding: 4px; }
-  .modal-body { padding: 24px; }
+  .modal-body { padding: 24px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .modal-footer { padding: 16px 24px; border-top: 1px solid ${T.line}; display: flex; justify-content: flex-end; gap: 10px; }
 
   /* PROGRESS */
@@ -433,7 +433,27 @@ export const css = `
     .form-row { grid-template-columns: 1fr !important; }
 
     /* Modal fullscreen-friendly */
-    .modal { width: calc(100vw - 24px) !important; max-width: 100% !important; max-height: calc(100vh - 40px) !important; }
+    .modal-overlay { align-items: stretch !important; justify-content: stretch !important; padding: 0 !important; }
+    .modal {
+      position: fixed !important;
+      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+      width: 100vw !important;
+      max-width: 100vw !important;
+      height: 100vh !important;
+      max-height: 100vh !important;
+      border-radius: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+    }
+    .modal-header { flex: 0 0 auto; }
+    .modal-body {
+      flex: 1 1 auto !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      padding: 18px !important;
+    }
+    .modal-footer { flex: 0 0 auto; }
 
     /* Botones más pequeños en móvil */
     .btn { padding: 8px 14px; font-size: 13px; }
