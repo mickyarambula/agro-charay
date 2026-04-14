@@ -62,12 +62,12 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
   const fileImportBitRef = useRef(null);
 
   const TIPOS = [
-    { id:"insumo",  icon:"🌱", label:"Aplicación de Insumos",  color:"#2d7a3a", roles:["admin","socio","campo"] },
-    { id:"diesel",  icon:"⛽", label:"Consumo Diesel",          color:"#e67e22", roles:["admin","socio","campo"] },
-    { id:"riego",   icon:"💧", label:"Riego",                   color:"#2980b9", roles:["admin","socio","campo"] },
-    { id:"foto",    icon:"📷", label:"Foto / Comprobante",      color:"#8e44ad", roles:["admin","socio","campo"] },
-    { id:"fenol",   icon:"🌿", label:"Lectura Fenológica",      color:"#27ae60", roles:["admin","socio","campo"] },
-    { id:"reporte", icon:"📝", label:"Reporte Diario",          color:"#34495e", roles:["admin","socio","campo"] },
+    { id:"insumo",  icon:"🌱", label:"Aplicación de Insumos",  color:"#2d7a3a", roles:["admin","encargado","ingeniero","campo"] },
+    { id:"diesel",  icon:"⛽", label:"Consumo Diesel",          color:"#e67e22", roles:["admin","encargado","campo"] },
+    { id:"riego",   icon:"💧", label:"Riego",                   color:"#2980b9", roles:["admin","encargado","ingeniero","campo"] },
+    { id:"foto",    icon:"📷", label:"Foto / Comprobante",      color:"#8e44ad", roles:["admin","encargado","ingeniero","campo"] },
+    { id:"fenol",   icon:"🌿", label:"Lectura Fenológica",      color:"#27ae60", roles:["admin","encargado","ingeniero","campo"] },
+    { id:"reporte", icon:"📝", label:"Reporte Diario",          color:"#34495e", roles:["admin","encargado","ingeniero","campo"] },
   ].filter(t => t.roles.includes(userRol));
 
   // ── IMPORTAR BITÁCORA DESDE EXCEL ─────────────────────────────────────────
