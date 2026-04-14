@@ -141,17 +141,17 @@ export function enviarWhatsApp(orden, operador, lote, maquina) {
   const nombreMaq = maquina?.nombre || "Por asignar";
 
   const mensaje = [
-    "*AgroSistema Charay*",
-    `Fecha: ${fechaStr}`,
+    "🌾 *AgroSistema Charay*",
+    `📅 ${fechaStr}`,
     "",
-    `Hola ${operador.nombre}, tu orden de trabajo:`,
-    `*${orden.tipoTrabajo || "Trabajo asignado"}*`,
-    `Lote: ${nombreLote}`,
-    `Maquina: ${nombreMaq}`,
-    orden.insumoNombre ? `Insumo: ${orden.insumoNombre}` : "",
-    orden.horaInicio ? `Hora inicio: ${orden.horaInicio}` : "",
-    orden.horasEstimadas ? `Duracion estimada: ${orden.horasEstimadas}h` : "",
-    orden.notas ? `Notas: ${orden.notas}` : "",
+    `Hola ${operador.nombre}, tu trabajo de hoy:`,
+    `🔧 *${orden.tipoTrabajo || "Trabajo asignado"}*`,
+    `📍 Lote: ${nombreLote}`,
+    `🚜 Maquina: ${nombreMaq}`,
+    orden.insumoNombre ? `🌱 Insumo: ${orden.insumoNombre}` : "",
+    orden.horaInicio ? `⏰ Hora inicio: ${orden.horaInicio}` : "",
+    orden.horasEstimadas ? `⏱ Duracion estimada: ${orden.horasEstimadas}h` : "",
+    orden.notas ? `📝 Notas: ${orden.notas}` : "",
     "",
     "Cualquier novedad reporta al encargado.",
   ].filter(Boolean).join("\n");
