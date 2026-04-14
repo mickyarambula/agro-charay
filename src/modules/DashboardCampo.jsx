@@ -23,10 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function DashboardCampo({ userRol, usuario, onNavigate }) {
   const { state, dispatch } = useData();
+  const isMobile = useIsMobile();
   const hoy = new Date().toISOString().split("T")[0];
 
   const bitacora   = state.bitacora   || [];
@@ -303,8 +305,8 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
         );
       })()}
 
-      {/* ═══ ACCIONES RÁPIDAS — 2x2 grid ═══ */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+      {/* ═══ ACCIONES RÁPIDAS — 2x2 grid (1 col en móvil) ═══ */}
+      <div style={{display:"grid",gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",gap:12,marginBottom:20}}>
         {[
           { icon:"📋", label:"Registrar trabajo", color:"#2d5a1b", bg:"#f0f8e8", onClick:abrirTrabajo },
           { icon:"⛽", label:"Registrar diesel",   color:"#e67e22", bg:"#fef5ed", onClick:abrirDiesel },
@@ -313,22 +315,24 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
         ].map(b => (
           <button key={b.label} onClick={b.onClick}
             style={{
-              minHeight:115,
-              padding:"16px 12px",
+              minHeight: isMobile ? 72 : 115,
+              width: "100%",
+              padding: isMobile ? "14px 16px" : "16px 12px",
               border:"none",
               borderRadius:14,
               background:"white",
               boxShadow:"0 2px 8px rgba(0,0,0,0.07)",
               cursor:"pointer",
               display:"flex",
-              flexDirection:"column",
+              flexDirection: isMobile ? "row" : "column",
               alignItems:"center",
-              justifyContent:"center",
-              gap:10,
+              justifyContent: isMobile ? "flex-start" : "center",
+              gap: isMobile ? 16 : 10,
               transition:"transform 0.12s, box-shadow 0.12s",
               borderTop:`4px solid ${b.color}`,
               position:"relative",
-              overflow:"hidden"
+              overflow:"hidden",
+              touchAction: "manipulation"
             }}
             onTouchStart={e=>{e.currentTarget.style.transform="scale(0.96)";}}
             onTouchEnd={e=>{e.currentTarget.style.transform="scale(1)";}}
@@ -336,12 +340,21 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
             onMouseUp={e=>{e.currentTarget.style.transform="scale(1)";}}
             onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";}}>
             <div style={{
-              width:56,height:56,borderRadius:"50%",
+              width: isMobile ? 64 : 56,
+              height: isMobile ? 64 : 56,
+              borderRadius:"50%",
               background:b.bg,
               display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:30
+              fontSize: isMobile ? 36 : 30,
+              flexShrink: 0
             }}>{b.icon}</div>
-            <span style={{fontSize:13,fontWeight:700,color:"#3d3525",textAlign:"center",lineHeight:1.25}}>{b.label}</span>
+            <span style={{
+              fontSize: isMobile ? 16 : 13,
+              fontWeight:700,
+              color:"#3d3525",
+              textAlign: isMobile ? "left" : "center",
+              lineHeight:1.25
+            }}>{b.label}</span>
           </button>
         ))}
       </div>
@@ -352,7 +365,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
         textTransform:"uppercase",letterSpacing:1,
         marginBottom:10,paddingLeft:4
       }}>Resumen del día</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
+      <div style={{display:"grid",gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)",gap:10,marginBottom:20}}>
         <div style={{
           padding:"14px 10px",background:"white",borderRadius:12,textAlign:"center",
           borderTop:"3px solid #2d5a1b",boxShadow:"0 1px 4px rgba(0,0,0,0.05)"

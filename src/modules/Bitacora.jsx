@@ -24,9 +24,11 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { mxn } from "../App.jsx";
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function BitacoraModule({ userRol, puedeEditar }) {
+  const isMobile = useIsMobile();
   const { state, dispatch } = useData();
   const cargarXLSX = () => new Promise((resolve, reject) => {
     if (typeof XLSX !== "undefined") { resolve(window.XLSX); return; }
@@ -616,10 +618,32 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
   return (
     <div>
       {/* Botones de acción rápida */}
-      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:20}}>
+      <div style={{
+        display: isMobile ? "grid" : "flex",
+        gridTemplateColumns: isMobile ? "repeat(auto-fit, minmax(140px, 1fr))" : undefined,
+        gap:10,
+        flexWrap:"wrap",
+        marginBottom:20
+      }}>
         {TIPOS.map(t=>(
           <button key={t.id} onClick={()=>{setFotoPreview(null);setTipoModal(t.id);}}
-            style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",background:T.card,border:`1.5px solid ${t.color}`,borderRadius:10,cursor:"pointer",fontSize:13,fontWeight:600,color:t.color,transition:"all 0.15s"}}
+            style={{
+              display:"flex",
+              alignItems:"center",
+              justifyContent: isMobile ? "center" : "flex-start",
+              gap:8,
+              padding: isMobile ? "14px 16px" : "10px 16px",
+              minHeight: isMobile ? 48 : undefined,
+              background:T.card,
+              border:`1.5px solid ${t.color}`,
+              borderRadius:10,
+              cursor:"pointer",
+              fontSize: isMobile ? 14 : 13,
+              fontWeight:600,
+              color:t.color,
+              transition:"all 0.15s",
+              touchAction:"manipulation"
+            }}
             onMouseOver={e=>{e.currentTarget.style.background=`${t.color}12`}}
             onMouseOut={e=>{e.currentTarget.style.background=T.card}}>
             <span style={{fontSize:18}}>{t.icon}</span>{t.label}
@@ -671,19 +695,26 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
       </div>
 
       {/* Filtros */}
-      <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
-        <select className="form-select" style={{width:180}} value={filtroLote} onChange={e=>setFiltroLote(e.target.value)}>
+      <div style={{
+        display: isMobile ? "grid" : "flex",
+        gridTemplateColumns: isMobile ? "1fr" : undefined,
+        gap: isMobile ? 10 : 8,
+        marginBottom:16,
+        flexWrap:"wrap",
+        alignItems: isMobile ? "stretch" : "center"
+      }}>
+        <select className="form-select" style={{width: isMobile ? "100%" : 180, minHeight: isMobile ? 48 : undefined, fontSize: isMobile ? 16 : undefined}} value={filtroLote} onChange={e=>setFiltroLote(e.target.value)}>
           <option value="">Todos los lotes</option>
           {(()=>{
             const zonas=[...new Set((state.lotes||[]).map(l=>l.apodo&&l.apodo!=="NO DEFINIDO"?l.apodo:(l.lote||("Lote #"+l.id))))].sort();
             return zonas.map(z=>(<option key={z} value={"zona:"+z}>{z}</option>));
           })()}
         </select>
-        <select className="form-select" style={{width:180}} value={filtroTipo} onChange={e=>setFiltroTipo(e.target.value)}>
+        <select className="form-select" style={{width: isMobile ? "100%" : 180, minHeight: isMobile ? 48 : undefined, fontSize: isMobile ? 16 : undefined}} value={filtroTipo} onChange={e=>setFiltroTipo(e.target.value)}>
           <option value="">Todos los tipos</option>
           {TIPOS.map(t=><option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
         </select>
-        <span style={{fontSize:12,color:T.fog,marginLeft:4}}>{bitacora.length} registro{bitacora.length!==1?"s":""}</span>
+        <span style={{fontSize:12,color:T.fog,marginLeft: isMobile ? 0 : 4}}>{bitacora.length} registro{bitacora.length!==1?"s":""}</span>
       </div>
 
       {/* Feed */}
