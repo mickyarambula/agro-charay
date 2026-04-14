@@ -527,6 +527,7 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
         const totalImp = dieselFiltrado.reduce((s,d)=>s+(parseFloat(d.importe)||0),0);
         const activeF  = [filtroProd!=="todos",filtroCancelados!=="activos",!!filtroActividad].filter(Boolean).length;
         return (
+          <>
           {/* Pills: filtro por tipo de movimiento */}
           <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
             {[
@@ -600,6 +601,7 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
               )}
             </div>
           </div>
+          </>
         );
       })()}
       {isMobile ? (
