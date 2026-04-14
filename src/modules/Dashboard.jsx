@@ -24,10 +24,13 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { WidgetCBOTDashboard } from "../App.jsx";
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function Dashboard({ userRol, onNavigate }) {
   const { state } = useData();
+  const isMobile = useIsMobile();
+  const [cbotAbierto, setCbotAbierto] = useState(false);
   const F = calcularFinancieros(state);
   const mxnFmt = n => (parseFloat(n)||0).toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2});
   const nav = (page, pid, filtros) => onNavigate && onNavigate(page, pid, filtros);
@@ -105,10 +108,38 @@ export default function Dashboard({ userRol, onNavigate }) {
       <PanelAlertas alertas={alertas} onNavigate={onNavigate} />
 
       {/* ── Widget CBOT Precio Maíz ── */}
-      <WidgetCBOTDashboard />
+      {isMobile ? (
+        <div style={{marginBottom:16}}>
+          <button
+            onClick={()=>setCbotAbierto(v=>!v)}
+            style={{
+              width:"100%",
+              minHeight:48,
+              padding:"12px 16px",
+              background:"#ffffff",
+              border:"1px solid #e5e7eb",
+              borderRadius:10,
+              cursor:"pointer",
+              display:"flex",
+              alignItems:"center",
+              justifyContent:"space-between",
+              fontSize:14,
+              fontWeight:600,
+              color:"#14532D",
+              touchAction:"manipulation",
+            }}
+          >
+            <span>📈 Precios CBOT</span>
+            <span style={{fontSize:12,color:"#6b7280"}}>{cbotAbierto?"▲ Ocultar":"▼ Ver"}</span>
+          </button>
+          {cbotAbierto && <div style={{marginTop:10}}><WidgetCBOTDashboard /></div>}
+        </div>
+      ) : (
+        <WidgetCBOTDashboard />
+      )}
 
       {/* ── Fila 1: KPIs principales clicables ── */}
-      <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:16}}>
+      <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:16}}>
 
         <div className="stat-card green" {...cardClick(()=>nav("ciclos"))} title="Ver Ciclos">
           <div className="stat-icon">🌽</div>

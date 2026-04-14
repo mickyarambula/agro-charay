@@ -23,10 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 export default function CosechaModule({ userRol, puedeEditar }) {
   const { state, dispatch } = useData();
+  const isMobile = useIsMobile();
   const hoy = new Date().toISOString().split("T")[0];
   const productores  = state.productores || [];
   const cicloPred    = (state.ciclos||[]).find(c=>c.id===state.cicloActivoId)||(state.ciclos||[]).find(c=>c.id===state.cicloActivoId)||(state.ciclos||[]).find(c=>c.predeterminado)||(state.ciclos||[])[0];
@@ -178,7 +180,7 @@ export default function CosechaModule({ userRol, puedeEditar }) {
   // ─── VISTA RESUMEN ──────────────────────────────────────────────────────────
   if (vista==="resumen") return (
     <div>
-      <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:20}}>
+      <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:20}}>
         <div className="stat-card green">
           <div className="stat-icon">🌽</div>
           <div className="stat-label">Producción Total (PNA)</div>
@@ -422,6 +424,44 @@ export default function CosechaModule({ userRol, puedeEditar }) {
         </div>
         <button className="btn btn-primary" onClick={()=>setVista("import")}>📥 Importar más</button>
       </div>
+      {isMobile ? (
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+          {[...boletas].sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).map(b=>{
+            const opaco = b.cancelado?{opacity:0.55}:{};
+            const ton = (parseFloat(b.pna)||0)/1000;
+            return (
+              <div key={b.id} style={{
+                background:"#ffffff",
+                border:"1px solid #e5e7eb",
+                borderLeft:"4px solid #15803D",
+                borderRadius:12,
+                padding:14,
+                boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
+                ...opaco,
+              }}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,marginBottom:6}}>
+                  <div style={{fontSize:18,fontWeight:700,color:"#14532D",fontFamily:"monospace"}}>#{b.boleta}</div>
+                  <div style={{fontSize:12,color:"#6b7280"}}>{b.fecha}</div>
+                </div>
+                <div style={{fontSize:13,color:"#374151",marginBottom:6}}>
+                  👤 <strong>{nomProd(b.productorId)||b.productorNombre||"—"}</strong>
+                </div>
+                <div style={{fontSize:20,fontWeight:700,color:"#15803D",marginBottom:4}}>
+                  {ton.toFixed(3)} <span style={{fontSize:13,fontWeight:500,color:"#6b7280"}}>ton</span>
+                </div>
+                <div style={{display:"flex",gap:14,flexWrap:"wrap",fontSize:12,color:"#6b7280"}}>
+                  <span>Hum: <strong style={{color:parseFloat(b.hum)>14?"#c0392b":"#14532D"}}>{b.hum}%</strong></span>
+                  {b.chofer && <span>🚚 {b.chofer}</span>}
+                </div>
+                {b.cancelado && <div style={{marginTop:6,fontSize:11,color:"#991b1b",fontWeight:600}}>🚫 Cancelada</div>}
+              </div>
+            );
+          })}
+          {boletas.length===0 && (
+            <div style={{textAlign:"center",padding:32,color:"#8a8070",fontSize:14}}>Sin boletas</div>
+          )}
+        </div>
+      ) : (
       <div className="card">
         <div className="table-wrap-scroll">
           <table style={{minWidth:900}}>
@@ -468,6 +508,7 @@ export default function CosechaModule({ userRol, puedeEditar }) {
           </table>
         </div>
       </div>
+      )}
     </div>
   );
 
