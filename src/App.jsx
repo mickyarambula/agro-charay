@@ -1236,18 +1236,39 @@ export default function App() {
   const [pageStack, setPageStack] = React.useState([]); // historial de navegación
 
   // Restaurar sesión después del reload post-login (handleLogin guarda en sessionStorage)
+  // O al volver a abrir la app (incluyendo al tocar una notificación push), leer
+  // agro_session persistente de localStorage si no expiró (8 horas).
   React.useEffect(() => {
-    const saved = sessionStorage.getItem('agroLoginUser');
-    if (saved && !usuario) {
+    if (usuario) return;
+    const restore = (u) => {
+      setUsuario(u);
+      if (u.rol === "campo") setPage("operador");
+      else if (["encargado","ingeniero"].includes(u.rol)) setPage("dashboard");
+      else if (u.rol === "compras") setPage("flujos");
+      else setPage("dashboard");
+    };
+    // 1) Bridge del reload post-login (corto plazo)
+    const savedSess = sessionStorage.getItem('agroLoginUser');
+    if (savedSess) {
       try {
-        const u = JSON.parse(saved);
+        const u = JSON.parse(savedSess);
         sessionStorage.removeItem('agroLoginUser');
-        setUsuario(u);
-        if (u.rol === "campo") setPage("operador");
-        else if (["encargado","ingeniero"].includes(u.rol)) setPage("dashboard");
-        else if (u.rol === "compras") setPage("flujos");
-        else setPage("dashboard");
+        restore(u);
+        return;
       } catch(e) {}
+    }
+    // 2) Sesión persistente (8 horas)
+    const savedPers = localStorage.getItem('agro_session');
+    if (savedPers) {
+      try {
+        const sesion = JSON.parse(savedPers);
+        const horasTranscurridas = (Date.now() - (sesion.timestamp||0)) / (1000 * 60 * 60);
+        if (horasTranscurridas < 8 && sesion.usuario) {
+          restore(sesion);
+        } else {
+          localStorage.removeItem('agro_session');
+        }
+      } catch(e) { localStorage.removeItem('agro_session'); }
     }
   }, []);
 
@@ -1448,6 +1469,11 @@ export default function App() {
   const handleLogin = async (u) => {
     try { await loadStateFromSupabase(); } catch(e) { console.warn('Supabase skip:', e); }
     sessionStorage.setItem('agroLoginUser', JSON.stringify(u));
+    // Persistir sesión 8 horas — sobrevive al cierre/reapertura de la app (PWA)
+    localStorage.setItem('agro_session', JSON.stringify({
+      ...u,
+      timestamp: Date.now(),
+    }));
     window.location.reload();
   };
 
@@ -1457,7 +1483,7 @@ export default function App() {
   if (usuario.rol === "campo") {
     return (
       <Ctx.Provider value={{ state, dispatch }}>
-        <VistaOperador usuario={usuario} onLogout={() => setUsuario(null)} />
+        <VistaOperador usuario={usuario} onLogout={() => { localStorage.removeItem('agro_session'); setUsuario(null); }} />
       </Ctx.Provider>
     );
   }
@@ -1593,7 +1619,7 @@ export default function App() {
               <div style={{color:"white",fontWeight:600,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{usuario.nombre}</div>
               <div style={{color:"rgba(255,255,255,0.55)",fontSize:11}}>{rolInfo.label}</div>
             </div>
-            <button onClick={()=>setUsuario(null)} title="Cerrar sesión"
+            <button onClick={()=>{ localStorage.removeItem('agro_session'); setUsuario(null); }} title="Cerrar sesión"
               style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:16,padding:2,flexShrink:0}} >⏏</button>
           </div>
 
