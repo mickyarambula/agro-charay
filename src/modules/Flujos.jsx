@@ -32,9 +32,9 @@ export default function FlujoModule({ userRol, usuario }) {
   const hoy = new Date().toISOString().split("T")[0];
   const mxnFmt = n => (parseFloat(n)||0).toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2});
 
-  const esSocio = userRol === "socio";
+  const puedeReembolso = userRol === "socio" || userRol === "encargado";
   const esAdmin = userRol === "admin";
-  const [tab, setTab]         = useState(esSocio ? "reembolsos" : "pendientes");
+  const [tab, setTab]         = useState(puedeReembolso ? "reembolsos" : "pendientes");
   const [modalTipo, setModalTipo] = useState(null); // "compra"|"gasto"|"recom"|"reembolso"
   const [form, setForm]       = useState({});
   const [detalle, setDetalle] = useState(null); // solicitud seleccionada
@@ -230,7 +230,7 @@ export default function FlujoModule({ userRol, usuario }) {
 
   // ── Reembolsos visibles según rol ────────────────────────────────────────
   const todosReembolsos = solGastos.filter(g => g.esReembolso);
-  const reembolsosVisibles = esSocio
+  const reembolsosVisibles = puedeReembolso
     ? todosReembolsos.filter(g => g.creadoPor === usuario?.usuario)
     : todosReembolsos;
 
@@ -331,7 +331,7 @@ export default function FlujoModule({ userRol, usuario }) {
   };
 
   // ── Tabs ────────────────────────────────────────────────────────────────
-  const tabs = esSocio
+  const tabs = puedeReembolso
     ? [
         {id:"reembolsos", label:`💰 Mis Reembolsos (${reembolsosVisibles.length})` },
       ]
@@ -351,7 +351,7 @@ export default function FlujoModule({ userRol, usuario }) {
         <div style={{fontFamily:"Georgia, serif",fontSize:22,fontWeight:700}}>
           ✅ Flujos y Aprobaciones
         </div>
-        {esSocio && (
+        {puedeReembolso && (
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             <button className="btn btn-primary btn-sm"
               onClick={()=>{setModalTipo("reembolso");setForm({tipo:"reembolso",fecha:hoy});}}>
@@ -391,7 +391,7 @@ export default function FlujoModule({ userRol, usuario }) {
       )}
 
       {/* KPIs — admin/otros ven 4 tarjetas; socio ve solo resumen de sus reembolsos */}
-      {esSocio ? (
+      {puedeReembolso ? (
         <div className="stat-grid" style={{gridTemplateColumns:"repeat(3,1fr)",marginBottom:16}}>
           {[
             {label:"Pendientes", val:reembolsosVisibles.filter(r=>r.estatus==="pendiente").length, color:"#e67e22", icon:"⏳"},
@@ -544,9 +544,9 @@ export default function FlujoModule({ userRol, usuario }) {
           return (
             <div className="empty-state">
               <div className="empty-icon">💰</div>
-              <div className="empty-title">{esSocio?"Sin reembolsos registrados":"Sin reembolsos"}</div>
+              <div className="empty-title">{puedeReembolso?"Sin reembolsos registrados":"Sin reembolsos"}</div>
               <div className="empty-sub">
-                {esSocio ? "Usa el botón 'Registrar Gasto de Reembolso' para capturar un nuevo gasto." : "Aún no hay reembolsos registrados por los socios."}
+                {puedeReembolso ? "Usa el botón 'Registrar Gasto de Reembolso' para capturar un nuevo gasto." : "Aún no hay reembolsos registrados por los socios."}
               </div>
             </div>
           );
@@ -624,7 +624,7 @@ export default function FlujoModule({ userRol, usuario }) {
                   )}
 
                   {/* ── Acciones socio SIEMPRE visibles (solo autor, solo pendiente/rechazado) ── */}
-                  {esSocio && sol.creadoPor === usuario?.usuario && ["pendiente","rechazado"].includes(sol.estatus) && (
+                  {puedeReembolso && sol.creadoPor === usuario?.usuario && ["pendiente","rechazado"].includes(sol.estatus) && (
                     <div style={{padding:"10px 16px",borderTop:`1px solid ${T.line}`,background:"#faf8f3",
                       display:"flex",gap:8,flexWrap:"wrap"}}>
                       <button className="btn btn-sm btn-secondary"
