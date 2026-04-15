@@ -206,7 +206,7 @@ export default function CiclosModule({ userRol, puedeEditar }) {
     <div>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:24}}>
         <button className="btn btn-secondary" onClick={()=>setVista(selCiclo?"detalle":"lista")}>← Cancelar</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700}}>
+        <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700}}>
           {modoForm==="nuevo" ? "Nuevo Ciclo Agrícola" : `Editar — ${cicloSel?.nombre}`}
         </div>
       </div>
@@ -277,7 +277,7 @@ export default function CiclosModule({ userRol, puedeEditar }) {
       <div>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
           <button className="btn btn-secondary" onClick={()=>setVista("detalle")}>← Volver</button>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,flex:1}}>
+          <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700,flex:1}}>
             🌽 Cultivos y Variedades — {cicloSel2?.nombre}
           </div>
         </div>
@@ -423,7 +423,7 @@ export default function CiclosModule({ userRol, puedeEditar }) {
         {/* Header fijo */}
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,flexShrink:0}}>
           <button className="btn btn-secondary" onClick={()=>setVista("detalle")}>← Volver</button>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,flex:1}}>
+          <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700,flex:1}}>
             Productores — {cicloSel?.nombre}
           </div>
           <div style={{fontSize:13,color:"#8a8070"}}>{prodsSel.length} seleccionados</div>
@@ -606,7 +606,7 @@ export default function CiclosModule({ userRol, puedeEditar }) {
         {/* Header */}
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,flexShrink:0,flexWrap:"wrap"}}>
           <button className="btn btn-secondary" onClick={()=>setVista("detalle")}>← Volver</button>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,flex:1}}>
+          <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700,flex:1}}>
             Predios — {cicloSel?.nombre}
           </div>
           <div style={{fontSize:13,color:"#2d5a1b",fontFamily:"monospace",fontWeight:700}}>{fmt2loc(totalHaAsig)} ha total</div>
@@ -848,7 +848,7 @@ export default function CiclosModule({ userRol, puedeEditar }) {
       <div>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,flexWrap:"wrap"}}>
           <button className="btn btn-secondary" onClick={()=>setVista("lista")}>← Volver</button>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,flex:1}}>
+          <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700,flex:1}}>
             {c.nombre}
             {c.predeterminado&&<span style={{marginLeft:10,background:"#e8f4e1",color:"#2d5a1b",fontSize:11,fontWeight:700,padding:"2px 10px",borderRadius:20,border:"1px solid #2d5a1b"}}>✅ Predeterminado</span>}
           </div>
@@ -1004,7 +1004,7 @@ export default function CiclosModule({ userRol, puedeEditar }) {
                   <div style={{fontSize:28}}>{c.predeterminado?"📅":"🗂"}</div>
                   <div style={{flex:1}}>
                     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                      <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:700}}>{c.nombre}</div>
+                      <div style={{fontFamily:"Georgia, serif",fontSize:16,fontWeight:700}}>{c.nombre}</div>
                       {c.predeterminado&&<span style={{background:"#e8f4e1",color:"#2d5a1b",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,border:"1px solid #2d5a1b"}}>✅ PREDETERMINADO</span>}
                     </div>
                     <div style={{fontSize:11,color:"#8a8070",marginTop:3}}>

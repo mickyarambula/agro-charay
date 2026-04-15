@@ -91,7 +91,7 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
       <div>
         <button className="btn btn-secondary btn-sm" style={{marginBottom:12}}
           onClick={()=>setVistaH("")}>← Regresar</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,marginBottom:4}}>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700,marginBottom:4}}>
           🚜 {maq?.nombre} — Historial de Horas
         </div>
         <div style={{display:"flex",gap:12,marginBottom:16,flexWrap:"wrap"}}>

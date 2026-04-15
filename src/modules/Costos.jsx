@@ -351,7 +351,7 @@ export default function CostosModule({ userRol, puedeEditar, onNavigate }) {
           <button className="btn btn-secondary" onClick={()=>setVista("global")}>← Volver</button>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <div style={{width:12,height:12,borderRadius:"50%",background:p.color}}/>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700}}>{p.alias||p.apPat}</div>
+            <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700}}>{p.alias||p.apPat}</div>
             <span style={{fontSize:11,padding:"3px 10px",borderRadius:10,background:"#f0f4e8",color:"#2d5a1b",fontWeight:600}}>{ha.toFixed(2)} ha</span>
           </div>
         </div>

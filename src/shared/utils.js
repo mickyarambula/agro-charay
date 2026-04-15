@@ -124,7 +124,7 @@ export const css = `
     flex-shrink: 0; position: sticky; top: 0; z-index: 5;
   }
   .topbar-title {
-    font-family: 'Playfair Display', serif;
+    font-family: Georgia, serif;
     font-size: 20px; font-weight: 600; color: ${T.inkLt};
   }
   .topbar-right { display: flex; align-items: center; gap: 12px; }
@@ -161,7 +161,7 @@ export const css = `
     display: flex; align-items: center; justify-content: space-between;
   }
   .card-title {
-    font-family: 'Playfair Display', serif;
+    font-family: Georgia, serif;
     font-size: 15px; font-weight: 600; color: ${T.inkLt};
   }
   .card-body { padding: 20px; }
@@ -312,7 +312,7 @@ export const css = `
     color: white; position: relative;
   }
   .lote-hectareas {
-    font-family: 'Playfair Display', serif;
+    font-family: Georgia, serif;
     font-size: 32px; font-weight: 700; line-height: 1;
   }
   .lote-ha-label { font-size: 12px; opacity: 0.75; margin-left: 3px; }
@@ -351,7 +351,7 @@ export const css = `
   /* EMPTY STATE */
   .empty-state { text-align: center; padding: 48px 24px; color: ${T.fog}; }
   .empty-icon { font-size: 44px; margin-bottom: 14px; }
-  .empty-title { font-family: 'Playfair Display', serif; font-size: 17px; color: ${T.inkLt}; margin-bottom: 6px; }
+  .empty-title { font-family: Georgia, serif; font-size: 17px; color: ${T.inkLt}; margin-bottom: 6px; }
   .empty-sub { font-size: 13px; margin-bottom: 20px; }
 
   /* CHART BARS (CSS only) */

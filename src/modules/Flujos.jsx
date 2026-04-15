@@ -348,7 +348,7 @@ export default function FlujoModule({ userRol, usuario }) {
     <div>
       {/* Header */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700}}>
+        <div style={{fontFamily:"Georgia, serif",fontSize:22,fontWeight:700}}>
           ✅ Flujos y Aprobaciones
         </div>
         {esSocio && (

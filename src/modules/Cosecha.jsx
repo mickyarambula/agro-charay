@@ -419,7 +419,7 @@ export default function CosechaModule({ userRol, puedeEditar }) {
     <div>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
         <button className="btn btn-secondary" onClick={()=>setVista("resumen")}>← Volver</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,flex:1}}>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700,flex:1}}>
           Boletas de Cosecha ({boletas.length})
         </div>
         <button className="btn btn-primary" onClick={()=>setVista("import")}>📥 Importar más</button>
@@ -517,7 +517,7 @@ export default function CosechaModule({ userRol, puedeEditar }) {
     <div style={{maxWidth:680}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
         <button className="btn btn-secondary" onClick={()=>setVista("resumen")}>← Volver</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>Importar Excel de Boletas</div>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700}}>Importar Excel de Boletas</div>
       </div>
       <div className="card" style={{marginBottom:16,borderLeft:"4px solid #2d5a1b"}}>
         <div className="card-body">

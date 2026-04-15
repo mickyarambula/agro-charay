@@ -287,7 +287,7 @@ export default function InventarioModule({ userRol, puedeEditar }) {
           <button className="btn btn-secondary" onClick={()=>setVista("resumen")}>← Volver</button>
           <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
             <div style={{width:12,height:12,borderRadius:"50%",background:catColor(item.categoria)}}/>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700}}>{item.nombre}</div>
+            <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700}}>{item.nombre}</div>
             <span style={{fontSize:11,padding:"3px 10px",borderRadius:10,background:catColor(item.categoria)+"22",color:catColor(item.categoria),fontWeight:600}}>{item.categoria}</span>
           </div>
           {puedeEditar&&<button className="btn btn-primary" onClick={()=>{setFormMov({...emptyMov,itemId:String(item.id)});setModalMov(true);}}>＋ Movimiento</button>}

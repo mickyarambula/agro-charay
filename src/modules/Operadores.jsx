@@ -352,7 +352,7 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
         <TabBar/>
         {/* Cabecera: fecha + info semana */}
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12,flexWrap:"wrap"}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,flex:1}}>
+          <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700,flex:1}}>
             Registrar Asistencia
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -552,7 +552,7 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
       <div>
         <TabBar/>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,flexWrap:"wrap"}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,flex:1}}>Semana de Pago</div>
+          <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700,flex:1}}>Semana de Pago</div>
           <select className="form-select" style={{width:230}} value={semSelReal} onChange={e=>setSemSel(e.target.value)}>
             {semsDisp.map(s=><option key={s} value={s}>{labelSemana(s)}</option>)}
           </select>
@@ -570,7 +570,7 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
               </div>
               {pagadaSem&&<div style={{fontSize:11,color:"#155724"}}>Registrado: {pagadaSem.fechaPago}</div>}
             </div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,
+            <div style={{fontFamily:"Georgia, serif",fontSize:22,fontWeight:800,
               color:pagadaSem?"#155724":"#c0392b"}}>{mxnFmt(totalSem)}</div>
           </div>
           {semAnt&&(
@@ -690,7 +690,7 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
       <div>
         <TabBar/>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,flex:1}}>Historial</div>
+          <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700,flex:1}}>Historial</div>
           <select className="form-select" style={{width:220}} value={opFiltro} onChange={e=>setOpFiltro(e.target.value)}>
             <option value="">Todos los operadores</option>
             {operadores.map(o=><option key={o.id} value={o.id}>{o.nombre}</option>)}
@@ -755,7 +755,7 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
     <div>
       <TabBar/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>Catálogo de Operadores</div>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700}}>Catálogo de Operadores</div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           <div style={{display:"flex",gap:8,padding:"6px 12px",background:T.mist,borderRadius:8,
             alignItems:"center",border:`1px solid ${T.line}`}}>

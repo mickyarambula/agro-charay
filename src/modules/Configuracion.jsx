@@ -526,7 +526,7 @@ export default function ConfiguracionModule({ userRol }) {
         return (
           <div>
             <div style={{marginBottom:20}}>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,marginBottom:4}}>
+              <div style={{fontFamily:"Georgia, serif",fontSize:17,fontWeight:700,marginBottom:4}}>
                 🔔 Configuración de Alertas
               </div>
               <div style={{fontSize:12,color:"#8a8070"}}>

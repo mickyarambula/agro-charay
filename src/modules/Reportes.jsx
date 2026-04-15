@@ -163,7 +163,7 @@ export default function ReportesModule() {
               <div style={{fontSize:12,color:"#c0392b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em"}}>Total a Liquidar del Ciclo</div>
               <div style={{fontSize:11,color:T.fog,marginTop:2}}>{mxnFmt(TOTS.ha>0?TOTS.tLiq/TOTS.ha:0)}/ha · {datosProductores.length} productores con movimientos</div>
             </div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:800,color:"#c0392b"}}>{mxnFmt(TOTS.tLiq)}</div>
+            <div style={{fontFamily:"Georgia, serif",fontSize:28,fontWeight:800,color:"#c0392b"}}>{mxnFmt(TOTS.tLiq)}</div>
           </div>
 
           {/* Desglose operativo + financiero */}
@@ -284,7 +284,7 @@ export default function ReportesModule() {
         <div>
           <div className="card" style={{marginBottom:16}}>
             <div style={{padding:"18px 20px",borderBottom:`1px solid ${T.line}`}}>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>Reporte Ejecutivo del Ciclo</div>
+              <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700}}>Reporte Ejecutivo del Ciclo</div>
               <div style={{fontSize:12,color:T.fog,marginTop:2}}>Agrícola Charay · {state.cicloActual} · Generado {new Date().toLocaleDateString("es-MX",{day:"2-digit",month:"long",year:"numeric"})}</div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)"}}>
@@ -628,7 +628,7 @@ export default function ReportesModule() {
         return (
           <div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>📄 Reporte de Cierre — {cicloNom}</div>
+              <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700}}>📄 Reporte de Cierre — {cicloNom}</div>
               <BtnExport label="📥 Excel Cierre" onClick={()=>exportarExcel("Cierre_"+cicloNom,[
                 {nombre:"Cierre",headers:["Sección","Concepto","Valor"],
                  rows:seccionesReporte.flatMap(s=>[[s.titulo,"",""],...s.items.map(([c,v])=>["",c,v])])},

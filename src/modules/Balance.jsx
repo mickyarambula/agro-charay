@@ -87,12 +87,12 @@ export default function BalanceModule({ userRol, onNavigate }) {
         <div className="card-body">
           <div className="flex justify-between items-center">
             <div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700}}>Balance General</div>
+              <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700}}>Balance General</div>
               <div style={{fontSize:12,color:T.fog,marginTop:2}}>Agrícola Charay · {new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})} · Estimado</div>
             </div>
             <div style={{textAlign:"right"}}>
               <div style={{fontSize:11,color:T.fog}}>Patrimonio neto estimado</div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:patrimonioNeto>=0?T.field:T.rust}}>{mxn(patrimonioNeto)}</div>
+              <div style={{fontFamily:"Georgia, serif",fontSize:26,fontWeight:700,color:patrimonioNeto>=0?T.field:T.rust}}>{mxn(patrimonioNeto)}</div>
             </div>
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function BalanceModule({ userRol, onNavigate }) {
 
       <div className="grid-2">
         <div className="card">
-          <div style={{padding:"14px 16px",borderBottom:`2px solid ${T.field}`,fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:700,color:T.field}}>ACTIVOS</div>
+          <div style={{padding:"14px 16px",borderBottom:`2px solid ${T.field}`,fontFamily:"Georgia, serif",fontSize:16,fontWeight:700,color:T.field}}>ACTIVOS</div>
           <div style={{padding:16}}>
             <Seccion titulo="Activo Circulante" rows={activoCirculante} total={totalActCirc} colorT={T.field}/>
             <Seccion titulo="Activo Fijo" rows={[...activoFijo,...activoTierras]} total={totalActFijo} colorT={T.field}/>
@@ -117,7 +117,7 @@ export default function BalanceModule({ userRol, onNavigate }) {
           </div>
         </div>
         <div className="card">
-          <div style={{padding:"14px 16px",borderBottom:`2px solid ${T.rust}`,fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:700,color:T.rust}}>PASIVOS Y CAPITAL</div>
+          <div style={{padding:"14px 16px",borderBottom:`2px solid ${T.rust}`,fontFamily:"Georgia, serif",fontSize:16,fontWeight:700,color:T.rust}}>PASIVOS Y CAPITAL</div>
           <div style={{padding:16}}>
             <Seccion titulo="Pasivo Circulante (corto plazo)" rows={pasivoCorto} total={totalPasCorto} colorT={T.rust}/>
             {pasivoLargo.length>0&&<Seccion titulo="Pasivo Largo Plazo" rows={pasivoLargo} total={totalPasLargo} colorT={T.rust}/>}

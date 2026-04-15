@@ -64,12 +64,12 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
         <div className="card-body">
           <div className="flex justify-between items-center">
             <div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700}}>Flujo de Caja del Ciclo</div>
+              <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700}}>Flujo de Caja del Ciclo</div>
               <div style={{fontSize:12,color:T.fog,marginTop:2}}>Agrícola Charay · {state.cicloActual} · Estimado + Real</div>
             </div>
             <div style={{textAlign:"right"}}>
               <div style={{fontSize:11,color:T.fog}}>Saldo neto estimado</div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:saldoFinal>=0?T.field:T.rust}}>{mxn(saldoFinal)}</div>
+              <div style={{fontFamily:"Georgia, serif",fontSize:26,fontWeight:700,color:saldoFinal>=0?T.field:T.rust}}>{mxn(saldoFinal)}</div>
             </div>
           </div>
         </div>
@@ -142,7 +142,7 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
               <div style={{fontWeight:700,fontSize:15}}>SALDO NETO DE CAJA DEL CICLO</div>
               <div style={{fontSize:12,color:T.fog,marginTop:3}}>Entradas − Salidas. Incluye ingreso de cosecha estimado.</div>
             </div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:30,fontWeight:800,color:saldoFinal>=0?T.field:T.rust}}>{mxn(saldoFinal)}</div>
+            <div style={{fontFamily:"Georgia, serif",fontSize:30,fontWeight:800,color:saldoFinal>=0?T.field:T.rust}}>{mxn(saldoFinal)}</div>
           </div>
         </div>
       </div>

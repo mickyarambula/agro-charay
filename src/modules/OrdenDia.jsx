@@ -505,7 +505,7 @@ export default function OrdenDia({ userRol, usuario }) {
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
           <div>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
               📋 Órdenes del Día
             </div>
             <div style={{ fontSize: 13, opacity: 0.9, textTransform: "capitalize" }}>
@@ -573,7 +573,7 @@ export default function OrdenDia({ userRol, usuario }) {
             boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
           }}>
             <div style={{ fontSize: 24, marginBottom: 4 }}>{k.icon}</div>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 700, color: k.color, lineHeight: 1 }}>{k.val}</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 28, fontWeight: 700, color: k.color, lineHeight: 1 }}>{k.val}</div>
             <div style={{ fontSize: 11, color: "#8a8070", fontWeight: 600, marginTop: 4, letterSpacing: 0.5, textTransform: "uppercase" }}>{k.label}</div>
           </div>
         ))}
@@ -675,7 +675,7 @@ export default function OrdenDia({ userRol, usuario }) {
                       }}>{est.label}</span>
                       {orden.horaInicio && <span style={{ fontSize: 12, color: "#8a8070" }}>⏰ {orden.horaInicio}</span>}
                     </div>
-                    <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: "#3d3525", marginBottom: 4 }}>
+                    <div style={{ fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, color: "#3d3525", marginBottom: 4 }}>
                       {orden.tipoTrabajo || "Trabajo"}
                     </div>
                     <div style={{ fontSize: 13, color: "#5a5040", display: "flex", flexDirection: "column", gap: 3 }}>

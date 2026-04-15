@@ -104,7 +104,7 @@ export default function VistaOperador({ usuario, onLogout }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 14, opacity: 0.85, marginBottom: 4 }}>{saludo},</div>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 700, lineHeight: 1.1 }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, lineHeight: 1.1 }}>
               {usuario?.nombre?.split(" ")[0] || "Operador"} 👷
             </div>
             <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8, textTransform: "capitalize" }}>
@@ -130,7 +130,7 @@ export default function VistaOperador({ usuario, onLogout }) {
       {/* TÍTULO DE LA SECCIÓN */}
       <div style={{ padding: "24px 20px 12px" }}>
         <div style={{
-          fontFamily: "'Playfair Display', serif",
+          fontFamily: "Georgia, serif",
           fontSize: 22,
           fontWeight: 700,
           color: "#3d3525",

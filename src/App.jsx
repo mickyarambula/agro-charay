@@ -274,7 +274,7 @@ export function WidgetCBOTDashboard(){
         {listo?(
           <div style={{display:"flex",alignItems:"center",gap:14,flex:1,justifyContent:"center",flexWrap:"wrap"}}>
             <div style={{display:"flex",alignItems:"baseline",gap:4}}>
-              <span style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:"#2d5a1b",lineHeight:1}}>{mxnFmt(m.precioMXN)}</span>
+              <span style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700,color:"#2d5a1b",lineHeight:1}}>{mxnFmt(m.precioMXN)}</span>
               <span style={{fontSize:10,color:"#8a8070"}}>/ton</span>
             </div>
             <div style={{display:"flex",gap:12,fontSize:11,color:"#8a8070"}}>

@@ -154,7 +154,7 @@ export default function LotesModule({ userRol, puedeEditar: _puedeEditar }) {
       <div>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,flexWrap:"wrap"}}>
           <button className="btn btn-secondary" onClick={()=>{setModo("lista");setSel(null);}}>← Volver</button>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,flex:1}}>
+          <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700,flex:1}}>
             {l.apodo||"Lote"} {l.lote?"· "+l.lote:""}
           </div>
           {puedeEditar && <button className="btn btn-secondary" onClick={()=>abrirForm(l)}>✏️ Editar</button>}
@@ -218,7 +218,7 @@ export default function LotesModule({ userRol, puedeEditar: _puedeEditar }) {
       <div>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:24}}>
           <button className="btn btn-secondary" onClick={()=>setModo(sel?"detalle":"lista")}>← Volver</button>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700}}>
+          <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700}}>
             {editando?"Editar Lote":"Nuevo Lote"}
           </div>
         </div>
@@ -388,7 +388,7 @@ export default function LotesModule({ userRol, puedeEditar: _puedeEditar }) {
       <div>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
           <button className="btn btn-secondary" onClick={()=>setModo("lista")}>← Volver</button>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,flex:1}}>
+          <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700,flex:1}}>
             🌿 Seguimiento Fenológico del Ciclo
           </div>
         </div>
@@ -526,7 +526,7 @@ export default function LotesModule({ userRol, puedeEditar: _puedeEditar }) {
       <div>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,flexWrap:"wrap"}}>
           <button className="btn btn-secondary" onClick={()=>{setModo("lista");setFiltroSel("");}}>← Volver</button>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,flex:1}}>Análisis de Superficie</div>
+          <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700,flex:1}}>Análisis de Superficie</div>
           {puedeEditar && <button className="btn btn-primary btn-sm" onClick={()=>abrirForm()}>＋ Nuevo lote</button>}
         </div>
         {/* KPIs */}

@@ -382,7 +382,7 @@ export default function ProductoresModule({ userRol, puedeEditar, onNavigate }) 
               {(p.alias||p.apPat||"?")[0]}
             </div>
             <div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,lineHeight:1.2}}>
+              <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700,lineHeight:1.2}}>
                 {p.alias||p.apPat}
               </div>
               <div style={{fontSize:11,color:T.fog}}>{nomCompleto(p)} · {p.rfc||"Sin RFC"}</div>
@@ -679,7 +679,7 @@ export default function ProductoresModule({ userRol, puedeEditar, onNavigate }) 
       <div>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:24}}>
           <button className="btn btn-secondary" onClick={()=>{setModo(sel?"detalle":"lista");if(!sel)setSel(null);}}>← Volver</button>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700}}>
+          <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700}}>
             {editando ? `Editar: ${sel?.alias||sel?.apPat||sel?.nombres}` : "Nuevo Productor"}
           </div>
         </div>

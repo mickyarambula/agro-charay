@@ -66,12 +66,12 @@ export default function EdoResultadosModule({ userRol, onNavigate }) {
         <div className="card-body">
           <div className="flex justify-between items-center">
             <div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700}}>Estado de Resultados</div>
+              <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700}}>Estado de Resultados</div>
               <div style={{fontSize:12,color:T.fog,marginTop:2}}>Agrícola Charay · Ciclo {ciclo} · Estimado al {new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})}</div>
             </div>
             <div style={{textAlign:"right"}}>
               <div style={{fontSize:11,color:T.fog}}>Utilidad estimada</div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:F.utilidadBruta>=0?T.field:T.rust}}>{mxn(F.utilidadBruta)}</div>
+              <div style={{fontFamily:"Georgia, serif",fontSize:26,fontWeight:700,color:F.utilidadBruta>=0?T.field:T.rust}}>{mxn(F.utilidadBruta)}</div>
               <div style={{fontSize:11,color:T.fog}}>Margen {fmt(Math.abs(F.margen),1)}%</div>
             </div>
           </div>

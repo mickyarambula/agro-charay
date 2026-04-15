@@ -395,7 +395,7 @@ export default function ProyeccionModule() {
             return (
               <div key={etapa} className="card" style={{marginBottom:12}}>
                 <div style={{padding:"12px 18px",borderBottom:`1px solid ${T.line}`,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:700,flex:1}}>{etapa}</div>
+                  <div style={{fontFamily:"Georgia, serif",fontSize:16,fontWeight:700,flex:1}}>{etapa}</div>
                   <div style={{display:"flex",gap:20,flexWrap:"wrap",alignItems:"center"}}>
                     <div style={{textAlign:"right"}}><div style={{fontSize:10,color:T.fog}}>Presupuesto</div><div style={{fontFamily:"monospace",fontWeight:600}}>{mxn(pTotal)}</div></div>
                     <div style={{textAlign:"right"}}><div style={{fontSize:10,color:T.fog}}>Real</div><div style={{fontFamily:"monospace",fontWeight:700,color:col}}>{mxn(rTotal)}</div></div>
