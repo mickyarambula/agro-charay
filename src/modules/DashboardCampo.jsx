@@ -182,41 +182,64 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
   );
 
   return (
-    <div>
+    <div style={isMobile ? { background: '#f8f6f2', minHeight: '100vh' } : undefined}>
       {/* ═══ HEADER — saludo ═══ */}
       {isMobile ? (
         <div style={{
-          marginBottom:16,
-          padding:16,
-          background:"#1a3a0f",
-          borderRadius:12,
-          display:"flex",
-          alignItems:"center",
-          justifyContent:"space-between",
-          gap:12,
+          background: '#1a3a0f',
+          padding: '18px 16px 22px',
+          margin: '-14px -12px 14px',
         }}>
-          <div style={{minWidth:0,flex:1}}>
-            <div style={{color:"#ffffff",fontSize:20,fontWeight:500,lineHeight:1.2}}>
-              {saludo}, {nombrePila} 👋
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{
+                fontSize: 10,
+                color: '#7ab87a',
+                letterSpacing: 1.2,
+                marginBottom: 4,
+                textTransform: 'uppercase',
+                fontWeight: 500,
+              }}>
+                {saludo} — Encargado de Campo
+              </div>
+              <div style={{
+                fontSize: 28,
+                color: '#ffffff',
+                fontFamily: 'Georgia, serif',
+                fontWeight: 400,
+                lineHeight: 1.1,
+              }}>
+                {saludo},<br/>{nombrePila}
+              </div>
             </div>
-            <div style={{color:"#7ab87a",fontSize:11,marginTop:4,textTransform:"capitalize"}}>
-              {new Date().toLocaleDateString("es-MX",{weekday:"long",day:"2-digit",month:"long"})} · Día {diaDelCiclo} del ciclo
+            <div style={{
+              textAlign: 'right',
+              fontSize: 10,
+              color: '#7ab87a',
+              lineHeight: 1.8,
+              textTransform: 'capitalize',
+              flexShrink: 0,
+            }}>
+              {new Date().toLocaleDateString('es-MX', { weekday: 'long' })}<br/>
+              {new Date().getDate()} {new Date().toLocaleDateString('es-MX', { month: 'long' })}<br/>
+              Día {diaDelCiclo}
             </div>
           </div>
           {cicloPred?.nombre && (
-            <span style={{
-              padding:"6px 12px",
-              borderRadius:999,
-              background:"#2d5a1b",
-              color:"#e8f5e2",
-              fontSize:10,
-              fontWeight:500,
-              letterSpacing:0.5,
-              whiteSpace:"nowrap",
-              border:"0.5px solid #7ab87a33",
+            <div style={{
+              display: 'inline-block',
+              marginTop: 10,
+              background: 'rgba(255,255,255,0.1)',
+              color: '#a8d5a2',
+              fontSize: 9,
+              fontWeight: 600,
+              padding: '3px 10px',
+              borderRadius: 20,
+              border: '1px solid rgba(255,255,255,0.15)',
+              letterSpacing: 0.3,
             }}>
               🌾 {cicloPred.nombre}
-            </span>
+            </div>
           )}
         </div>
       ) : (
@@ -232,7 +255,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
         }}>
           <div style={{position:"absolute",right:-20,top:-20,fontSize:120,opacity:0.08}}>🌾</div>
           <div style={{position:"relative"}}>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,lineHeight:1.2}}>
+            <div style={{fontFamily:"Georgia, serif",fontSize:24,fontWeight:700,lineHeight:1.2}}>
               {saludo}, {nombrePila} 👋
             </div>
             <div style={{fontSize:13,opacity:0.92,marginTop:6,textTransform:"capitalize"}}>
@@ -322,9 +345,19 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
                 </div>
                 <button onClick={()=>nav("ordenes")}
                   style={{
-                    marginTop:10,padding:"10px 18px",borderRadius:10,border:"none",
-                    background:"#2d5a1b",color:"white",fontSize:13,fontWeight:700,
-                    cursor:"pointer",
+                    marginTop: 12,
+                    padding: "16px",
+                    width: isMobile ? "100%" : undefined,
+                    borderRadius: 10,
+                    border: "none",
+                    background: "#1a3a0f",
+                    color: "#ffffff",
+                    fontSize: 15,
+                    fontFamily: isMobile ? "Georgia, serif" : undefined,
+                    fontWeight: isMobile ? 400 : 700,
+                    cursor: "pointer",
+                    minHeight: isMobile ? 56 : undefined,
+                    touchAction: "manipulation",
                   }}>
                   + Nueva orden
                 </button>
@@ -379,8 +412,8 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
         );
       })()}
 
-      {/* ═══ ACCIONES RÁPIDAS — 2x2 grid (1 col en móvil) ═══ */}
-      <div style={{display:"grid",gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",gap:12,marginBottom:20}}>
+      {/* ═══ ACCIONES RÁPIDAS — 2x2 grid ═══ */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
         {[
           { icon:"📋", label:"Registrar trabajo", color:"#2d5a1b", bg:"#f0f8e8", onClick:abrirTrabajo },
           { icon:"⛽", label:"Registrar diesel",   color:"#e67e22", bg:"#fef5ed", onClick:abrirDiesel },
@@ -389,21 +422,21 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
         ].map(b => (
           <button key={b.label} onClick={b.onClick}
             style={{
-              minHeight: isMobile ? 72 : 115,
+              minHeight: isMobile ? 92 : 115,
               width: "100%",
-              padding: isMobile ? "14px 16px" : "16px 12px",
-              border:"none",
-              borderRadius:14,
-              background:"white",
-              boxShadow:"0 2px 8px rgba(0,0,0,0.07)",
+              padding: isMobile ? "14px 12px" : "16px 12px",
+              border: isMobile ? "1px solid #ede5d8" : "none",
+              borderRadius:10,
+              background:"#ffffff",
+              boxShadow: isMobile ? "0 1px 4px rgba(26,58,15,0.04)" : "0 2px 8px rgba(0,0,0,0.07)",
               cursor:"pointer",
               display:"flex",
-              flexDirection: isMobile ? "row" : "column",
-              alignItems:"center",
-              justifyContent: isMobile ? "flex-start" : "center",
-              gap: isMobile ? 16 : 10,
+              flexDirection: "column",
+              alignItems:"flex-start",
+              justifyContent: "center",
+              gap: 8,
               transition:"transform 0.12s, box-shadow 0.12s",
-              borderTop:`4px solid ${b.color}`,
+              borderTop: isMobile ? "1px solid #ede5d8" : `4px solid ${b.color}`,
               position:"relative",
               overflow:"hidden",
               touchAction: "manipulation"
@@ -414,20 +447,21 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
             onMouseUp={e=>{e.currentTarget.style.transform="scale(1)";}}
             onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";}}>
             <div style={{
-              width: isMobile ? 64 : 56,
-              height: isMobile ? 64 : 56,
-              borderRadius:"50%",
-              background:b.bg,
+              width: isMobile ? 36 : 56,
+              height: isMobile ? 36 : 56,
+              borderRadius: isMobile ? 0 : "50%",
+              background: isMobile ? "transparent" : b.bg,
               display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize: isMobile ? 36 : 30,
+              fontSize: isMobile ? 24 : 30,
               flexShrink: 0
             }}>{b.icon}</div>
             <span style={{
-              fontSize: isMobile ? 16 : 13,
-              fontWeight:700,
-              color:"#3d3525",
-              textAlign: isMobile ? "left" : "center",
-              lineHeight:1.25
+              fontSize: 13,
+              fontWeight: isMobile ? 500 : 700,
+              color: isMobile ? "#1a2e1a" : "#3d3525",
+              textAlign: "left",
+              lineHeight:1.25,
+              fontFamily: isMobile ? "Georgia, serif" : "inherit",
             }}>{b.label}</span>
           </button>
         ))}
@@ -446,7 +480,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
         }}>
           <div style={{fontSize:22,marginBottom:4}}>📋</div>
           <div style={{fontSize:26,fontWeight:700,color:"#2d5a1b",
-            fontFamily:"'Playfair Display',serif",lineHeight:1}}>{bitHoy.length}</div>
+            fontFamily:"Georgia, serif",lineHeight:1}}>{bitHoy.length}</div>
           <div style={{fontSize:10,color:"#8a8070",fontWeight:600,marginTop:6,letterSpacing:0.3}}>TRABAJOS HOY</div>
         </div>
         <div style={{
@@ -455,7 +489,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
         }}>
           <div style={{fontSize:22,marginBottom:4}}>⛽</div>
           <div style={{fontSize:26,fontWeight:700,color:"#e67e22",
-            fontFamily:"'Playfair Display',serif",lineHeight:1}}>
+            fontFamily:"Georgia, serif",lineHeight:1}}>
             {litrosHoy.toFixed(0)}<span style={{fontSize:13}}>L</span>
           </div>
           <div style={{fontSize:10,color:"#8a8070",fontWeight:600,marginTop:6,letterSpacing:0.3}}>DIESEL HOY</div>
@@ -470,7 +504,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
           <div style={{fontSize:22,marginBottom:4}}>{alertasLotes>0?"⚠️":"✅"}</div>
           <div style={{fontSize:26,fontWeight:700,
             color:alertasLotes>0?"#c0392b":"#2d5a1b",
-            fontFamily:"'Playfair Display',serif",lineHeight:1}}>{alertasLotes}</div>
+            fontFamily:"Georgia, serif",lineHeight:1}}>{alertasLotes}</div>
           <div style={{fontSize:10,color:"#8a8070",fontWeight:600,marginTop:6,letterSpacing:0.3}}>ALERTAS LOTES</div>
         </div>
       </div>
