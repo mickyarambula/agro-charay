@@ -176,7 +176,7 @@ export default function Dashboard({ userRol, onNavigate }) {
           <div style={{fontSize:9,color:T.fog,marginTop:4}}>→ Cosecha y Maquila</div>
         </div>
 
-        <div className="stat-card" style={{borderLeft:`4px solid ${semaforo.color}`,borderTop:`2px solid ${F.utilidadBruta<0?"#c84b4b":"#2d7a2d"}`,cursor:"pointer",transition:"transform 0.12s"}}
+        <div className="stat-card" style={{borderTop:`2px solid ${F.utilidadBruta<0?"#c84b4b":"#2d7a2d"}`,cursor:"pointer",transition:"transform 0.12s"}}
           {...cardClick(()=>nav("costos"))} title="Ver Costos y Equilibrio">
           <div className="stat-icon">{semaforo.icono}</div>
           <div className="stat-label">Utilidad Estimada</div>
