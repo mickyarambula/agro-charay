@@ -73,14 +73,14 @@ export default function Dashboard({ userRol, onNavigate }) {
   // Estructura de costos
   const costLines = [
     {l:"Semilla",            v:F.costoSemilla,                        c:"#c8a84b", mod:"insumos", filtro:{categoria:"Semilla",    vista:"tabla"}},
-    {l:"Insumos",            v:(F.costoInsumos||0)-F.costoSemilla,    c:"#2d5a1b", mod:"insumos", filtro:{categoria:"Fertilizante",vista:"tabla"}},
+    {l:"Insumos",            v:(F.costoInsumos||0)-F.costoSemilla,    c:"#1a3a0f", mod:"insumos", filtro:{categoria:"Fertilizante",vista:"tabla"}},
     {l:"Diesel",             v:F.costoDiesel,                         c:"#e67e22", mod:"diesel"},
     {l:"Renta",              v:F.costoRenta,                          c:"#9b6d3a", mod:"rentas"},
     {l:"Mano de Obra",       v:F.costoManoObra,                       c:"#5b9fd6", mod:"gastos"},
     {l:"Agua",               v:F.costoAgua,                           c:"#1a6ea8", mod:"gastos"},
     {l:"Seguros",            v:F.costoSeguros,                        c:"#8e44ad", mod:"gastos"},
     {l:"Trámites/Otros",     v:(F.costoTramites||0)+(F.costoOtros||0),c:"#7f8c8d", mod:"gastos"},
-    {l:"Int. Parafinanciero",v:F.costoInteresPara,                    c:"#c0392b", mod:"credito"},
+    {l:"Int. Parafinanciero",v:F.costoInteresPara,                    c:"#c84b4b", mod:"credito"},
     {l:"Int. Directo",       v:F.costoInteresDir,                     c:"#922b21", mod:"credito"},
     {l:"Comisiones",         v:F.costoComisiones,                     c:"#a93226", mod:"credito"},
   ].filter(d=>d.v>0);
@@ -205,9 +205,9 @@ export default function Dashboard({ userRol, onNavigate }) {
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
               {[
-                ["Días transcurridos",`${diasTransc} días`,"#2d5a1b"],
+                ["Días transcurridos",`${diasTransc} días`,"#1a3a0f"],
                 ["Días restantes",    `${Math.max(0,diasTotal-diasTransc)} días`,"#8a8070"],
-                ["Costo acumulado",   mxnFmt(F.costoTotal),"#c0392b"],
+                ["Costo acumulado",   mxnFmt(F.costoTotal),"#c84b4b"],
                 ["Costo/día prom.",   mxnFmt(diasTransc>0?F.costoTotal/diasTransc:0),"#e67e22"],
               ].map(([l,v,c])=>(
                 <div key={l} style={{padding:"8px 12px",background:T.mist,borderRadius:7}}>
@@ -229,7 +229,7 @@ export default function Dashboard({ userRol, onNavigate }) {
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",borderBottom:`2px solid ${T.line}`}}>
               {[
                 ["Total dispersado", mxnFmt(totalDisp),                 "#1a6ea8"],
-                ["Intereses acum.",  mxnFmt(F.costoInteres||0),         "#c0392b"],
+                ["Intereses acum.",  mxnFmt(F.costoInteres||0),         "#c84b4b"],
                 ["Interés/día hoy",  (() => {
                   const p={...{para_tasaAnual:1.38,dir_tasaAnual:1.8},...(state.creditoParams||{})};
                   const hoyD=new Date(), asigs=cicloPred?.asignaciones||[];
@@ -293,16 +293,16 @@ export default function Dashboard({ userRol, onNavigate }) {
                         <div style={{width:7,height:7,borderRadius:"50%",background:prod.color,flexShrink:0}}/>
                         <span style={{fontSize:11,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{prod.alias||prod.apPat}</span>
                       </div>
-                      <div style={{textAlign:"right",fontFamily:"monospace",fontSize:11,fontWeight:600,color:dias>180?"#c0392b":dias>90?T.straw:T.fog}}>{dias}</div>
+                      <div style={{textAlign:"right",fontFamily:"monospace",fontSize:11,fontWeight:600,color:dias>180?"#c84b4b":dias>90?T.straw:T.fog}}>{dias}</div>
                       <div style={{textAlign:"right",fontFamily:"monospace",fontSize:11,fontWeight:700,color:"#e67e22"}}>{mxnFmt(intDia)}</div>
-                      <div style={{textAlign:"right",fontFamily:"monospace",fontSize:11,fontWeight:700,color:"#c0392b"}}>{mxnFmt(intAcum)}</div>
+                      <div style={{textAlign:"right",fontFamily:"monospace",fontSize:11,fontWeight:700,color:"#c84b4b"}}>{mxnFmt(intAcum)}</div>
                       <div style={{textAlign:"right",fontSize:9,color:T.fog}}>{primerDisp?.fecha?.slice(5)||"—"}</div>
                     </div>
                   ))}
                   <div style={{display:"grid",gridTemplateColumns:"minmax(80px,1fr) 52px 80px 80px 76px",padding:"7px 14px",background:"#fdf5f0",borderTop:`2px solid ${T.line}`,alignItems:"center"}}>
                     <div style={{fontSize:11,fontWeight:700,color:T.inkLt,gridColumn:"1/3"}}>Total</div>
                     <div style={{textAlign:"right",fontFamily:"monospace",fontSize:11,fontWeight:700,color:"#e67e22"}}>{mxnFmt(filas.reduce((s,f)=>s+f.intDia,0))}</div>
-                    <div style={{textAlign:"right",fontFamily:"monospace",fontSize:11,fontWeight:700,color:"#c0392b"}}>{mxnFmt(filas.reduce((s,f)=>s+f.intAcum,0))}</div>
+                    <div style={{textAlign:"right",fontFamily:"monospace",fontSize:11,fontWeight:700,color:"#c84b4b"}}>{mxnFmt(filas.reduce((s,f)=>s+f.intAcum,0))}</div>
                     <div/>
                   </div>
                 </div>

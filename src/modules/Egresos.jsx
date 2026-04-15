@@ -248,11 +248,11 @@ const fileEgresosRef    = useRef(null);
     int_para:"💰",int_dir:"💳",comisiones_para:"📑",comisiones_dir:"📑",
   };
   const CAT_COLORS = {
-    semilla_auto:"#c8a84b",insumos_auto:"#2d5a1b",diesel_auto:"#e67e22",
+    semilla_auto:"#c8a84b",insumos_auto:"#1a3a0f",diesel_auto:"#e67e22",
     mano_obra:"#5b9fd6",renta_tierra:"#9b6d3a",pago_agua:"#1a6ea8",
     permiso_siembra:"#7f8c8d",flete:"#7f8c8d",reparaciones:"#7f8c8d",
     tramites:"#7f8c8d",seguros:"#8e44ad",otro:"#7f8c8d",
-    int_para:"#c0392b",int_dir:"#922b21",
+    int_para:"#c84b4b",int_dir:"#922b21",
     comisiones_para:"#e74c3c",comisiones_dir:"#a93226",
   };
   const CAT_LABELS_EXT = {
@@ -455,7 +455,7 @@ const fileEgresosRef    = useRef(null);
             <div style={{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap"}}>
               <div style={{textAlign:"right"}}>
                 <div style={{fontSize:10,color:"#7a4a10",fontWeight:600}}>Egresos operativos</div>
-                <div style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:"#c0392b"}}>{mxnFmt(totalGastos)}</div>
+                <div style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:"#c84b4b"}}>{mxnFmt(totalGastos)}</div>
               </div>
               <div style={{fontSize:13,color:"#7a4a10",fontWeight:700}}>+</div>
               <div style={{textAlign:"right"}}>
@@ -470,7 +470,7 @@ const fileEgresosRef    = useRef(null);
               <div style={{fontSize:13,color:"#7a4a10",fontWeight:700}}>=</div>
               <div style={{textAlign:"right",padding:"4px 10px",background:"#c0392b11",borderRadius:6,border:"1px solid #c0392b33"}}>
                 <div style={{fontSize:10,color:"#7a4a10",fontWeight:600}}>Costo Total Ciclo</div>
-                <div style={{fontFamily:"monospace",fontSize:14,fontWeight:800,color:"#c0392b"}}>{mxnFmt(totalCompleto)}</div>
+                <div style={{fontFamily:"monospace",fontSize:14,fontWeight:800,color:"#c84b4b"}}>{mxnFmt(totalCompleto)}</div>
               </div>
             </div>
           </div>
@@ -542,7 +542,7 @@ const fileEgresosRef    = useRef(null);
                     title={destMod ? `→ Ver en ${destMod}` : ""}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
                       <span style={{fontSize:11,fontWeight:600,color}}>{CAT_ICONS[cat]||"📌"} {CAT_LABELS_EXT[cat]||cat} {destMod&&<span style={{fontSize:9,opacity:0.6}}>→</span>}</span>
-                      <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:"#c0392b"}}>{mxnFmt(v)}</span>
+                      <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:"#c84b4b"}}>{mxnFmt(v)}</span>
                     </div>
                     <div style={{height:4,borderRadius:2,background:"#e8e0d0",overflow:"hidden"}}>
                       <div style={{height:"100%",borderRadius:2,background:color,width:`${totalOpTotal>0?Math.min(100,v/totalOpTotal*100):0}%`}}/>
@@ -556,14 +556,14 @@ const fileEgresosRef    = useRef(null);
           {(F2.costoFinanciero||0)>0 && (
             <>
               <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",
-                color:"#c0392b",marginBottom:8,paddingTop:8,borderTop:"1px solid #ddd5c0"}}>
+                color:"#c84b4b",marginBottom:8,paddingTop:8,borderTop:"1px solid #ddd5c0"}}>
                 Costos Financieros
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>
                 {Object.entries(resumenCat)
                   .filter(([k,v])=>v>0&&["int_para","int_dir","comisiones_para","comisiones_dir"].includes(k))
                   .map(([cat,v])=>{
-                    const color = CAT_COLORS[cat]||"#c0392b";
+                    const color = CAT_COLORS[cat]||"#c84b4b";
                     return (
                       <div key={cat}
                         style={{padding:"10px 14px",borderRadius:8,border:`1px solid ${color}33`,background:`${color}0d`,
@@ -574,7 +574,7 @@ const fileEgresosRef    = useRef(null);
                         title="→ Ver en Crédito Habilitación">
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
                           <span style={{fontSize:11,fontWeight:600,color}}>{CAT_ICONS[cat]||"💰"} {CAT_LABELS_EXT[cat]||cat} <span style={{fontSize:9,opacity:0.6}}>→</span></span>
-                          <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:"#c0392b"}}>{mxnFmt(v)}</span>
+                          <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:"#c84b4b"}}>{mxnFmt(v)}</span>
                         </div>
                         <div style={{height:4,borderRadius:2,background:"#e8e0d0",overflow:"hidden"}}>
                           <div style={{height:"100%",borderRadius:2,background:color,width:`${totalOpTotal>0?Math.min(100,v/totalOpTotal*100):0}%`}}/>
@@ -603,7 +603,7 @@ const fileEgresosRef    = useRef(null);
               <th style={{textAlign:"right"}}>🌿 Insumos</th>
               <th style={{textAlign:"right"}}>⛽ Diesel</th>
               <th style={{textAlign:"right"}}>💵 Efectivo</th>
-              <th style={{textAlign:"right",fontWeight:700,color:"#c0392b"}}>Total Gastado</th>
+              <th style={{textAlign:"right",fontWeight:700,color:"#c84b4b"}}>Total Gastado</th>
               <th></th>
             </tr></thead>
             <tbody>
@@ -633,12 +633,15 @@ const fileEgresosRef    = useRef(null);
                     </td>
                     <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12}}>{ha>0?fmt2(ha)+" ha":"—"}</td>
                     <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#c8a84b"}}>{gsem>0?mxnFmt(gsem):"—"}</td>
-                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#2d5a1b"}}>{gins>0?mxnFmt(gins):"—"}</td>
+                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#1a3a0f"}}>{gins>0?mxnFmt(gins):"—"}</td>
                     <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#e67e22"}}>{gdie>0?mxnFmt(gdie):"—"}</td>
                     <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#8e44ad"}}>{gefe>0?mxnFmt(gefe):"—"}</td>
-                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,fontWeight:700,color:"#c0392b"}}>{gas>0?mxnFmt(gas):"—"}</td>
+                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,fontWeight:700,color:"#c84b4b"}}>{gas>0?mxnFmt(gas):"—"}</td>
                     <td style={{background:bg}}>
-                      <button className="btn btn-sm btn-secondary" onClick={e=>{e.stopPropagation();setProdDetalle(p.id);setVista("detalle_prod");}}>Ver detalle</button>
+                      <button onClick={e=>{e.stopPropagation();setProdDetalle(p.id);setVista("detalle_prod");}}
+                        style={{background:"#1a3a0f",color:"#ffffff",border:"none",borderRadius:6,padding:"4px 10px",fontSize:11,fontFamily:"Georgia, serif",cursor:"pointer"}}>
+                        Ver detalle
+                      </button>
                     </td>
                   </tr>
                 );
@@ -711,11 +714,11 @@ const fileEgresosRef    = useRef(null);
                       <td style={{background:bg,fontFamily:"monospace",fontWeight:700}}>{d.numSolicitud}</td>
                       <td style={{background:bg,fontFamily:"monospace"}}>{d.numOrden||"—"}</td>
                       <td style={{background:bg,fontSize:12}}>{d.fecha}</td>
-                      <td style={{background:bg,fontWeight:600,fontSize:13}}>{nomProd(d.productorId)}{d.productorNombreOriginal&&!d.productorId?<span style={{fontSize:10,color:"#c0392b"}}> ⚠️{d.productorNombreOriginal}</span>:""}</td>
+                      <td style={{background:bg,fontWeight:600,fontSize:13}}>{nomProd(d.productorId)}{d.productorNombreOriginal&&!d.productorId?<span style={{fontSize:10,color:"#c84b4b"}}> ⚠️{d.productorNombreOriginal}</span>:""}</td>
                       <td style={{background:bg}}><span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:10,background:d.lineaCredito==="parafinanciero"?"#dbeafe":"#ede9fe",color:d.lineaCredito==="parafinanciero"?"#1a6ea8":"#8e44ad"}}>{d.lineaCredito==="parafinanciero"?"Parafinanciero":"Directo"}</span></td>
                       <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700}}>{mxnFmt(d.monto)}</td>
                       <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12}}>{aplicado>0?mxnFmt(aplicado):"—"}</td>
-                      <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,fontWeight:700,color:dif>=0?"#2d5a1b":"#c0392b"}}>{mxnFmt(Math.abs(dif))}{dif<0?" ⚠️":dif===0?" ✅":""}</td>
+                      <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,fontWeight:700,color:dif>=0?"#1a3a0f":"#c84b4b"}}>{mxnFmt(Math.abs(dif))}{dif<0?" ⚠️":dif===0?" ✅":""}</td>
                       <td style={{background:bg}}>{d.cancelado&&<BadgeCancelado registro={d}/>}{d.cancelado?(puedeEditar&&<button className="btn btn-sm btn-secondary" style={{fontSize:11}} onClick={()=>setCancelModal({action:"reactivar",tabla:"dispersiones",rec:d})}>↺</button>):(puedeEditar&&<button className="btn btn-sm" style={{fontSize:11,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>setCancelModal({action:"cancelar",tabla:"dispersiones",rec:d})}>🚫</button>)}</td>
                     </tr>
                   );
@@ -821,7 +824,7 @@ const fileEgresosRef    = useRef(null);
               <input className="form-input" style={{width:180,fontSize:12}} placeholder="🔍 Concepto / Detalle MO..."
                 value={filtroConcepto} onChange={e=>setFiltroConcepto(e.target.value)}/>
               {activeFilters>0&&(
-                <button className="btn btn-secondary" style={{fontSize:11,padding:"4px 10px",color:"#c0392b",borderColor:"#c0392b"}}
+                <button className="btn btn-secondary" style={{fontSize:11,padding:"4px 10px",color:"#c84b4b",borderColor:"#c84b4b"}}
                   onClick={()=>{setFiltroCat("todas");setFiltroProd("todos");setFiltroLinea("todas");setFiltroTipoTrab("");setFiltroConcepto("");setFiltroSemana("");}}>
                   ✕ Limpiar filtros
                 </button>
@@ -830,7 +833,7 @@ const fileEgresosRef    = useRef(null);
             {/* Barra de totales */}
             <div style={{display:"flex",alignItems:"center",gap:12,padding:"8px 14px",background:activeFilters>0?"#fff8f0":"#f5f4f0",borderRadius:8,border:`1px solid ${activeFilters>0?"#f0a04b":"#ddd5c0"}`}}>
               <span style={{fontSize:11,color:"#8a8070"}}>{activeFilters>0?"Filtrado:":"Total:"}</span>
-              <span style={{fontFamily:"monospace",fontSize:15,fontWeight:800,color:activeFilters>0?"#e67e22":"#c0392b"}}>
+              <span style={{fontFamily:"monospace",fontSize:15,fontWeight:800,color:activeFilters>0?"#e67e22":"#c84b4b"}}>
                 {totalFiltrado.toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2})}
               </span>
               <span style={{fontSize:11,color:"#8a8070"}}>{egFiltrados.length} registros</span>
@@ -886,7 +889,7 @@ const fileEgresosRef    = useRef(null);
                     <tr key={g.id}>
                       <td style={{background:bg,fontSize:11,fontFamily:"monospace",whiteSpace:"nowrap"}}>{fechaG}</td>
                       <td style={{background:bg,fontSize:11,fontFamily:"monospace",color:"#5a7a3a"}}>{numOrdG||"—"}</td>
-                      <td style={{background:bg}}><span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:10,background:"#f0f4e8",color:"#2d5a1b"}}>{CAT_ICONS[g.categoria]||"📌"} {CAT_LABELS[g.categoria]||g.categoria}</span></td>
+                      <td style={{background:bg}}><span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:10,background:"#f0f4e8",color:"#1a3a0f"}}>{CAT_ICONS[g.categoria]||"📌"} {CAT_LABELS[g.categoria]||g.categoria}</span></td>
                       <td style={{background:bg,fontSize:12,maxWidth:200}}>
                         <div style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
                           <span>{label}</span>
@@ -917,7 +920,7 @@ const fileEgresosRef    = useRef(null);
                       {/* Tipo Trabajador */}
                       <td style={{background:bg,fontSize:11}}>
                         {g.tipoTrabajador ? (
-                          <span style={{display:"inline-block",padding:"2px 8px",borderRadius:10,fontSize:10,fontWeight:600,background:"#e8f4e8",color:"#2d5a1b",border:"1px solid #c8e0b0"}}>
+                          <span style={{display:"inline-block",padding:"2px 8px",borderRadius:10,fontSize:10,fontWeight:600,background:"#e8f4e8",color:"#1a3a0f",border:"1px solid #c8e0b0"}}>
                             {g.tipoTrabajador}
                           </span>
                         ) : <span style={{color:"#ccc"}}>{"—"}</span>}
@@ -929,7 +932,7 @@ const fileEgresosRef    = useRef(null);
                         ) : <span style={{color:"#ccc"}}>{"—"}</span>}
                       </td>
                       <td style={{background:bg,fontSize:12,fontWeight:600}}>{nomProd(g.productorId)}</td>
-                      <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}>{mxnFmt(g.monto)}</td>
+                      <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c84b4b"}}>{mxnFmt(g.monto)}</td>
                       <td style={{background:bg,fontSize:11,fontFamily:"monospace",color:"#5a7a3a"}}>{numSolG||"—"}</td>
                       <td style={{background:bg}}>{g.cancelado&&<BadgeCancelado registro={g}/>}{g.cancelado?(puedeEditar&&<button className="btn btn-sm btn-secondary" style={{fontSize:11}} onClick={()=>setCancelModal({action:"reactivar",tabla:"egresosManual",rec:g})}>↺</button>):(puedeEditar&&<button className="btn btn-sm" style={{fontSize:11,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>setCancelModal({action:"cancelar",tabla:"egresosManual",rec:g})}>🚫</button>)}</td>
                     </tr>
@@ -1068,7 +1071,7 @@ const fileEgresosRef    = useRef(null);
           </button>
           {importLog.length>0&&(
             <div style={{marginTop:16,textAlign:"left",padding:"12px 16px",background:"#f5f4f0",borderRadius:8}}>
-              {importLog.map((l,i)=><div key={i} style={{fontSize:12,marginBottom:4,color:l.startsWith("❌")?"#c0392b":l.startsWith("⚠️")?"#e67e22":"#2d5a1b"}}>{l}</div>)}
+              {importLog.map((l,i)=><div key={i} style={{fontSize:12,marginBottom:4,color:l.startsWith("❌")?"#c84b4b":l.startsWith("⚠️")?"#e67e22":"#1a3a0f"}}>{l}</div>)}
             </div>
           )}
         </div>
@@ -1087,7 +1090,7 @@ const fileEgresosRef    = useRef(null);
       {/* Instrucciones */}
       <div className="card" style={{marginBottom:16,borderLeft:"4px solid #c0392b"}}>
         <div className="card-body">
-          <div style={{fontWeight:700,fontSize:13,marginBottom:10,color:"#c0392b"}}>📋 Estructura requerida</div>
+          <div style={{fontWeight:700,fontSize:13,marginBottom:10,color:"#c84b4b"}}>📋 Estructura requerida</div>
           <div style={{padding:"8px 12px",background:"#fdf2f2",borderRadius:6,fontFamily:"monospace",fontSize:10,marginBottom:10,lineHeight:1.8}}>
             CATEGORIA &nbsp;|&nbsp; PRODUCTOR &nbsp;|&nbsp; MONTO &nbsp;|&nbsp; NUM_SOLICITUD &nbsp;|&nbsp; NUM_ORDEN &nbsp;|&nbsp; CONCEPTO<br/>
             <span style={{color:"#1a6ea8"}}>+ Para mano_obra: &nbsp;SEMANA_NUM | SEMANA_FECHA_INICIO | SEMANA_FECHA_FIN | DOMINGO_FECHA | TIPO_DE_TRABAJADOR | DETALLE_MO</span><br/>
@@ -1115,7 +1118,7 @@ const fileEgresosRef    = useRef(null);
             <div style={{marginTop:16,textAlign:"left",padding:"12px 16px",background:"#f5f4f0",borderRadius:8}}>
               {importLogEgresos.map((l,i)=>(
                 <div key={i} style={{fontSize:12,marginBottom:4,
-                  color:l.startsWith("❌")?"#c0392b":l.startsWith("⚠️")?"#e67e22":"#2d5a1b"}}>
+                  color:l.startsWith("❌")?"#c84b4b":l.startsWith("⚠️")?"#e67e22":"#1a3a0f"}}>
                   {l}
                 </div>
               ))}
@@ -1199,7 +1202,7 @@ const fileEgresosRef    = useRef(null);
             {/* ── MANO DE OBRA — desglose especial ── */}
             {esMO&&(
               <div style={{background:"#f0f8e8",borderRadius:8,padding:"14px 16px",border:"1px solid #c8e0b0"}}>
-                <div style={{fontWeight:700,fontSize:13,color:"#2d5a1b",marginBottom:10}}>{"👷 Mano de Obra"}</div>
+                <div style={{fontWeight:700,fontSize:13,color:"#1a3a0f",marginBottom:10}}>{"👷 Mano de Obra"}</div>
                 <div className="form-row" style={{marginBottom:10}}>
                   <div className="form-group">
                     <label className="form-label">{"Semana #"}</label>
@@ -1261,7 +1264,7 @@ const fileEgresosRef    = useRef(null);
             {esMO&&(
               <div className="form-group">
                 <label className="form-label">Monto total (calculado)</label>
-                <input className="form-input" style={{fontFamily:"monospace",fontWeight:700,color:"#2d5a1b",background:"#f0f8e8"}}
+                <input className="form-input" style={{fontFamily:"monospace",fontWeight:700,color:"#1a3a0f",background:"#f0f8e8"}}
                   value={(totalMO).toFixed(2)} readOnly
                   onChange={()=>{}} // auto
                   onFocus={()=>setFormGasto(f=>({...f,monto:totalMO}))}
@@ -1304,7 +1307,7 @@ const fileEgresosRef    = useRef(null);
               {formGasto.solicitudes.length>0&&(
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {formGasto.solicitudes.map((s,i)=>(
-                    <div key={i} style={{padding:"4px 10px",borderRadius:20,background:"#2d5a1b",color:"white",fontSize:11,display:"flex",alignItems:"center",gap:6}}>
+                    <div key={i} style={{padding:"4px 10px",borderRadius:20,background:"#1a3a0f",color:"white",fontSize:11,display:"flex",alignItems:"center",gap:6}}>
                       <span>Sol.{s.numSolicitud}{s.numOrden?` / Ord.${s.numOrden}`:""}</span>
                       <span style={{cursor:"pointer"}} onClick={()=>delSolicitud(i)}>✕</span>
                     </div>
@@ -1405,7 +1408,7 @@ const fileEgresosRef    = useRef(null);
               </div>}
               {gInsP>0&&<div style={{padding:"8px 14px",borderRadius:8,background:"#f0f8e8",border:"1px solid #b0d890",minWidth:150}}>
                 <div style={{fontSize:11,fontWeight:600}}>🌿 Insumos</div>
-                <div style={{fontFamily:"monospace",fontWeight:700,color:"#2d5a1b",marginTop:2}}>{mxnFmt(gInsP)}</div>
+                <div style={{fontFamily:"monospace",fontWeight:700,color:"#1a3a0f",marginTop:2}}>{mxnFmt(gInsP)}</div>
               </div>}
               {gDieP>0&&<div style={{padding:"8px 14px",borderRadius:8,background:"#fff3e0",border:"1px solid #f0c060",minWidth:150}}>
                 <div style={{fontSize:11,fontWeight:600}}>⛽ Diesel</div>
@@ -1414,7 +1417,7 @@ const fileEgresosRef    = useRef(null);
               {Object.entries(catResP).filter(([,v])=>v>0).map(([k,v])=>(
                 <div key={k} style={{padding:"8px 14px",borderRadius:8,background:"#f5f4f0",border:"1px solid #ddd5c0",minWidth:150}}>
                   <div style={{fontSize:11,fontWeight:600}}>{CAT_ICONS[k]} {CAT_LABELS[k]}</div>
-                  <div style={{fontFamily:"monospace",fontWeight:700,color:"#c0392b",marginTop:2}}>{mxnFmt(v)}</div>
+                  <div style={{fontFamily:"monospace",fontWeight:700,color:"#c84b4b",marginTop:2}}>{mxnFmt(v)}</div>
                 </div>
               ))}
             </div>
@@ -1459,10 +1462,10 @@ const fileEgresosRef    = useRef(null);
                 const label=g.categoria==="mano_obra"?`Sem.${g.semanaNum||"?"} ${g.semanaFechaInicio||""}–${g.semanaFechaFin||""}`:(g.subcategoria||g.concepto||"");
                 return(<tr key={g.id}>
                   <td style={{background:bg,fontSize:12,fontFamily:"monospace"}}>{g.fecha}</td>
-                  <td style={{background:bg}}><span style={{fontSize:10,padding:"2px 6px",borderRadius:8,background:"#f0f4e8",color:"#2d5a1b"}}>{CAT_ICONS[g.categoria]||"📌"} {CAT_LABELS[g.categoria]||g.categoria}</span></td>
+                  <td style={{background:bg}}><span style={{fontSize:10,padding:"2px 6px",borderRadius:8,background:"#f0f4e8",color:"#1a3a0f"}}>{CAT_ICONS[g.categoria]||"📌"} {CAT_LABELS[g.categoria]||g.categoria}</span></td>
                   <td style={{background:bg,fontSize:12}}>{label}</td>
                   <td style={{background:bg,fontSize:10,color:"#5a7a3a"}}>{(g.solicitudes||[]).map(s=>s.numSolicitud).join(", ")||"—"}</td>
-                  <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}>{mxnFmt(g.monto)}</td>
+                  <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c84b4b"}}>{mxnFmt(g.monto)}</td>
                 </tr>);
               })}</tbody>
             </table>

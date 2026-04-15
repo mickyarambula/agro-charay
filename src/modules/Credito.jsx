@@ -297,7 +297,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
       <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:6}}>
         {[
           ["Capital aplicado",   mxnFmt(data.montoApl),         "#3d3525"],
-          ["Interés acumulado",  mxnFmt(data.interes),          "#c0392b"],
+          ["Interés acumulado",  mxnFmt(data.interes),          "#c84b4b"],
           ["Factibilidad",       mxnFmt(data.factTotal||0),     "#8e44ad"],
           ["FEGA",               mxnFmt(data.fegaTotal||0),     "#1a6ea8"],
           ...extraRows,
@@ -336,19 +336,19 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
         <div className="credito-cards-row" style={{display:"flex",gap:14,marginBottom:20}}>
           <TarjetaLinea titulo="Crédito Parafinanciero" color="#1a6ea8" icono="🏦"
             data={G.rPara}
-            extraRows={[["Asist. Técnica", mxnFmt(G.rPara.asistBase||0),"#2d5a1b"]]}/>
+            extraRows={[["Asist. Técnica", mxnFmt(G.rPara.asistBase||0),"#1a3a0f"]]}/>
           <TarjetaLinea titulo="Crédito Directo" color="#8e44ad" icono="💳" data={G.rDir}/>
           <div style={{flex:1,border:"2px solid #c0392b33",borderRadius:10,overflow:"hidden"}}>
-            <div style={{background:"#c0392b",padding:"10px 16px",color:"white"}}>
+            <div style={{background:"#c84b4b",padding:"10px 16px",color:"white"}}>
               <div style={{fontWeight:700,fontSize:14}}>📊 TOTAL GRUPO</div>
             </div>
             <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:6}}>
               {[
                 ["Capital total",      mxnFmt(G.total.montoApl),       "#3d3525"],
-                ["Intereses totales",  mxnFmt(G.total.interes),        "#c0392b"],
+                ["Intereses totales",  mxnFmt(G.total.interes),        "#c84b4b"],
                 ["Factibilidad",       mxnFmt(G.total.factTotal),      "#8e44ad"],
                 ["FEGA",               mxnFmt(G.total.fegaTotal),      "#1a6ea8"],
-                ["Asist. Técnica",     mxnFmt(G.total.asistBase),      "#2d5a1b"],
+                ["Asist. Técnica",     mxnFmt(G.total.asistBase),      "#1a3a0f"],
                 ["Comisiones totales", mxnFmt(G.total.totalComisiones),"#856404"],
               ].map(([l,v,c])=>(
                 <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid #f0ece4"}}>
@@ -358,7 +358,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
               ))}
               <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0 0",marginTop:4,borderTop:"2px solid #c0392b"}}>
                 <span style={{fontWeight:700,fontSize:13}}>TOTAL A LIQUIDAR</span>
-                <span style={{fontFamily:"monospace",fontWeight:700,fontSize:15,color:"#c0392b"}}>{mxnFmt(G.total.totalALiquidar)}</span>
+                <span style={{fontFamily:"monospace",fontWeight:700,fontSize:15,color:"#c84b4b"}}>{mxnFmt(G.total.totalALiquidar)}</span>
               </div>
             </div>
           </div>
@@ -388,7 +388,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                   <th rowSpan={2} style={{textAlign:"right"}}>Ha</th>
                   <th colSpan={3} style={{textAlign:"center",background:"#dbeafe",color:"#1a6ea8"}}>🏦 Parafinanciero</th>
                   <th colSpan={3} style={{textAlign:"center",background:"#ede9fe",color:"#8e44ad"}}>💳 Crédito Directo</th>
-                  <th rowSpan={2} style={{textAlign:"right",color:"#c0392b",fontWeight:700}}>Total a Liquidar</th>
+                  <th rowSpan={2} style={{textAlign:"right",color:"#c84b4b",fontWeight:700}}>Total a Liquidar</th>
                   <th rowSpan={2} style={{textAlign:"right",color:"#856404",fontWeight:700}}>$/ha</th>
                   <th rowSpan={2}></th>
                 </tr>
@@ -427,7 +427,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                       <td style={{background:"#faf5ff",textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#8e44ad"}}>{cDir.montoApl>0?mxnFmt(cDir.montoApl):"—"}</td>
                       <td style={{background:"#faf5ff",textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#856404"}}>{cDir.montoApl>0?mxnFmt(cDir.interes+cDir.totalComisiones):"—"}</td>
                       <td style={{background:"#faf5ff",textAlign:"right",fontFamily:"monospace",fontWeight:700,fontSize:11,color:"#8e44ad"}}>{cDir.totalALiquidar>0?mxnFmt(cDir.totalALiquidar):"—"}</td>
-                      <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,fontSize:12,color:"#c0392b"}}>{mxnFmt(totalLiquidar)}</td>
+                      <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,fontSize:12,color:"#c84b4b"}}>{mxnFmt(totalLiquidar)}</td>
                       <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#856404",fontWeight:600}}>
                         {haProd(p.id)>0?mxnFmt(totalLiquidar/haProd(p.id)):"—"}
                       </td>
@@ -461,7 +461,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                       <td style={{textAlign:"right",fontFamily:"monospace",color:"#8e44ad",background:"#f3eeff"}}>{mxnFmt(tots.dirCap)}</td>
                       <td style={{textAlign:"right",fontFamily:"monospace",color:"#856404",background:"#f3eeff"}}>{mxnFmt(tots.dirInt)}</td>
                       <td style={{textAlign:"right",fontFamily:"monospace",color:"#8e44ad",background:"#f3eeff"}}>{mxnFmt(tots.dirCap+tots.dirInt)}</td>
-                      <td style={{textAlign:"right",fontFamily:"monospace",color:"#c0392b",fontSize:13}}>{mxnFmt(tots.liq)}</td>
+                      <td style={{textAlign:"right",fontFamily:"monospace",color:"#c84b4b",fontSize:13}}>{mxnFmt(tots.liq)}</td>
                       <td style={{textAlign:"right",fontFamily:"monospace",color:"#856404"}}>{tots.ha>0?mxnFmt(tots.liq/tots.ha):"—"}</td>
                       <td/>
                     </tr>
@@ -553,7 +553,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
           <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
             <div style={{width:12,height:12,borderRadius:"50%",background:colProd(p.id)}}/>
             <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700}}>{p.alias||p.apPat}</div>
-            <span style={{fontSize:11,padding:"3px 10px",borderRadius:10,background:"#f0f4e8",color:"#2d5a1b",fontWeight:600}}>
+            <span style={{fontSize:11,padding:"3px 10px",borderRadius:10,background:"#f0f4e8",color:"#1a3a0f",fontWeight:600}}>
               {ha.toFixed(2)} ha
             </span>
           </div>
@@ -578,7 +578,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
             ):(
               <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
                 {[
-                  ["Monto/ha autorizado", exp?.montoPorHa?`$${exp.montoPorHa.toLocaleString("es-MX")}/ha`:"⏳ Pendiente", exp?.montoPorHa?"#2d5a1b":"#e67e22"],
+                  ["Monto/ha autorizado", exp?.montoPorHa?`$${exp.montoPorHa.toLocaleString("es-MX")}/ha`:"⏳ Pendiente", exp?.montoPorHa?"#1a3a0f":"#e67e22"],
                   ["Crédito Parafinanciero total", exp?.montoPorHa?mxnFmt(cPar.creditoAut):"—", "#1a6ea8"],
                   ["Días transcurridos", cPar.fechaInicio?`${cPar.dias} días desde ${cPar.fechaInicio}`:"Sin dispersiones","#3d3525"],
                 ].map(([l,v,c])=>(
@@ -605,10 +605,10 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
               {cPar.montoApl>0?(
                 <>
                   <FilaDetalle label="Capital aplicado" base={cPar.montoApl} iva={0} total={cPar.montoApl} color="#1a6ea8"/>
-                  <FilaDetalle label={`Interés ${params.para_tasaAnual}% mens. · ${cPar.dias} días`} base={cPar.interes} iva={0} total={cPar.interes} color="#c0392b"/>
+                  <FilaDetalle label={`Interés ${params.para_tasaAnual}% mens. · ${cPar.dias} días`} base={cPar.interes} iva={0} total={cPar.interes} color="#c84b4b"/>
                   <FilaDetalle label={`Factibilidad ${params.para_factibilidad}% s/crédito total`} base={cPar.factBase} iva={cPar.factIva} total={cPar.factTotal} color="#8e44ad"/>
                   <FilaDetalle label={`FEGA ${params.para_fega}% por dispersión`} base={cPar.fegaBase} iva={cPar.fegaIva} total={cPar.fegaTotal} color="#1a6ea8"/>
-                  <FilaDetalle label={`Asist. Técnica $${params.para_asistTec}/ha × ${ha.toFixed(2)} ha`} base={cPar.asistBase} iva={0} total={cPar.asistBase} color="#2d5a1b"/>
+                  <FilaDetalle label={`Asist. Técnica $${params.para_asistTec}/ha × ${ha.toFixed(2)} ha`} base={cPar.asistBase} iva={0} total={cPar.asistBase} color="#1a3a0f"/>
                   <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0 4px",marginTop:6,borderTop:"2px solid #1a6ea8"}}>
                     <span style={{fontWeight:700}}>TOTAL A LIQUIDAR</span>
                     <span style={{fontFamily:"monospace",fontWeight:700,fontSize:15,color:"#1a6ea8"}}>{mxnFmt(cPar.totalALiquidar)}</span>
@@ -632,7 +632,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
               {cDir.montoApl>0?(
                 <>
                   <FilaDetalle label="Capital aplicado (exceso sobre parafin.)" base={cDir.montoApl} iva={0} total={cDir.montoApl} color="#8e44ad"/>
-                  <FilaDetalle label={`Interés ${params.dir_tasaAnual}% anual · ${cDir.dias} días`} base={cDir.interes} iva={0} total={cDir.interes} color="#c0392b"/>
+                  <FilaDetalle label={`Interés ${params.dir_tasaAnual}% anual · ${cDir.dias} días`} base={cDir.interes} iva={0} total={cDir.interes} color="#c84b4b"/>
                   <FilaDetalle label={`Factibilidad ${params.dir_factibilidad}% por dispersión`} base={cDir.factBase} iva={cDir.factIva} total={cDir.factTotal} color="#8e44ad"/>
                   <FilaDetalle label={`FEGA ${params.dir_fega}% por dispersión`} base={cDir.fegaBase} iva={cDir.fegaIva} total={cDir.fegaTotal} color="#1a6ea8"/>
                   <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0 4px",marginTop:6,borderTop:"2px solid #8e44ad"}}>
@@ -641,7 +641,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                   </div>
                 </>
               ):(
-                <div style={{padding:"20px 0",textAlign:"center",color:"#2d5a1b",fontSize:13}}>
+                <div style={{padding:"20px 0",textAlign:"center",color:"#1a3a0f",fontSize:13}}>
                   ✅ Sin saldo en crédito directo
                 </div>
               )}
@@ -654,11 +654,11 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
           <div className="card-body" style={{display:"flex",justifyContent:"space-around",flexWrap:"wrap",gap:12}}>
             {[
               ["Capital total",      mxnFmt(cPar.montoApl+cDir.montoApl),                                      "#3d3525"],
-              ["Intereses totales",  mxnFmt(cPar.interes+cDir.interes),                                        "#c0392b"],
+              ["Intereses totales",  mxnFmt(cPar.interes+cDir.interes),                                        "#c84b4b"],
               ["Comisiones totales", mxnFmt(cPar.totalComisiones+cDir.totalComisiones),                        "#856404"],
-              ["TOTAL A LIQUIDAR",   mxnFmt(cPar.totalALiquidar+cDir.totalALiquidar),                         "#c0392b"],
+              ["TOTAL A LIQUIDAR",   mxnFmt(cPar.totalALiquidar+cDir.totalALiquidar),                         "#c84b4b"],
             ].map(([l,v,c])=>(
-              <div key={l} style={{textAlign:"center",padding:"10px 20px",borderRadius:8,background:c==="#c0392b"?"#fff0f0":"#faf8f3",border:`1px solid ${c}33`}}>
+              <div key={l} style={{textAlign:"center",padding:"10px 20px",borderRadius:8,background:c==="#c84b4b"?"#fff0f0":"#faf8f3",border:`1px solid ${c}33`}}>
                 <div style={{fontSize:10,color:"#8a8070",marginBottom:3}}>{l}</div>
                 <div style={{fontFamily:"monospace",fontWeight:700,fontSize:l==="TOTAL A LIQUIDAR"?16:13,color:c}}>{v}</div>
               </div>
@@ -669,7 +669,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
         {/* Botón para mostrar tabla de desglose de intereses */}
         <div style={{textAlign:"center",marginBottom:12}}>
           <button className="btn btn-secondary" onClick={()=>setShowDesglose(v=>!v)}
-            style={{fontSize:13,padding:"10px 24px",border:"1.5px solid #c0392b",color:"#c0392b",background:showDesglose?"#fff0f0":"white"}}>
+            style={{fontSize:13,padding:"10px 24px",border:"1.5px solid #c0392b",color:"#c84b4b",background:showDesglose?"#fff0f0":"white"}}>
             📋 {showDesglose?"Ocultar":"Ver"} Desglose de Intereses por Dispersión
           </button>
         </div>
@@ -689,10 +689,10 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                   <th>Tipo / Concepto</th><th>Fecha</th>
                   <th style={{textAlign:"right"}}>Monto</th>
                   <th style={{textAlign:"right"}}>Días</th>
-                  <th style={{textAlign:"right",color:"#c0392b"}}>Interés</th>
+                  <th style={{textAlign:"right",color:"#c84b4b"}}>Interés</th>
                   <th style={{textAlign:"right"}}>Factibilidad</th>
                   <th style={{textAlign:"right"}}>FEGA+IVA</th>
-                  <th style={{textAlign:"right",color:"#c0392b",fontWeight:700}}>Total Cargo</th>
+                  <th style={{textAlign:"right",color:"#c84b4b",fontWeight:700}}>Total Cargo</th>
                 </tr></thead>
                 <tbody>
                   {(cPar.movimientos||[]).map((m,i)=>{
@@ -703,7 +703,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                         <td style={{background:bg,fontSize:12}}>
                           <span style={{fontSize:10,padding:"2px 6px",borderRadius:6,background:
                             m.tipo==="Insumo"?"#f0f8e8":m.tipo==="Diesel"?"#fff3e0":m.tipo==="Efectivo"?"#fce4ec":"#e3f2fd",
-                            color:m.tipo==="Insumo"?"#2d5a1b":m.tipo==="Diesel"?"#e65100":m.tipo==="Egreso"?"#9b1d1d":"#1565c0",
+                            color:m.tipo==="Insumo"?"#1a3a0f":m.tipo==="Diesel"?"#e65100":m.tipo==="Egreso"?"#9b1d1d":"#1565c0",
                             marginRight:6,fontWeight:600}}>
                             {m.tipo}
                           </span>
@@ -712,10 +712,10 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                         <td style={{background:bg,fontSize:12,color:"#5a7a3a"}}>{m.fecha||"—"}</td>
                         <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700}}>{mxnFmt(m.montoDisp)}</td>
                         <td style={{background:bg,textAlign:"right",fontFamily:"monospace",color:"#5a7a3a",fontWeight:600}}>{m.diasD}</td>
-                        <td style={{background:bg,textAlign:"right",fontFamily:"monospace",color:"#c0392b",fontWeight:700}}>{mxnFmt(m.intDisp)}</td>
+                        <td style={{background:bg,textAlign:"right",fontFamily:"monospace",color:"#c84b4b",fontWeight:700}}>{mxnFmt(m.intDisp)}</td>
                         <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#856404"}}>—</td>
                         <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#8a8070"}}>—</td>
-                        <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}>{mxnFmt(m.intDisp)}</td>
+                        <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c84b4b"}}>{mxnFmt(m.intDisp)}</td>
                       </tr>
                     );
                   })}
@@ -729,10 +729,10 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                     </td>
                     <td style={{textAlign:"right",fontFamily:"monospace",color:"#1a6ea8"}}>{mxnFmt(cPar.montoApl)}</td>
                     <td/>
-                    <td style={{textAlign:"right",fontFamily:"monospace",color:"#c0392b",fontWeight:700}}>{mxnFmt(cPar.interes)}</td>
+                    <td style={{textAlign:"right",fontFamily:"monospace",color:"#c84b4b",fontWeight:700}}>{mxnFmt(cPar.interes)}</td>
                     <td style={{textAlign:"right",fontFamily:"monospace",color:"#856404"}}>{mxnFmt(cPar.factTotal)}</td>
                     <td style={{textAlign:"right",fontFamily:"monospace",color:"#1a6ea8"}}>{mxnFmt(cPar.fegaTotal)}</td>
-                    <td style={{textAlign:"right",fontFamily:"monospace",color:"#c0392b",fontSize:14}}>{mxnFmt(cPar.totalALiquidar)}</td>
+                    <td style={{textAlign:"right",fontFamily:"monospace",color:"#c84b4b",fontSize:14}}>{mxnFmt(cPar.totalALiquidar)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -754,7 +754,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                 <div style={{color:"#3d3525",lineHeight:1.6}}>
                   El monto directo es el gasto del productor que <strong>excede el tope parafinanciero</strong>.<br/>
                   El interés se calcula desde la <strong>primera dispersión</strong> del ciclo.<br/>
-                  Fórmula: ((Monto directo × {params.dir_tasaAnual}%) / 30) × {cDir.dias} días = <strong style={{color:"#c0392b"}}>{mxnFmt(cDir.interes)}</strong>
+                  Fórmula: ((Monto directo × {params.dir_tasaAnual}%) / 30) × {cDir.dias} días = <strong style={{color:"#c84b4b"}}>{mxnFmt(cDir.interes)}</strong>
                 </div>
               </div>
               {/* Tabla de movimientos del excedente directo */}
@@ -765,10 +765,10 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                       <th>Tipo / Concepto</th><th>Fecha</th>
                       <th style={{textAlign:"right"}}>Monto Excedente</th>
                       <th style={{textAlign:"right"}}>Días</th>
-                      <th style={{textAlign:"right",color:"#c0392b"}}>Interés</th>
+                      <th style={{textAlign:"right",color:"#c84b4b"}}>Interés</th>
                       <th style={{textAlign:"right"}}>Factibilidad+IVA</th>
                       <th style={{textAlign:"right"}}>FEGA+IVA</th>
-                      <th style={{textAlign:"right",color:"#c0392b",fontWeight:700}}>Total Cargo</th>
+                      <th style={{textAlign:"right",color:"#c84b4b",fontWeight:700}}>Total Cargo</th>
                     </tr></thead>
                     <tbody>
                       {(cDir.movimientos||[]).map((m,i)=>{
@@ -780,7 +780,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                             <td style={{background:bg,fontSize:12}}>
                               <span style={{fontSize:10,padding:"2px 6px",borderRadius:6,background:
                                 m.tipo==="Insumo"?"#f0f8e8":m.tipo==="Diesel"?"#fff3e0":m.tipo==="Efectivo"?"#fce4ec":"#e3f2fd",
-                                color:m.tipo==="Insumo"?"#2d5a1b":m.tipo==="Diesel"?"#e65100":m.tipo==="Egreso"?"#9b1d1d":"#1565c0",
+                                color:m.tipo==="Insumo"?"#1a3a0f":m.tipo==="Diesel"?"#e65100":m.tipo==="Egreso"?"#9b1d1d":"#1565c0",
                                 marginRight:6,fontWeight:600}}>
                                 {m.tipo}
                               </span>
@@ -789,10 +789,10 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                             <td style={{background:bg,fontSize:12}}>{m.fecha||"—"}</td>
                             <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700}}>{mxnFmt(m.montoDisp)}</td>
                             <td style={{background:bg,textAlign:"right",fontFamily:"monospace",color:"#5a7a3a",fontWeight:600}}>{m.diasD}</td>
-                            <td style={{background:bg,textAlign:"right",fontFamily:"monospace",color:"#c0392b",fontWeight:700}}>{mxnFmt(m.intDisp)}</td>
+                            <td style={{background:bg,textAlign:"right",fontFamily:"monospace",color:"#c84b4b",fontWeight:700}}>{mxnFmt(m.intDisp)}</td>
                             <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#856404"}}>{mxnFmt(factD)}</td>
                             <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:11,color:"#1a6ea8"}}>{mxnFmt(fegaD)}</td>
-                            <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}>{mxnFmt(m.intDisp+factD+fegaD)}</td>
+                            <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c84b4b"}}>{mxnFmt(m.intDisp+factD+fegaD)}</td>
                           </tr>
                         );
                       })}
@@ -802,10 +802,10 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
                         <td colSpan={2} style={{padding:"8px 12px",color:"#8e44ad"}}>SUBTOTAL DIRECTO</td>
                         <td style={{textAlign:"right",fontFamily:"monospace"}}>{mxnFmt(cDir.montoApl)}</td>
                         <td/>
-                        <td style={{textAlign:"right",fontFamily:"monospace",color:"#c0392b"}}>{mxnFmt(cDir.interes)}</td>
+                        <td style={{textAlign:"right",fontFamily:"monospace",color:"#c84b4b"}}>{mxnFmt(cDir.interes)}</td>
                         <td style={{textAlign:"right",fontFamily:"monospace",color:"#856404"}}>{mxnFmt(cDir.factTotal)}</td>
                         <td style={{textAlign:"right",fontFamily:"monospace",color:"#1a6ea8"}}>{mxnFmt(cDir.fegaTotal)}</td>
-                        <td style={{textAlign:"right",fontFamily:"monospace",color:"#c0392b",fontSize:14}}>{mxnFmt(cDir.totalALiquidar)}</td>
+                        <td style={{textAlign:"right",fontFamily:"monospace",color:"#c84b4b",fontSize:14}}>{mxnFmt(cDir.totalALiquidar)}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -819,11 +819,11 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
             <div className="card-body" style={{display:"flex",justifyContent:"space-around",flexWrap:"wrap",gap:12,padding:"16px"}}>
               {[
                 ["Capital total",          mxnFmt(cPar.montoApl+cDir.montoApl),             "#3d3525"],
-                ["Interés total",          mxnFmt(cPar.interes+cDir.interes),               "#c0392b"],
+                ["Interés total",          mxnFmt(cPar.interes+cDir.interes),               "#c84b4b"],
                 ["Factibilidad+IVA",       mxnFmt(cPar.factTotal+cDir.factTotal),           "#856404"],
                 ["FEGA+IVA",               mxnFmt(cPar.fegaTotal+cDir.fegaTotal),           "#1a6ea8"],
-                ["Asistencia Técnica",     mxnFmt(cPar.asistBase),                           "#2d5a1b"],
-                ["TOTAL A LIQUIDAR",       mxnFmt(cPar.totalALiquidar+cDir.totalALiquidar), "#c0392b"],
+                ["Asistencia Técnica",     mxnFmt(cPar.asistBase),                           "#1a3a0f"],
+                ["TOTAL A LIQUIDAR",       mxnFmt(cPar.totalALiquidar+cDir.totalALiquidar), "#c84b4b"],
               ].map(([l,v,c])=>(
                 <div key={l} style={{textAlign:"center",padding:"10px 16px",borderRadius:8,background:"white",border:`1px solid ${c}33`}}>
                   <div style={{fontSize:10,color:"#8a8070",marginBottom:3}}>{l}</div>

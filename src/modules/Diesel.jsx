@@ -205,7 +205,7 @@ export default function DieselModule({ userRol }) {
         <div style={{fontSize:11,fontWeight:700,color:'#6b7280',letterSpacing:0.8,textTransform:'uppercase',marginBottom:6}}>
           🛢 Cilindro diesel
         </div>
-        <div style={{fontSize: isMobile ? 32 : 36, fontWeight: 700, color: saldoColor, lineHeight: 1}}>
+        <div style={{fontSize: isMobile ? 32 : 36, fontWeight: 400, fontFamily: 'Georgia, serif', color: saldoColor, lineHeight: 1}}>
           {saldoCilindro.toLocaleString('es-MX', {maximumFractionDigits: 0})}
           <span style={{fontSize: 14, fontWeight: 500, color: '#6b7280', marginLeft: 8}}>
             / {CILINDRO_CAPACIDAD.toLocaleString('es-MX')} L

@@ -107,22 +107,36 @@ export const css = `
     border-top: 1px solid rgba(255,255,255,0.08);
     font-size: 11px; color: rgba(255,255,255,0.25);
   }
-  .cycle-badge {
-    display: inline-block; background: rgba(200,168,75,0.18);
-    color: ${T.strawLt}; font-family: 'DM Mono', monospace;
-    font-size: 10px; padding: 3px 9px; border-radius: 20px;
-    border: 1px solid rgba(200,168,75,0.3); margin-top: 5px;
+  .cycle-badge, .ciclo-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.1);
+    color: #a8d5a2;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15);
+    margin-top: 5px;
   }
 
   /* MAIN */
   .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; background: ${T.mist}; }
   .topbar {
-    background: white; border-bottom: 1px solid ${T.line};
+    background: #1a3a0f; border-bottom: none;
     padding: 0 32px; height: 60px;
     padding-top: max(0px, env(safe-area-inset-top));
     display: flex; align-items: center; justify-content: space-between;
     flex-shrink: 0; position: sticky; top: 0; z-index: 5;
+    box-shadow: none;
   }
+  .topbar, .topbar-title, .topbar-date, .topbar-right { color: #e8f5e2; }
+  .topbar-title { font-family: Georgia, serif; }
+  .topbar .btn, .topbar button {
+    color: #e8f5e2;
+    border-color: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+  }
+  .topbar .btn:hover, .topbar button:hover { background: rgba(255,255,255,0.15); }
   .topbar-title {
     font-family: Georgia, serif;
     font-size: 20px; font-weight: 600; color: ${T.inkLt};
@@ -175,11 +189,11 @@ export const css = `
     box-shadow: 0 1px 6px rgba(26,58,15,0.04);
     position: relative; overflow: hidden;
   }
-  .stat-card.green { border-top-color: #2d7a2d; }
-  .stat-card.gold  { border-top-color: #c8a84b; }
-  .stat-card.rust  { border-top-color: #c84b4b; }
-  .stat-card.purple { border-top-color: #8e44ad; }
-  .stat-card.sky   { border-top-color: #2980b9; }
+  .stat-card.green  { border-top: 2px solid #2d7a2d; border-left: none; }
+  .stat-card.gold   { border-top: 2px solid #c8a84b; border-left: none; }
+  .stat-card.rust   { border-top: 2px solid #c84b4b; border-left: none; }
+  .stat-card.sky    { border-top: 2px solid #2980b9; border-left: none; }
+  .stat-card.purple { border-top: 2px solid #8e44ad; border-left: none; }
   .stat-icon { font-size: 22px; margin-bottom: 10px; }
   .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: ${T.fog}; }
   .stat-value { font-family: Georgia, serif; font-size: 28px; font-weight: 400; color: ${T.ink}; margin-top: 4px; line-height: 1; }

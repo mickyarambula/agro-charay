@@ -22,9 +22,9 @@ const TIPOS_TRABAJO = [
 
 // Estatus simplificado: Pendiente → Completado. "En progreso" eliminado.
 const ESTATUS_COLORES = {
-  pendiente:    { bg: "#fff3cd", color: "#856404", border: "#ffc107", label: "⏳ Pendiente" },
-  completado:   { bg: "#d4efdf", color: "#117a65", border: "#16a085", label: "✅ Completado" },
-  cancelado:    { bg: "#fdf0ef", color: "#c0392b", border: "#c0392b", label: "🚫 Cancelado" },
+  pendiente:    { bg: "#fef3c7", color: "#92400e", border: "#c8a84b", label: "⏳ Pendiente" },
+  completado:   { bg: "#dcfce7", color: "#15803d", border: "#2d7a2d", label: "✅ Completado" },
+  cancelado:    { bg: "#fee2e2", color: "#991b1b", border: "#c84b4b", label: "🚫 Cancelado" },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -79,7 +79,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
   };
 
   const CAT_COLORS = {
-    Semilla:"#c8a84b", Fertilizante:"#2d5a1b", Herbicida:"#b85c2c",
+    Semilla:"#c8a84b", Fertilizante:"#1a3a0f", Herbicida:"#c84b4b",
     Fungicida:"#1a6ea8", Insecticida:"#8e44ad", Foliar:"#27ae60",
     Adherente:"#7f8c8d", Otro:"#95a5a6"
   };
@@ -385,7 +385,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                 title={`Ver todos los ${c}`}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
                   <span style={{fontSize:12,fontWeight:700,color:CAT_COLORS[c]}}>{CAT_ICONS[c]} {c}</span>
-                  <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:"#c0392b"}}>{mxnFmt(porCategoria[c])}</span>
+                  <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:"#c84b4b"}}>{mxnFmt(porCategoria[c])}</span>
                 </div>
                 <div style={{height:4,borderRadius:2,background:"#e8e0d0"}}>
                   <div style={{height:"100%",borderRadius:2,background:CAT_COLORS[c],width:`${totalGeneral>0?Math.min(100,porCategoria[c]/totalGeneral*100):0}%`}}/>
@@ -439,7 +439,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                         </div>
                         <div style={{display:"flex",gap:12,alignItems:"baseline",flexShrink:0}}>
                           <span style={{fontSize:10,color:T.fog}}>{c.prods} prod · {c.regs} reg</span>
-                          <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:"#c0392b"}}>{mxnFmt(c.total)}</span>
+                          <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:"#c84b4b"}}>{mxnFmt(c.total)}</span>
                           <span style={{fontSize:10,color:T.fog,minWidth:32,textAlign:"right"}}>{pct.toFixed(1)}%</span>
                           <span style={{fontSize:10,color:color,opacity:0.7}}>→</span>
                         </div>
@@ -477,7 +477,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
           </div>
           <div className="card-body" style={{padding:"12px 16px"}}>
             {proveedoresOrdenados.slice(0,8).map((p,i)=>{
-              const col = ["#2d5a1b","#1a6ea8","#c8a84b","#c0392b","#8e44ad","#e67e22","#27ae60","#7f8c8d"][i%8];
+              const col = ["#1a3a0f","#1a6ea8","#c8a84b","#c84b4b","#8e44ad","#e67e22","#27ae60","#7f8c8d"][i%8];
               return (
                 <div key={p.nombre} style={{marginBottom:10,cursor:"pointer"}}
                   onClick={()=>{setFiltroProveedor(p.nombre);setVista("tabla");}}
@@ -491,7 +491,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                     <div style={{display:"flex",gap:10,alignItems:"baseline",flexShrink:0}}>
                       <span style={{fontSize:10,color:T.fog}}>{p.regs} ped</span>
                       <span style={{fontSize:10,color:T.fog}}>{p.pct.toFixed(1)}%</span>
-                      <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:"#c0392b"}}>{mxnFmt(p.total)}</span>
+                      <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:"#c84b4b"}}>{mxnFmt(p.total)}</span>
                       <span style={{fontSize:10,color:col,opacity:0.7}}>→</span>
                     </div>
                   </div>
@@ -550,9 +550,9 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                       </div>
                     </td>
                     <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,color:"#c8a84b"}}>{sem>0?mxnFmt(sem):"—"}</td>
-                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,color:"#2d5a1b"}}>{fer>0?mxnFmt(fer):"—"}</td>
+                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,color:"#1a3a0f"}}>{fer>0?mxnFmt(fer):"—"}</td>
                     <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,color:"#8e44ad"}}>{agro>0?mxnFmt(agro):"—"}</td>
-                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}>{mxnFmt(tot)}</td>
+                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c84b4b"}}>{mxnFmt(tot)}</td>
                     <td style={{background:bg,fontSize:12,color:"#5a7a3a"}}>{ins.length} reg.</td>
                   </tr>
                 );
@@ -562,7 +562,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
         </div>
         {filtroProd!=="todos" && (
           <div style={{padding:"8px 16px",background:"#f0f4e8",borderTop:`1px solid ${T.line}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{fontSize:12,color:"#2d5a1b",fontWeight:600}}>
+            <span style={{fontSize:12,color:"#1a3a0f",fontWeight:600}}>
               Filtrando por: {productores.find(p=>String(p.id)===String(filtroProd))?.alias||"Productor"}
             </span>
             <button className="btn btn-sm btn-secondary" style={{fontSize:11}} onClick={()=>setFiltroProd("todos")}>✕ Quitar filtro</button>
@@ -636,7 +636,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
           </span>
         )}
         {filtroConcepto && (
-          <span style={{padding:"3px 10px",borderRadius:12,background:"#e8f4e8",color:"#2d5a1b",fontSize:11,fontWeight:700,border:"1px solid #4a8c2a44",cursor:"pointer"}}
+          <span style={{padding:"3px 10px",borderRadius:12,background:"#e8f4e8",color:"#1a3a0f",fontSize:11,fontWeight:700,border:"1px solid #4a8c2a44",cursor:"pointer"}}
             onClick={()=>setFiltroConcepto("")} title="Quitar filtro de concepto">
             🔍 {filtroConcepto} ✕
           </span>
@@ -673,7 +673,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
         const provData = filtroProveedor ? proveedoresOrdenados.find(p=>p.nombre===filtroProveedor) : null;
         const hasCiclo = (state.ciclos||[]).find(c=>c.id===state.cicloActivoId);
         const haTotales= (hasCiclo?.asignaciones||[]).reduce((s,a)=>s+(parseFloat(a.supAsignada)||0),0);
-        const color = filtroProveedor ? "#1a6ea8" : (CAT_COLORS[filtroCat]||"#2d5a1b");
+        const color = filtroProveedor ? "#1a6ea8" : (CAT_COLORS[filtroCat]||"#1a3a0f");
         const titulo = filtroProveedor
           ? `🏢 ${filtroProveedor}`
           : `${CAT_ICONS[filtroCat]||"📌"} ${filtroConcepto || filtroCat}`;
@@ -687,13 +687,13 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                   {provData && ` · ${provData.conceptos} conceptos`}
                 </div>
               </div>
-              {verPrecios && <div style={{fontFamily:"Georgia, serif",fontSize:22,fontWeight:800,color:"#c0392b"}}>{mxnFmt(totalImporte)}</div>}
+              {verPrecios && <div style={{fontFamily:"Georgia, serif",fontSize:22,fontWeight:800,color:"#c84b4b"}}>{mxnFmt(totalImporte)}</div>}
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",background:"white"}}>
               {[
                 {icon:"📦", label:"Total Cantidad", valor:`${totalCantidad.toLocaleString("es-MX",{maximumFractionDigits:2})} ${unidades.join("/")||""}`, sub:"suma pedidos"},
                 ...(verPrecios ? [
-                  {icon:"💰", label:"Importe Total",  valor:mxnFmt(totalImporte), sub:`${activos.length} pedidos`, clr:"#c0392b"},
+                  {icon:"💰", label:"Importe Total",  valor:mxnFmt(totalImporte), sub:`${activos.length} pedidos`, clr:"#c84b4b"},
                   {icon:"💲", label:"Precio Prom.",   valor:precioProm>0?`$${precioProm.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2})}`:"—", sub:precioProm>0?`${preciosProm.length} refs`:"—"},
                   {icon:"🌾", label:"Costo / Ha",     valor:haTotales>0?mxnFmt(totalImporte/haTotales):"—", sub:haTotales>0?`${haTotales.toFixed(1)} ha`:"—"},
                 ] : []),
@@ -716,7 +716,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                       style={{padding:"5px 12px",borderRadius:20,background:`${CAT_COLORS[cat]||"#888"}15`,border:`1px solid ${CAT_COLORS[cat]||"#888"}33`,fontSize:11,cursor:"pointer"}}>
                       <span style={{fontWeight:600,color:CAT_COLORS[cat]||"#888"}}>{CAT_ICONS[cat]||"📌"} {cat}</span>
                       <span style={{color:T.fog,marginLeft:6}}>{d.regs} ped</span>
-                      <span style={{fontFamily:"monospace",fontWeight:700,color:"#c0392b",marginLeft:8}}>{mxnFmt(d.total)}</span>
+                      <span style={{fontFamily:"monospace",fontWeight:700,color:"#c84b4b",marginLeft:8}}>{mxnFmt(d.total)}</span>
                     </div>
                   ))}
                 </div>
@@ -731,7 +731,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                     <div key={nom} style={{padding:"5px 12px",borderRadius:20,background:`${color}10`,border:`1px solid ${color}33`,fontSize:11}}>
                       <span style={{fontWeight:600,color}}>{nom}</span>
                       {unidades[0] && <span style={{color:T.fog,marginLeft:6}}>{d.cant.toLocaleString("es-MX",{maximumFractionDigits:1})} {unidades[0]}</span>}
-                      {verPrecios && <span style={{fontFamily:"monospace",fontWeight:700,color:"#c0392b",marginLeft:8}}>{mxnFmt(d.importe)}</span>}
+                      {verPrecios && <span style={{fontFamily:"monospace",fontWeight:700,color:"#c84b4b",marginLeft:8}}>{mxnFmt(d.importe)}</span>}
                     </div>
                   ))}
                 </div>
@@ -834,10 +834,10 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                     <td style={{background:bg,fontWeight:500,fontSize:12}}>{ins.insumo}</td>
                     <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12}}>{ins.cantidad}</td>
                     <td style={{background:bg,fontSize:11}}>{ins.unidad}</td>
-                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,color:"#2d5a1b"}}>{parseFloat(ins.cantidadRecibida)||0 > 0 ? `${ins.cantidadRecibida} ${ins.unidad}` : "—"}</td>
+                    <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12,color:"#1a3a0f"}}>{parseFloat(ins.cantidadRecibida)||0 > 0 ? `${ins.cantidadRecibida} ${ins.unidad}` : "—"}</td>
                     <td style={{background:bg}}>{badgeEstatus(ins)}</td>
                     {verPrecios && <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontSize:12}}>{ins.precioUnitario>0?mxnFmt(ins.precioUnitario):"—"}</td>}
-                    {verPrecios && <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}>{mxnFmt(ins.importe)}</td>}
+                    {verPrecios && <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:"#c84b4b"}}>{mxnFmt(ins.importe)}</td>}
                     <td style={{background:bg,fontSize:11,color:"#7a7060",maxWidth:150}}>{ins.proveedor}</td>
                     <td style={{background:bg}}>
                       <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
@@ -867,7 +867,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
           <div style={{padding:"8px 12px",background:"#f0f8e8",borderRadius:6,marginBottom:12,fontSize:12}}>
             <div>Pedido total: <strong>{recibirModal.cantidad} {recibirModal.unidad}</strong></div>
             <div>Ya recibido: <strong>{parseFloat(recibirModal.cantidadRecibida)||0} {recibirModal.unidad}</strong></div>
-            <div>Pendiente: <strong style={{color:"#c0392b"}}>{(parseFloat(recibirModal.cantidad)||0)-(parseFloat(recibirModal.cantidadRecibida)||0)} {recibirModal.unidad}</strong></div>
+            <div>Pendiente: <strong style={{color:"#c84b4b"}}>{(parseFloat(recibirModal.cantidad)||0)-(parseFloat(recibirModal.cantidadRecibida)||0)} {recibirModal.unidad}</strong></div>
           </div>
           <div className="form-row">
             <div className="form-group"><label className="form-label">Cantidad recibida ahora *</label>
@@ -887,7 +887,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
               {recibirModal.recepciones.map((r,i)=>(
                 <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,padding:"4px 8px",background:"#faf8f3",borderRadius:4,marginBottom:3}}>
                   <span>{r.fecha} — {r.ubicacion}</span>
-                  <span style={{fontFamily:"monospace",fontWeight:600,color:"#2d5a1b"}}>{r.cantidad} {recibirModal.unidad}</span>
+                  <span style={{fontFamily:"monospace",fontWeight:600,color:"#1a3a0f"}}>{r.cantidad} {recibirModal.unidad}</span>
                 </div>
               ))}
             </div>
@@ -986,7 +986,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
             <div className="form-group">
               <label className="form-label">Importe Total $ * <span style={{fontSize:10,color:"#8a8070"}}>(se calcula automático, puedes ajustar)</span></label>
               <input className="form-input" type="number" value={form.importe}
-                style={{fontFamily:"monospace",fontWeight:700,color:"#c0392b"}}
+                style={{fontFamily:"monospace",fontWeight:700,color:"#c84b4b"}}
                 onChange={e=>setForm(f=>({...f,importe:e.target.value}))} placeholder="0.00"/>
             </div>
           )}
@@ -1010,7 +1010,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
       </div>
       <div className="card" style={{marginBottom:16,borderLeft:"4px solid #2d5a1b"}}>
         <div className="card-body">
-          <div style={{fontWeight:700,fontSize:13,marginBottom:10,color:"#2d5a1b"}}>📋 Estructura requerida del archivo Excel</div>
+          <div style={{fontWeight:700,fontSize:13,marginBottom:10,color:"#1a3a0f"}}>📋 Estructura requerida del archivo Excel</div>
           <div style={{padding:"8px 12px",background:"#f0f4e8",borderRadius:6,fontFamily:"monospace",fontSize:11,marginBottom:10}}>
             # SOLICITUD &nbsp;|&nbsp; # ORDEN &nbsp;|&nbsp; FECHA SOLICITUD &nbsp;|&nbsp; GRUPO &nbsp;|&nbsp; CODIGO CTE &nbsp;|&nbsp; PRODUCTOR &nbsp;|&nbsp; CULTIVO &nbsp;|&nbsp; EMPRESA &nbsp;|&nbsp; CATEGORIA &nbsp;|&nbsp; INSUMO &nbsp;|&nbsp; CANTIDAD &nbsp;|&nbsp; UNIDAD &nbsp;|&nbsp; PRECIO FINAL &nbsp;|&nbsp; IMPORTE &nbsp;|&nbsp; FECHA ORDEN
           </div>
@@ -1031,7 +1031,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
           </button>
           {importLog.length>0&&(
             <div style={{marginTop:16,textAlign:"left",padding:"12px 16px",background:"#f5f4f0",borderRadius:8}}>
-              {importLog.map((l,i)=><div key={i} style={{fontSize:12,marginBottom:4,color:l.startsWith("❌")?"#c0392b":l.startsWith("⚠️")?"#e67e22":"#2d5a1b"}}>{l}</div>)}
+              {importLog.map((l,i)=><div key={i} style={{fontSize:12,marginBottom:4,color:l.startsWith("❌")?"#c84b4b":l.startsWith("⚠️")?"#e67e22":"#1a3a0f"}}>{l}</div>)}
             </div>
           )}
         </div>
