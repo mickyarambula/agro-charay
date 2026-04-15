@@ -529,6 +529,14 @@ export function reducer(s, a) {
       cicloActual: (s.ciclos||[]).find(c=>c.id===a.payload)?.nombre || s.cicloActual,
       ciclos: (s.ciclos||[]).map(c=>({...c, predeterminado: c.id===a.payload}))
     };
+    case "SET_LIQUIDACION": {
+      const list = s.liquidaciones || [];
+      const idx = list.findIndex(l => String(l.productorId) === String(a.payload.productorId));
+      const updated = [...list];
+      if (idx >= 0) updated[idx] = a.payload;
+      else updated.push(a.payload);
+      return { ...s, liquidaciones: updated };
+    }
     default: return s;
   }
 }

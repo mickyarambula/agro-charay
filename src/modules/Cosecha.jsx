@@ -43,6 +43,14 @@ export default function CosechaModule({ userRol, puedeEditar }) {
   const [modalFlete, setModalFlete] = useState(false);
   const [modalMaquila, setModalMaquila] = useState(false);
   const [modalSecado, setModalSecado] = useState(false);
+  const [modalLiq, setModalLiq] = useState(false);
+  const [prodLiqId, setProdLiqId] = useState(null);
+  const [formLiq, setFormLiq] = useState({
+    fecha: '', toneladas_entregadas: '', precio_real: '',
+    capital_para: '', capital_dir: '', intereses: '', comisiones: '',
+    estatus: 'liquidado', notas: '',
+  });
+  const liquidaciones = state.liquidaciones || [];
   const emptyCuad    = { fecha:hoy, ha:0, precioHa:0, concepto:"Cuadrilla cosecha", notas:"" };
   const emptyFlete   = { fecha:hoy, toneladas:0, precioTon:0, concepto:"Flete", notas:"" };
   const emptyMaquila = { fecha:hoy, ha:0, precioHa:0, concepto:"Maquila", notas:"" };
@@ -210,6 +218,12 @@ export default function CosechaModule({ userRol, puedeEditar }) {
       <div style={{display:"flex",gap:10,marginBottom:20,flexWrap:"wrap"}}>
         <button className="btn btn-primary"   onClick={()=>setVista("import")}>📥 Importar Excel Boletas</button>
         <button className="btn btn-secondary" onClick={()=>setVista("boletas")}>📋 Ver Boletas ({boletas.length})</button>
+        {(userRol==='admin'||userRol==='daniela') && (
+          <button className="btn btn-secondary" onClick={()=>setVista("liquidacion")}
+            style={{borderColor:'#1a3a0f', color:'#1a3a0f'}}>
+            💰 Liquidación ({liquidaciones.filter(l=>l.estatus==='liquidado').length}/{productores.length})
+          </button>
+        )}
       </div>
 
       {/* Resumen por productor */}
@@ -513,6 +527,294 @@ export default function CosechaModule({ userRol, puedeEditar }) {
   );
 
   // ─── VISTA IMPORTAR ─────────────────────────────────────────────────────────
+  // ─── VISTA LIQUIDACIÓN POR PRODUCTOR ─────────────────────────────────
+  const abrirLiquidacion = (r) => {
+    const liqExist = r.liq || {};
+    setFormLiq({
+      fecha: liqExist.fecha || hoy,
+      toneladas_entregadas: String(liqExist.toneladas_entregadas || r.tonProd || 0),
+      precio_real: String(liqExist.precio_real || precioVenta || 0),
+      capital_para: String(liqExist.capital_para || (r.capitalPara || 0)),
+      capital_dir: String(liqExist.capital_dir || (r.capitalDir || 0)),
+      intereses: String(liqExist.intereses || (r.intTotal || 0)),
+      comisiones: String(liqExist.comisiones || (r.comTotal || 0)),
+      estatus: liqExist.estatus || 'liquidado',
+      notas: liqExist.notas || '',
+    });
+    setProdLiqId(r.p.id);
+    setModalLiq(true);
+  };
+
+  if (vista === "liquidacion") {
+    const filasLiq = productores.map(p => {
+      const bolsProd = boletasActivas.filter(b => String(b.productorId) === String(p.id));
+      const tonProd = bolsProd.reduce((s,b) => s + (parseFloat(b.pna)||0), 0) / 1000;
+      const ingresoBruto = tonProd * precioVenta;
+      const cp = calcularCreditoProd(p.id, state);
+      const capitalPara = Math.min(cp.tGas||0, cp.credAut||0);
+      const capitalDir = Math.max(0, (cp.tGas||0) - (cp.credAut||0));
+      const intTotal = (cp.iP||0) + (cp.iD||0);
+      const comTotal = (cp.cP||0) + (cp.cD||0);
+      const totalDebe = capitalPara + capitalDir + intTotal + comTotal;
+      const saldo = ingresoBruto - totalDebe;
+      const liq = liquidaciones.find(l => String(l.productorId) === String(p.id));
+      return { p, tonProd, ingresoBruto, capitalPara, capitalDir, intTotal, comTotal, totalDebe, saldo, liq };
+    }).filter(r => r.tonProd > 0 || r.totalDebe > 0);
+
+    const totalIngreso = filasLiq.reduce((s,r) => s + r.ingresoBruto, 0);
+    const totalDebeAll = filasLiq.reduce((s,r) => s + r.totalDebe, 0);
+    const totalSaldo = filasLiq.reduce((s,r) => s + r.saldo, 0);
+    const liquidados = liquidaciones.filter(l => l.estatus === 'liquidado').length;
+
+    return (
+      <div>
+        <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:16, flexWrap:'wrap'}}>
+          <button className="btn btn-secondary" onClick={()=>setVista("resumen")}>← Volver</button>
+          <div style={{fontFamily:'Georgia, serif', fontSize:18, fontWeight:700, flex:1}}>
+            Liquidación por Productor
+          </div>
+          <div style={{fontSize:12, color:'#8a8070'}}>
+            {liquidados} de {productores.length} liquidados
+          </div>
+        </div>
+
+        <div className="stat-grid" style={{gridTemplateColumns:'repeat(3,1fr)', marginBottom:20}}>
+          <div className="stat-card green">
+            <div className="stat-icon">📥</div>
+            <div className="stat-label">Ingreso bruto cosecha</div>
+            <div className="stat-value" style={{fontSize:16}}>{mxnFmt(totalIngreso)}</div>
+            <div className="stat-sub">suma de todos los productores</div>
+          </div>
+          <div className="stat-card rust">
+            <div className="stat-icon">🏦</div>
+            <div className="stat-label">Total a liquidar al banco</div>
+            <div className="stat-value" style={{fontSize:16}}>{mxnFmt(totalDebeAll)}</div>
+            <div className="stat-sub">capital + intereses + comisiones</div>
+          </div>
+          <div className="stat-card" style={{borderTop:`2px solid ${totalSaldo>=0?'#2d7a2d':'#c84b4b'}`}}>
+            <div className="stat-icon">{totalSaldo>=0?'✅':'⚠️'}</div>
+            <div className="stat-label">Saldo neto del grupo</div>
+            <div className="stat-value" style={{fontSize:16, color:totalSaldo>=0?'#2d7a2d':'#c84b4b'}}>
+              {totalSaldo>=0?'+':''}{mxnFmt(totalSaldo)}
+            </div>
+            <div className="stat-sub">{totalSaldo>=0?'Ganancia estimada':'Déficit estimado'}</div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <div className="card-title">Estado de liquidación por productor</div>
+          </div>
+          <div className="table-wrap-scroll">
+            <table style={{minWidth:900}}>
+              <thead>
+                <tr>
+                  <th>Productor</th>
+                  <th style={{textAlign:'right'}}>Ton entregadas</th>
+                  <th style={{textAlign:'right'}}>Ingreso bruto</th>
+                  <th style={{textAlign:'right'}}>Capital a pagar</th>
+                  <th style={{textAlign:'right'}}>Intereses</th>
+                  <th style={{textAlign:'right'}}>Comisiones</th>
+                  <th style={{textAlign:'right'}}>Total deuda</th>
+                  <th style={{textAlign:'right'}}>Saldo productor</th>
+                  <th style={{textAlign:'center'}}>Estatus</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filasLiq.map((r, i) => {
+                  const bg = i%2===0?'white':'#faf8f3';
+                  const saldoColor = r.saldo >= 0 ? '#2d5a1b' : '#c84b4b';
+                  const estatus = r.liq?.estatus || 'pendiente';
+                  const estatusColor = { liquidado:'#2d7a2d', parcial:'#c8a84b', pendiente:'#8a8070' }[estatus];
+                  const estatusLabel = { liquidado:'✅ Liquidado', parcial:'⏳ Parcial', pendiente:'⏸ Pendiente' }[estatus];
+                  return (
+                    <tr key={r.p.id}>
+                      <td style={{background:bg, fontWeight:600, fontSize:13}}>
+                        <div style={{display:'flex', alignItems:'center', gap:6}}>
+                          <div style={{width:8, height:8, borderRadius:'50%', background:r.p.color}}/>
+                          {r.p.alias || r.p.apPat}
+                        </div>
+                      </td>
+                      <td style={{background:bg, textAlign:'right', fontFamily:'monospace', fontSize:12}}>
+                        {r.tonProd > 0 ? numFmt(r.tonProd, 3) : '—'}
+                      </td>
+                      <td style={{background:bg, textAlign:'right', fontFamily:'monospace', fontSize:12, color:'#2d5a1b', fontWeight:700}}>
+                        {r.ingresoBruto > 0 ? mxnFmt(r.ingresoBruto) : '—'}
+                      </td>
+                      <td style={{background:bg, textAlign:'right', fontFamily:'monospace', fontSize:12, color:'#c84b4b'}}>
+                        {mxnFmt(r.capitalPara + r.capitalDir)}
+                      </td>
+                      <td style={{background:bg, textAlign:'right', fontFamily:'monospace', fontSize:12, color:'#c84b4b'}}>
+                        {mxnFmt(r.intTotal)}
+                      </td>
+                      <td style={{background:bg, textAlign:'right', fontFamily:'monospace', fontSize:12, color:'#c84b4b'}}>
+                        {mxnFmt(r.comTotal)}
+                      </td>
+                      <td style={{background:bg, textAlign:'right', fontFamily:'monospace', fontSize:12, color:'#c84b4b', fontWeight:700}}>
+                        {mxnFmt(r.totalDebe)}
+                      </td>
+                      <td style={{background:bg, textAlign:'right', fontFamily:'monospace', fontSize:13, fontWeight:700, color:saldoColor}}>
+                        {r.tonProd > 0 ? (r.saldo >= 0 ? '+' : '') + mxnFmt(r.saldo) : '—'}
+                      </td>
+                      <td style={{background:bg, textAlign:'center'}}>
+                        <span style={{fontSize:11, color:estatusColor, fontWeight:500}}>{estatusLabel}</span>
+                      </td>
+                      <td style={{background:bg}}>
+                        {puedeEditar && (
+                          <button
+                            className="btn btn-sm btn-primary"
+                            style={{fontSize:10}}
+                            onClick={()=>abrirLiquidacion(r)}>
+                            {estatus === 'liquidado' ? '✏️ Ver' : '💰 Liquidar'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr style={{background:'#f0f4e8', fontWeight:700}}>
+                  <td>TOTAL</td>
+                  <td style={{textAlign:'right', fontFamily:'monospace'}}>{numFmt(filasLiq.reduce((s,r)=>s+r.tonProd,0),3)}</td>
+                  <td style={{textAlign:'right', fontFamily:'monospace', color:'#2d5a1b'}}>{mxnFmt(totalIngreso)}</td>
+                  <td colSpan={3} style={{textAlign:'right', fontFamily:'monospace', color:'#c84b4b'}}></td>
+                  <td style={{textAlign:'right', fontFamily:'monospace', color:'#c84b4b'}}>{mxnFmt(totalDebeAll)}</td>
+                  <td style={{textAlign:'right', fontFamily:'monospace', color:totalSaldo>=0?'#2d5a1b':'#c84b4b', fontWeight:700}}>
+                    {totalSaldo>=0?'+':''}{mxnFmt(totalSaldo)}
+                  </td>
+                  <td colSpan={2}></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        {boletasActivas.length === 0 && (
+          <div style={{marginTop:16, padding:'12px 16px', background:'#fef3c7', border:'1px solid #fde68a', borderRadius:8, fontSize:12, color:'#92400e'}}>
+            ⚠️ Aún no hay boletas importadas. La columna "Ingreso bruto" y "Saldo productor" mostrarán datos cuando importes las boletas reales de cosecha.
+          </div>
+        )}
+
+        {modalLiq && prodLiqId && (() => {
+          const r = filasLiq.find(x => String(x.p.id) === String(prodLiqId));
+          if (!r) return null;
+          const ingreso = (parseFloat(formLiq.toneladas_entregadas)||0) * (parseFloat(formLiq.precio_real)||0);
+          const deuda = (parseFloat(formLiq.capital_para)||0) + (parseFloat(formLiq.capital_dir)||0)
+                      + (parseFloat(formLiq.intereses)||0) + (parseFloat(formLiq.comisiones)||0);
+          const saldoProd = ingreso - deuda;
+          return (
+            <Modal
+              title={`💰 Liquidar — ${r.p.alias || r.p.apPat}`}
+              onClose={()=>{setModalLiq(false); setProdLiqId(null);}}
+              footer={
+                <>
+                  <button className="btn btn-secondary" onClick={()=>{setModalLiq(false); setProdLiqId(null);}}>Cancelar</button>
+                  <button className="btn btn-primary" onClick={()=>{
+                    dispatch({
+                      type: 'SET_LIQUIDACION',
+                      payload: {
+                        id: r.liq?.id || (Date.now() + Math.random()),
+                        productorId: r.p.id,
+                        cicloId: state.cicloActivoId || 1,
+                        fecha: formLiq.fecha,
+                        toneladas_entregadas: parseFloat(formLiq.toneladas_entregadas)||0,
+                        precio_real: parseFloat(formLiq.precio_real)||0,
+                        capital_para: parseFloat(formLiq.capital_para)||0,
+                        capital_dir: parseFloat(formLiq.capital_dir)||0,
+                        intereses: parseFloat(formLiq.intereses)||0,
+                        comisiones: parseFloat(formLiq.comisiones)||0,
+                        total_liquidado: deuda,
+                        saldo_productor: saldoProd,
+                        estatus: formLiq.estatus,
+                        notas: formLiq.notas,
+                      }
+                    });
+                    setModalLiq(false); setProdLiqId(null);
+                  }}>💾 Guardar liquidación</button>
+                </>
+              }>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Fecha de liquidación</label>
+                  <input className="form-input" type="date" value={formLiq.fecha}
+                    onChange={e=>setFormLiq(f=>({...f, fecha:e.target.value}))}/>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Estatus</label>
+                  <select className="form-input" value={formLiq.estatus}
+                    onChange={e=>setFormLiq(f=>({...f, estatus:e.target.value}))}>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="parcial">Parcial</option>
+                    <option value="liquidado">Liquidado</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Toneladas entregadas</label>
+                  <input className="form-input" type="number" value={formLiq.toneladas_entregadas}
+                    onChange={e=>setFormLiq(f=>({...f, toneladas_entregadas:e.target.value}))}/>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Precio real por ton ($)</label>
+                  <input className="form-input" type="number" value={formLiq.precio_real}
+                    onChange={e=>setFormLiq(f=>({...f, precio_real:e.target.value}))}/>
+                </div>
+              </div>
+              <div style={{padding:'8px 12px', background:'#f0f7ec', borderRadius:6, fontSize:12, marginBottom:12}}>
+                <span style={{color:'#2d5a1b', fontWeight:700}}>Ingreso bruto: {mxnFmt(ingreso)}</span>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Capital parafinanciero</label>
+                  <input className="form-input" type="number" value={formLiq.capital_para}
+                    onChange={e=>setFormLiq(f=>({...f, capital_para:e.target.value}))}/>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Capital directo</label>
+                  <input className="form-input" type="number" value={formLiq.capital_dir}
+                    onChange={e=>setFormLiq(f=>({...f, capital_dir:e.target.value}))}/>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Intereses</label>
+                  <input className="form-input" type="number" value={formLiq.intereses}
+                    onChange={e=>setFormLiq(f=>({...f, intereses:e.target.value}))}/>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Comisiones</label>
+                  <input className="form-input" type="number" value={formLiq.comisiones}
+                    onChange={e=>setFormLiq(f=>({...f, comisiones:e.target.value}))}/>
+                </div>
+              </div>
+              <div style={{padding:'10px 14px', background: saldoProd>=0?'#f0fdf4':'#fef2f2',
+                border:`1px solid ${saldoProd>=0?'#bbf7d0':'#fecaca'}`, borderRadius:8, marginBottom:8}}>
+                <div style={{fontSize:11, color:saldoProd>=0?'#166534':'#991b1b', marginBottom:2}}>
+                  Total deuda: {mxnFmt(deuda)}
+                </div>
+                <div style={{fontSize:18, fontFamily:'Georgia, serif', fontWeight:500, color:saldoProd>=0?'#166534':'#991b1b'}}>
+                  Saldo del productor: {saldoProd>=0?'+':''}{mxnFmt(saldoProd)}
+                </div>
+                <div style={{fontSize:10, color:saldoProd>=0?'#166534':'#991b1b', marginTop:2}}>
+                  {saldoProd>=0?'Ganancia estimada tras liquidar':'Déficit — el productor no alcanza a cubrir su deuda'}
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Notas</label>
+                <input className="form-input" value={formLiq.notas}
+                  onChange={e=>setFormLiq(f=>({...f, notas:e.target.value}))}
+                  placeholder="Observaciones, fecha de pago real al banco, etc."/>
+              </div>
+            </Modal>
+          );
+        })()}
+      </div>
+    );
+  }
+
   if (vista==="import") return (
     <div style={{maxWidth:680}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
