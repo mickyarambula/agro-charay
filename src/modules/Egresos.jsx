@@ -657,7 +657,7 @@ const fileEgresosRef    = useRef(null);
     <div>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
         <button className="btn btn-secondary" onClick={()=>setVista("resumen")}>← Volver</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,flex:1}}>Dispersiones de Crédito</div>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700,flex:1}}>Dispersiones de Crédito</div>
         <BtnExport onClick={()=>exportarExcel("Dispersiones_"+state.cicloActual,[{
           nombre:"Dispersiones",
           headers:["# Sol","# Orden","Fecha","Productor","Línea","Monto","Notas"],
@@ -760,7 +760,7 @@ const fileEgresosRef    = useRef(null);
     <div>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
         <button className="btn btn-secondary" onClick={()=>setVista("resumen")}>← Volver</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,flex:1}}>Gastos Registrados <span style={{fontSize:12,color:"#8a8070",fontWeight:400}}>({egresosMan.length} registros)</span></div>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700,flex:1}}>Gastos Registrados <span style={{fontSize:12,color:"#8a8070",fontWeight:400}}>({egresosMan.length} registros)</span></div>
         <BtnExport onClick={()=>exportarExcel("Egresos_"+state.cicloActual,[{
           nombre:"Egresos",
           headers:["Fecha","Categoría","Concepto","Productor","Monto","Línea Crédito"],
@@ -975,7 +975,7 @@ const fileEgresosRef    = useRef(null);
     <div style={{maxWidth:600}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
         <button className="btn btn-secondary" onClick={()=>setVista("dispersiones")}>← Volver</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>Nueva Dispersión de Crédito</div>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700}}>Nueva Dispersión de Crédito</div>
       </div>
       <div className="card">
         <div className="card-body" style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -1035,7 +1035,7 @@ const fileEgresosRef    = useRef(null);
     <div style={{maxWidth:680}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
         <button className="btn btn-secondary" onClick={()=>setVista("dispersiones")}>← Volver</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>Importar Excel Parafinanciera</div>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700}}>Importar Excel Parafinanciera</div>
       </div>
       {/* Instrucciones estructura */}
       <div className="card" style={{marginBottom:16,borderLeft:"4px solid #1a6ea8"}}>
@@ -1081,7 +1081,7 @@ const fileEgresosRef    = useRef(null);
     <div style={{maxWidth:700}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
         <button className="btn btn-secondary" onClick={()=>setVista("gastos")}>← Volver</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>Importar Excel de Egresos</div>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700}}>Importar Excel de Egresos</div>
       </div>
 
       {/* Instrucciones */}
@@ -1151,7 +1151,7 @@ const fileEgresosRef    = useRef(null);
       <div style={{maxWidth:680}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
           <button className="btn btn-secondary" onClick={()=>setVista("gastos")}>← Volver</button>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>Registrar Gasto</div>
+          <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700}}>Registrar Gasto</div>
         </div>
         <div className="card">
           <div className="card-body" style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -1374,7 +1374,7 @@ const fileEgresosRef    = useRef(null);
           <button className="btn btn-secondary" onClick={()=>setVista("resumen")}>← Volver</button>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <div style={{width:14,height:14,borderRadius:"50%",background:p.color}}/>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>{p.alias||p.apPat}</div>
+            <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700}}>{p.alias||p.apPat}</div>
           </div>
         </div>
         {/* Stats */}

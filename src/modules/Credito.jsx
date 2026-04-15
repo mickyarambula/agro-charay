@@ -552,7 +552,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
           <button className="btn btn-secondary" onClick={()=>setVista("consolidado")}>← Volver</button>
           <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
             <div style={{width:12,height:12,borderRadius:"50%",background:colProd(p.id)}}/>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700}}>{p.alias||p.apPat}</div>
+            <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700}}>{p.alias||p.apPat}</div>
             <span style={{fontSize:11,padding:"3px 10px",borderRadius:10,background:"#f0f4e8",color:"#2d5a1b",fontWeight:600}}>
               {ha.toFixed(2)} ha
             </span>

@@ -580,7 +580,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
     <div>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
         <button className="btn btn-secondary" onClick={()=>setVista("resumen")}>← Volver</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,flex:1}}>Todos los Registros</div>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700,flex:1}}>Todos los Registros</div>
         <BtnExport onClick={()=>exportarExcel("Insumos_"+state.cicloActual,[{
           nombre:"Insumos",
           headers:["# Sol","# Orden","Fecha Sol","Productor","Categoría","Insumo","Cantidad","Unidad","Importe","Estatus"],
@@ -687,7 +687,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
                   {provData && ` · ${provData.conceptos} conceptos`}
                 </div>
               </div>
-              {verPrecios && <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:800,color:"#c0392b"}}>{mxnFmt(totalImporte)}</div>}
+              {verPrecios && <div style={{fontFamily:"Georgia, serif",fontSize:22,fontWeight:800,color:"#c0392b"}}>{mxnFmt(totalImporte)}</div>}
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",background:"white"}}>
               {[
@@ -904,7 +904,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
     <div style={{maxWidth:660}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
         <button className="btn btn-secondary" onClick={()=>setVista("tabla")}>← Volver</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>Registrar Insumo / Semilla</div>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700}}>Registrar Insumo / Semilla</div>
       </div>
       <div className="card">
         <div className="card-body" style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -1006,7 +1006,7 @@ export default function InsumosModule({ userRol, puedeEditar, onNavigate, navFil
     <div style={{maxWidth:680}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
         <button className="btn btn-secondary" onClick={()=>setVista("tabla")}>← Volver</button>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700}}>Importar Excel de Insumos</div>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontWeight:700}}>Importar Excel de Insumos</div>
       </div>
       <div className="card" style={{marginBottom:16,borderLeft:"4px solid #2d5a1b"}}>
         <div className="card-body">
