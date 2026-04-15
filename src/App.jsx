@@ -108,48 +108,65 @@ function LoginScreen({ onLogin }) {
   };
 
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a2e1a 0%,#2d5a1b 50%,#1a3d2e 100%)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>
-      <div style={{background:"white",borderRadius:20,padding:"48px 40px",width:360,boxShadow:"0 24px 64px rgba(0,0,0,0.35)"}}>
-        <div style={{textAlign:"center",marginBottom:32}}>
-          <div style={{fontSize:48,marginBottom:8}}>🌽</div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:"#1a2e1a"}}>AgroSistema</div>
-          <div style={{fontSize:14,color:"#5a7a5a",marginTop:4}}>Almacenes Santa Rosa · Charay</div>
+    <div style={{
+      minHeight:"100vh",
+      background:"#1a3a0f",
+      display:"flex",
+      alignItems:"center",
+      justifyContent:"center",
+      padding:"20px",
+      fontFamily:"system-ui, -apple-system, sans-serif",
+    }}>
+      <div style={{
+        background:"#ffffff",
+        borderRadius:16,
+        padding:32,
+        width:"100%",
+        maxWidth:400,
+        boxShadow:"0 20px 50px rgba(0,0,0,0.35)",
+      }}>
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <div style={{fontSize:42,marginBottom:6}}>🌽</div>
+          <div style={{fontFamily:"Georgia, serif",fontSize:28,fontWeight:400,color:"#1a2e1a",lineHeight:1.1}}>AgroSistema</div>
+          <div style={{fontSize:12,color:"#b0a090",marginTop:6,letterSpacing:0.3}}>Almacenes Santa Rosa · Charay</div>
         </div>
 
-        <div style={{marginBottom:16}}>
-          <label style={{fontSize:12,fontWeight:600,color:"#4a6a4a",display:"block",marginBottom:6}}>Usuario</label>
+        <div style={{marginBottom:14}}>
+          <label style={{fontSize:11,fontWeight:600,color:"#b0a090",display:"block",marginBottom:6,letterSpacing:0.8,textTransform:"uppercase"}}>Usuario</label>
           <input
             value={user} onChange={e=>setUser(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&handleLogin()}
-            placeholder="admin / socio / campo"
-            style={{width:"100%",padding:"11px 14px",border:"1.5px solid #d0e0d0",borderRadius:10,fontSize:14,outline:"none",boxSizing:"border-box",transition:"border 0.15s"}}
-            onFocus={e=>e.target.style.borderColor="#2d7a3a"}
-            onBlur={e=>e.target.style.borderColor="#d0e0d0"}
+            placeholder="admin / socio / encargado"
+            style={{width:"100%",padding:12,border:"1px solid #ede5d8",borderRadius:8,fontSize:15,outline:"none",boxSizing:"border-box",transition:"border 0.15s",background:"#ffffff",color:"#1a2e1a"}}
+            onFocus={e=>e.target.style.borderColor="#1a3a0f"}
+            onBlur={e=>e.target.style.borderColor="#ede5d8"}
           />
         </div>
-        <div style={{marginBottom:24}}>
-          <label style={{fontSize:12,fontWeight:600,color:"#4a6a4a",display:"block",marginBottom:6}}>Contraseña</label>
+        <div style={{marginBottom:20}}>
+          <label style={{fontSize:11,fontWeight:600,color:"#b0a090",display:"block",marginBottom:6,letterSpacing:0.8,textTransform:"uppercase"}}>Contraseña</label>
           <input
             type="password" value={pass} onChange={e=>setPass(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&handleLogin()}
             placeholder="••••••••"
-            style={{width:"100%",padding:"11px 14px",border:"1.5px solid #d0e0d0",borderRadius:10,fontSize:14,outline:"none",boxSizing:"border-box"}}
-            onFocus={e=>e.target.style.borderColor="#2d7a3a"}
-            onBlur={e=>e.target.style.borderColor="#d0e0d0"}
+            style={{width:"100%",padding:12,border:"1px solid #ede5d8",borderRadius:8,fontSize:15,outline:"none",boxSizing:"border-box",background:"#ffffff",color:"#1a2e1a"}}
+            onFocus={e=>e.target.style.borderColor="#1a3a0f"}
+            onBlur={e=>e.target.style.borderColor="#ede5d8"}
           />
         </div>
 
-        {error && <div style={{background:"#fdf0ef",border:"1px solid #e74c3c",borderRadius:8,padding:"10px 14px",fontSize:13,color:"#c0392b",marginBottom:16}}>{error}</div>}
+        {error && <div style={{background:"#fdf0ef",border:"1px solid #e74c3c",borderRadius:8,padding:"10px 14px",fontSize:13,color:"#c0392b",marginBottom:14}}>{error}</div>}
 
         <button onClick={handleLogin} disabled={loading}
-          style={{width:"100%",padding:"13px",background:loading?"#7aaa6a":"#2d7a3a",color:"white",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:loading?"wait":"pointer",transition:"background 0.15s"}}>
+          onMouseOver={e=>{if(!loading)e.currentTarget.style.background="#2d5a1b";}}
+          onMouseOut={e=>{if(!loading)e.currentTarget.style.background="#1a3a0f";}}
+          style={{width:"100%",padding:14,background:loading?"#4a7c3f":"#1a3a0f",color:"#ffffff",border:"none",borderRadius:8,fontSize:15,fontFamily:"Georgia, serif",fontWeight:400,cursor:loading?"wait":"pointer",transition:"background 0.15s",minHeight:48}}>
           {loading ? "Verificando..." : "Ingresar →"}
         </button>
 
-        <div style={{marginTop:24,padding:"14px",background:"#f0f7f0",borderRadius:10,fontSize:11,color:"#5a7a5a"}}>
-          <div style={{fontWeight:600,marginBottom:4}}>Perfiles disponibles:</div>
+        <div style={{marginTop:20,padding:12,background:"#f8f6f2",borderRadius:8,fontSize:12,color:"#b0a090"}}>
+          <div style={{fontWeight:600,marginBottom:6,color:"#1a2e1a"}}>Perfiles disponibles:</div>
           {Object.entries(ROLES).map(([k,r])=>(
-            <div key={k} style={{marginTop:2}}>{r.icon} <strong>{k}</strong> — {r.label}</div>
+            <div key={k} style={{marginTop:3}}>{r.icon} <strong style={{color:"#1a2e1a"}}>{k}</strong> — {r.label}</div>
           ))}
         </div>
       </div>

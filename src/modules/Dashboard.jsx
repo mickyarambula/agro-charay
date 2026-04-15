@@ -152,35 +152,35 @@ export default function Dashboard({ userRol, onNavigate }) {
       {/* ── Fila 1: KPIs principales clicables ── */}
       <div className="stat-grid" style={{gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",marginBottom:16}}>
 
-        <div className="stat-card green" {...cardClick(()=>nav("ciclos"))} title="Ver Ciclos">
+        <div className="stat-card green" {...cardClick(()=>nav("ciclos"))} title="Ver Ciclos" style={{borderTop:"2px solid #2d7a2d"}}>
           <div className="stat-icon">🌽</div>
           <div className="stat-label">Hectáreas del Ciclo</div>
-          <div className="stat-value">{F.ha.toFixed(1)}<span className="stat-unit"> ha</span></div>
+          <div className="stat-value" style={{fontFamily:"Georgia, serif"}}>{F.ha.toFixed(1)}<span className="stat-unit"> ha</span></div>
           <div className="stat-sub">{productores.filter(p=>asigsCiclo.some(a=>String(a.productorId)===String(p.id))).length} productores · {state.cicloActual}</div>
           <div style={{fontSize:9,color:T.fog,marginTop:4}}>→ Ciclos</div>
         </div>
 
-        <div className="stat-card rust" {...cardClick(()=>nav("gastos"))} title="Ver Costos">
+        <div className="stat-card rust" {...cardClick(()=>nav("gastos"))} title="Ver Costos" style={{borderTop:"2px solid #c8a84b"}}>
           <div className="stat-icon">💸</div>
           <div className="stat-label">Costo Total Ciclo</div>
-          <div className="stat-value" style={{fontSize:18}}>{mxnFmt(F.costoTotal)}</div>
+          <div className="stat-value" style={{fontSize:18,fontFamily:"Georgia, serif"}}>{mxnFmt(F.costoTotal)}</div>
           <div className="stat-sub">{mxnFmt(F.ha>0?F.costoTotal/F.ha:0)}/ha · incl. intereses y comisiones</div>
           <div style={{fontSize:9,color:T.fog,marginTop:4}}>→ Costos y Equilibrio</div>
         </div>
 
-        <div className="stat-card gold" {...cardClick(()=>nav("cosecha"))} title="Ver Cosecha">
+        <div className="stat-card gold" {...cardClick(()=>nav("cosecha"))} title="Ver Cosecha" style={{borderTop:"2px solid #2980b9"}}>
           <div className="stat-icon">{hayBoletas?"🌽":"📊"}</div>
           <div className="stat-label">{hayBoletas?"Producción Real":"Ingreso Estimado"}</div>
-          <div className="stat-value" style={{fontSize:18}}>{hayBoletas?`${totalTon.toFixed(2)} ton`:mxnFmt(F.ingresoEst)}</div>
+          <div className="stat-value" style={{fontSize:18,fontFamily:"Georgia, serif"}}>{hayBoletas?`${totalTon.toFixed(2)} ton`:mxnFmt(F.ingresoEst)}</div>
           <div className="stat-sub">{hayBoletas?`${boletas.length} boletas · ${mxnFmt(totalTon*F.precio)}`:`Est.: ${F.produccionEst.toFixed(0)} ton × ${mxnFmt(F.precio)}`}</div>
           <div style={{fontSize:9,color:T.fog,marginTop:4}}>→ Cosecha y Maquila</div>
         </div>
 
-        <div className="stat-card" style={{borderLeft:`4px solid ${semaforo.color}`,cursor:"pointer",transition:"transform 0.12s"}}
+        <div className="stat-card" style={{borderLeft:`4px solid ${semaforo.color}`,borderTop:`2px solid ${F.utilidadBruta<0?"#c84b4b":"#2d7a2d"}`,cursor:"pointer",transition:"transform 0.12s"}}
           {...cardClick(()=>nav("costos"))} title="Ver Costos y Equilibrio">
           <div className="stat-icon">{semaforo.icono}</div>
           <div className="stat-label">Utilidad Estimada</div>
-          <div className="stat-value" style={{fontSize:18,color:semaforo.color}}>{mxnFmt(F.utilidadBruta)}</div>
+          <div className="stat-value" style={{fontSize:18,fontFamily:"Georgia, serif",color:semaforo.color}}>{mxnFmt(F.utilidadBruta)}</div>
           <div className="stat-sub">{semaforo.texto} · {Math.abs(F.margen).toFixed(1)}% margen</div>
           <div style={{fontSize:9,color:T.fog,marginTop:4}}>→ Costos y Equilibrio</div>
         </div>
