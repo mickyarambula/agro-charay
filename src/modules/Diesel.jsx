@@ -190,6 +190,31 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
     }
 
     dispatch({ type:"ADD_DIESEL", payload: nuevoReg });
+
+    // Espejo en Bitácora para salidas internas (consumo en campo)
+    if (esSalidaInterna) {
+      const maq = (state.maquinaria||[]).find(m=>String(m.id)===String(nuevoReg.maquinariaId));
+      dispatch({
+        type: 'ADD_BITACORA',
+        payload: {
+          id: Date.now() + 1,
+          tipo: 'diesel',
+          fecha: nuevoReg.fechaSolicitud || nuevoReg.fecha,
+          loteId: nuevoReg.loteId ? parseInt(nuevoReg.loteId) || nuevoReg.loteId : null,
+          loteIds: nuevoReg.loteId ? [parseInt(nuevoReg.loteId) || nuevoReg.loteId] : [],
+          operadorId: nuevoReg.operadorId || '',
+          operador: (state.operadores||[]).find(o=>String(o.id)===String(nuevoReg.operadorId))?.nombre || '',
+          cantidad: nuevoReg.cantidad,
+          unidad: 'L',
+          maquinariaId: nuevoReg.maquinariaId || '',
+          horas: 0,
+          notas: `Carga de diesel: ${nuevoReg.cantidad}L — ${maq?.nombre || 'Sin tractor'}`,
+          origen: 'diesel_cilindro',
+          data: { litros: nuevoReg.cantidad, precioLitro: 0, actividad: 'Carga cilindro' },
+        }
+      });
+    }
+
     setForm(emptyForm);
     setVista("resumen");
   };
@@ -282,7 +307,7 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
   // ─────────────────────────────────────────────────────────────────────────────
   if (vista==="resumen" && userRol === 'encargado') {
     const misSalidas = [...dieselActivo]
-      .filter(d => tipoMov(d) === 'salida_interna')
+      .filter(d => tipoMov(d) === 'salida_interna' && (parseFloat(d.cantidad) || 0) > 0)
       .sort((a,b)=>String(b.fechaSolicitud||'').localeCompare(String(a.fechaSolicitud||'')))
       .slice(0,10);
     const nomMaq = id => (state.maquinaria||[]).find(m=>String(m.id)===String(id))?.nombre || '—';
@@ -838,15 +863,34 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
                 <input className="form-input" type="date" value={form.fechaSolicitud} onChange={e=>setForm(f=>({...f,fechaSolicitud:e.target.value,fechaOrden:e.target.value}))}/>
               </div>
               <div className="form-group">
-                <label className="form-label">🚜 Equipo / Tractor *</label>
+                <label className="form-label">🚜 Tractor / Equipo</label>
                 <select className="form-select" value={form.maquinariaId||""} onChange={e=>{
                   const m = (state.maquinaria||[]).find(x=>String(x.id)===String(e.target.value));
                   setForm(f=>({...f,maquinariaId:e.target.value,unidad: m?.nombre || "LT"}));
                 }}>
-                  <option value="">— Seleccionar equipo —</option>
+                  <option value="">— Sin especificar —</option>
                   {(state.maquinaria||[]).map(m=>(
                     <option key={m.id} value={m.id}>{m.nombre}{m.tipo?` (${m.tipo})`:""}</option>
                   ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">📍 Lote</label>
+                <select className="form-select" value={form.loteId||""} onChange={e=>setForm(f=>({...f,loteId:e.target.value}))}>
+                  <option value="">— Sin especificar —</option>
+                  {(state.lotes||[])
+                    .filter(l => l.activo !== false)
+                    .sort((a,b) => {
+                      const na = (a.apodo && a.apodo !== 'NO DEFINIDO' ? a.apodo : a.folioCorto || '');
+                      const nb = (b.apodo && b.apodo !== 'NO DEFINIDO' ? b.apodo : b.folioCorto || '');
+                      return na.localeCompare(nb);
+                    })
+                    .map(l => {
+                      const ha = parseFloat(l.hectareas || l.supCredito || l.supModulo || 0).toFixed(1);
+                      const apodo = l.apodo && l.apodo !== 'NO DEFINIDO' ? l.apodo : (l.folioCorto || `Lote #${l.id}`);
+                      const prodTxt = l.propietario ? ` — ${l.propietario}` : '';
+                      return <option key={l.id} value={l.id}>{apodo}{prodTxt} ({ha} ha)</option>;
+                    })}
                 </select>
               </div>
               <div className="form-group">
