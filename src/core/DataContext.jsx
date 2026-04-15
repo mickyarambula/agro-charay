@@ -537,6 +537,32 @@ export function reducer(s, a) {
       else updated.push(a.payload);
       return { ...s, liquidaciones: updated };
     }
+    case "CERRAR_CICLO": {
+      const ciclos = (s.ciclos||[]).map(c =>
+        String(c.id) === String(a.payload.cicloId)
+          ? { ...c, estatus: 'cerrado', fechaCierre: a.payload.fecha }
+          : c
+      );
+      return { ...s, ciclos };
+    }
+    case "NUEVO_CICLO": {
+      const nuevoCiclo = {
+        id: Date.now(),
+        nombre: a.payload.nombre,
+        cultivo: a.payload.cultivo || 'maiz',
+        fechaInicio: a.payload.fechaInicio,
+        fechaFin: a.payload.fechaFin,
+        estatus: 'activo',
+        asignaciones: [],
+        predeterminado: false,
+      };
+      return {
+        ...s,
+        ciclos: [...(s.ciclos||[]), nuevoCiclo],
+        cicloActivoId: nuevoCiclo.id,
+        cicloActual: nuevoCiclo.nombre,
+      };
+    }
     default: return s;
   }
 }

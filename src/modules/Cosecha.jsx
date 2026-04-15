@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
 
 
 export default function CosechaModule({ userRol, puedeEditar }) {
@@ -51,6 +52,10 @@ export default function CosechaModule({ userRol, puedeEditar }) {
     estatus: 'liquidado', notas: '',
   });
   const liquidaciones = state.liquidaciones || [];
+  const [showNuevoCiclo, setShowNuevoCiclo] = useState(false);
+  const [formCiclo, setFormCiclo] = useState({
+    nombre: 'PV 2026', cultivo: 'maiz', fechaInicio: '', fechaFin: '',
+  });
   const emptyCuad    = { fecha:hoy, ha:0, precioHa:0, concepto:"Cuadrilla cosecha", notas:"" };
   const emptyFlete   = { fecha:hoy, toneladas:0, precioTon:0, concepto:"Flete", notas:"" };
   const emptyMaquila = { fecha:hoy, ha:0, precioHa:0, concepto:"Maquila", notas:"" };
@@ -528,6 +533,42 @@ export default function CosechaModule({ userRol, puedeEditar }) {
 
   // ─── VISTA IMPORTAR ─────────────────────────────────────────────────────────
   // ─── VISTA LIQUIDACIÓN POR PRODUCTOR ─────────────────────────────────
+  const descargarReporteLiquidacion = (filas, totalIng, totalDeb, totalSal) => {
+    const hoyStr = new Date().toLocaleDateString('es-MX', {day:'2-digit',month:'long',year:'numeric'});
+    const rows = filas.map(r => `
+      <tr>
+        <td>${r.p.alias||r.p.apPat||''} ${r.p.apMat||''}</td>
+        <td style="text-align:right">${r.tonProd>0?numFmt(r.tonProd,3):'—'}</td>
+        <td style="text-align:right;color:#155724">${r.ingresoBruto>0?mxnFmt(r.ingresoBruto):'—'}</td>
+        <td style="text-align:right;color:#721c24">${mxnFmt(r.capitalPara)}</td>
+        <td style="text-align:right;color:#721c24">${mxnFmt(r.capitalDir)}</td>
+        <td style="text-align:right;color:#721c24">${mxnFmt(r.intTotal)}</td>
+        <td style="text-align:right;color:#721c24">${mxnFmt(r.comTotal)}</td>
+        <td style="text-align:right;color:#721c24;font-weight:700">${mxnFmt(r.totalDebe)}</td>
+        <td style="text-align:right;font-weight:700;color:${r.saldo>=0?'#155724':'#721c24'}">${r.tonProd>0?(r.saldo>=0?'+':'')+mxnFmt(r.saldo):'—'}</td>
+        <td style="text-align:center">${({liquidado:'✅ Liquidado',parcial:'⏳ Parcial',pendiente:'⏸ Pendiente'})[r.liq?.estatus||'pendiente']}</td>
+      </tr>
+    `).join('');
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Liquidación ${state.cicloActual||''}</title>
+    <style>body{font-family:Georgia,serif;margin:40px;color:#1a2e1a}h1{font-size:22px;margin-bottom:4px}h2{font-size:14px;font-weight:400;color:#5a6a5a;margin-bottom:24px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#1a3a0f;color:#e8f5e2;padding:8px 6px;text-align:left;font-weight:500}th:not(:first-child){text-align:right}td{padding:7px 6px;border-bottom:1px solid #ede5d8}tr:nth-child(even) td{background:#f8f6f2}tfoot td{background:#1a3a0f;color:#e8f5e2;font-weight:700;padding:8px 6px}tfoot td:not(:first-child){text-align:right}.footer{margin-top:32px;font-size:10px;color:#b0a090;text-align:center}</style></head><body>
+    <h1>Estado de Liquidación — Ciclo ${state.cicloActual||''}</h1>
+    <h2>Agrícola Charay · Generado el ${hoyStr}</h2>
+    <table>
+      <thead><tr><th>Productor</th><th style="text-align:right">Ton entregadas</th><th style="text-align:right">Ingreso bruto</th><th style="text-align:right">Capital para</th><th style="text-align:right">Capital dir</th><th style="text-align:right">Intereses</th><th style="text-align:right">Comisiones</th><th style="text-align:right">Total deuda</th><th style="text-align:right">Saldo productor</th><th style="text-align:right">Estatus</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td>TOTAL</td><td style="text-align:right">${numFmt(filas.reduce((s,r)=>s+r.tonProd,0),3)}</td><td style="text-align:right">${mxnFmt(totalIng)}</td><td colspan="4"></td><td style="text-align:right">${mxnFmt(totalDeb)}</td><td style="text-align:right">${totalSal>=0?'+':''}${mxnFmt(totalSal)}</td><td></td></tr></tfoot>
+    </table>
+    <div class="footer">AgroSistema Charay · Documento generado automáticamente</div>
+    </body></html>`;
+    const blob = new Blob([html], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `liquidacion-${(state.cicloActual||'ciclo').replace(/\s+/g,'-')}-${new Date().toISOString().split('T')[0]}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const abrirLiquidacion = (r) => {
     const liqExist = r.liq || {};
     setFormLiq({
@@ -573,6 +614,9 @@ export default function CosechaModule({ userRol, puedeEditar }) {
           <div style={{fontFamily:'Georgia, serif', fontSize:18, fontWeight:700, flex:1}}>
             Liquidación por Productor
           </div>
+          <button className="btn btn-secondary" onClick={()=>descargarReporteLiquidacion(filasLiq, totalIngreso, totalDebeAll, totalSaldo)}>
+            📄 Descargar reporte
+          </button>
           <div style={{fontSize:12, color:'#8a8070'}}>
             {liquidados} de {productores.length} liquidados
           </div>
@@ -697,6 +741,95 @@ export default function CosechaModule({ userRol, puedeEditar }) {
           </div>
         )}
 
+        {/* Card de cierre de ciclo — visible cuando todos los productores con boletas están liquidados */}
+        {(() => {
+          const conBoletas = filasLiq.filter(r => r.tonProd > 0);
+          const todosLiquidados = conBoletas.length > 0 && conBoletas.every(r => r.liq?.estatus === 'liquidado');
+          const cicloActivo = (state.ciclos||[]).find(c => String(c.id) === String(state.cicloActivoId||1));
+          if (!todosLiquidados || cicloActivo?.estatus === 'cerrado') return null;
+          return (
+            <div style={{marginTop:20, background:'#f0fdf4', border:'2px solid #2d7a2d', borderRadius:10, padding:'16px'}}>
+              <div style={{fontSize:13, fontWeight:500, color:'#1a3a0f', marginBottom:8}}>
+                ✅ Todos los productores liquidados — el ciclo puede cerrarse
+              </div>
+              <div style={{fontSize:11, color:'#5a6a5a', marginBottom:12}}>
+                Al cerrar el ciclo {state.cicloActual}, el sistema lo marcará como finalizado. Los datos quedarán preservados para consulta histórica.
+              </div>
+              {puedeEditar && (
+                <button className="btn btn-primary" style={{background:'#1a3a0f'}}
+                  onClick={() => {
+                    if (!window.confirm(`¿Cerrar el ciclo ${state.cicloActual}? Esta acción no se puede deshacer.`)) return;
+                    dispatch({ type: 'CERRAR_CICLO', payload: { cicloId: state.cicloActivoId||1, fecha: hoy } });
+                  }}>
+                  🔒 Cerrar ciclo {state.cicloActual}
+                </button>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Card de apertura de nuevo ciclo — solo cuando el activo ya está cerrado */}
+        {(() => {
+          const cicloActivo = (state.ciclos||[]).find(c => String(c.id) === String(state.cicloActivoId||1));
+          if (cicloActivo?.estatus !== 'cerrado') return null;
+          return (
+            <div style={{marginTop:12, background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:10, padding:'16px'}}>
+              <div style={{fontSize:13, fontWeight:500, color:'#1e40af', marginBottom:8}}>
+                🌱 El ciclo está cerrado — ¿abrir el siguiente ciclo?
+              </div>
+              {!showNuevoCiclo ? (
+                <button className="btn btn-secondary" onClick={()=>setShowNuevoCiclo(true)}
+                  style={{borderColor:'#1e40af', color:'#1e40af'}}>
+                  + Abrir nuevo ciclo
+                </button>
+              ) : (
+                <div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Nombre del ciclo</label>
+                      <input className="form-input" value={formCiclo.nombre}
+                        onChange={e=>setFormCiclo(f=>({...f,nombre:e.target.value}))}
+                        placeholder="PV 2026, OI 2026-2027..."/>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Cultivo</label>
+                      <select className="form-input" value={formCiclo.cultivo}
+                        onChange={e=>setFormCiclo(f=>({...f,cultivo:e.target.value}))}>
+                        <option value="maiz">Maíz</option>
+                        <option value="sorgo">Sorgo</option>
+                        <option value="frijol">Frijol</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Fecha inicio</label>
+                      <input className="form-input" type="date" value={formCiclo.fechaInicio}
+                        onChange={e=>setFormCiclo(f=>({...f,fechaInicio:e.target.value}))}/>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Fecha fin estimada</label>
+                      <input className="form-input" type="date" value={formCiclo.fechaFin}
+                        onChange={e=>setFormCiclo(f=>({...f,fechaFin:e.target.value}))}/>
+                    </div>
+                  </div>
+                  <div style={{display:'flex', gap:8, marginTop:8}}>
+                    <button className="btn btn-secondary" onClick={()=>setShowNuevoCiclo(false)}>Cancelar</button>
+                    <button className="btn btn-primary" style={{background:'#1a3a0f'}}
+                      onClick={()=>{
+                        if (!formCiclo.nombre || !formCiclo.fechaInicio) return;
+                        dispatch({ type: 'NUEVO_CICLO', payload: formCiclo });
+                        setShowNuevoCiclo(false);
+                      }}>
+                      🌱 Crear ciclo {formCiclo.nombre}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {modalLiq && prodLiqId && (() => {
           const r = filasLiq.find(x => String(x.p.id) === String(prodLiqId));
           if (!r) return null;
@@ -711,26 +844,56 @@ export default function CosechaModule({ userRol, puedeEditar }) {
               footer={
                 <>
                   <button className="btn btn-secondary" onClick={()=>{setModalLiq(false); setProdLiqId(null);}}>Cancelar</button>
-                  <button className="btn btn-primary" onClick={()=>{
-                    dispatch({
-                      type: 'SET_LIQUIDACION',
-                      payload: {
-                        id: r.liq?.id || (Date.now() + Math.random()),
-                        productorId: r.p.id,
-                        cicloId: state.cicloActivoId || 1,
-                        fecha: formLiq.fecha,
-                        toneladas_entregadas: parseFloat(formLiq.toneladas_entregadas)||0,
-                        precio_real: parseFloat(formLiq.precio_real)||0,
-                        capital_para: parseFloat(formLiq.capital_para)||0,
-                        capital_dir: parseFloat(formLiq.capital_dir)||0,
-                        intereses: parseFloat(formLiq.intereses)||0,
-                        comisiones: parseFloat(formLiq.comisiones)||0,
-                        total_liquidado: deuda,
-                        saldo_productor: saldoProd,
-                        estatus: formLiq.estatus,
-                        notas: formLiq.notas,
-                      }
-                    });
+                  <button className="btn btn-primary" onClick={async ()=>{
+                    const liqUuid = (typeof r.liq?.id === 'string' && r.liq.id.length >= 32)
+                      ? r.liq.id
+                      : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `liq-${Date.now()}-${Math.random().toString(36).slice(2,10)}`);
+                    const payload = {
+                      id: liqUuid,
+                      productorId: r.p.id,
+                      cicloId: state.cicloActivoId || 1,
+                      fecha: formLiq.fecha,
+                      toneladas_entregadas: parseFloat(formLiq.toneladas_entregadas)||0,
+                      precio_real: parseFloat(formLiq.precio_real)||0,
+                      capital_para: parseFloat(formLiq.capital_para)||0,
+                      capital_dir: parseFloat(formLiq.capital_dir)||0,
+                      intereses: parseFloat(formLiq.intereses)||0,
+                      comisiones: parseFloat(formLiq.comisiones)||0,
+                      total_liquidado: deuda,
+                      saldo_productor: saldoProd,
+                      estatus: formLiq.estatus,
+                      notas: formLiq.notas,
+                    };
+                    // POST / PATCH a Supabase (upsert por id)
+                    try {
+                      await fetch(`${SUPABASE_URL}/rest/v1/liquidaciones`, {
+                        method: 'POST',
+                        headers: {
+                          apikey: SUPABASE_ANON_KEY,
+                          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+                          'Content-Type': 'application/json',
+                          Prefer: 'resolution=merge-duplicates,return=minimal',
+                        },
+                        body: JSON.stringify({
+                          id: liqUuid,
+                          productor_legacy_id: r.p.id,
+                          ciclo_legacy_id: state.cicloActivoId || 1,
+                          fecha: formLiq.fecha,
+                          toneladas_entregadas: payload.toneladas_entregadas,
+                          precio_real: payload.precio_real,
+                          ingreso_bruto: payload.toneladas_entregadas * payload.precio_real,
+                          capital_para: payload.capital_para,
+                          capital_dir: payload.capital_dir,
+                          intereses: payload.intereses,
+                          comisiones: payload.comisiones,
+                          total_liquidado: payload.total_liquidado,
+                          estatus: payload.estatus,
+                          notas: payload.notas,
+                          creado_por: userRol || 'admin',
+                        }),
+                      });
+                    } catch(e) { console.warn('[Supabase] liquidación POST fail:', e); }
+                    dispatch({ type: 'SET_LIQUIDACION', payload });
                     setModalLiq(false); setProdLiqId(null);
                   }}>💾 Guardar liquidación</button>
                 </>

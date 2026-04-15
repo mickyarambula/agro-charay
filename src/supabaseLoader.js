@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -48,6 +48,7 @@ export async function loadStateFromSupabase() {
         return [];
       }),
       supaFetch('expedientes', 'order=productor_legacy_id').catch(() => []),
+      supaFetch('liquidaciones', 'order=fecha').catch(() => []),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -252,12 +253,31 @@ export async function loadStateFromSupabase() {
       pagos: [],
     }));
 
+    const liquidaciones = (liquidacionesRows||[]).map(l => ({
+      id: l.id,
+      productorId: l.productor_legacy_id || null,
+      cicloId: l.ciclo_legacy_id || null,
+      fecha: l.fecha || '',
+      toneladas_entregadas: parseFloat(l.toneladas_entregadas)||0,
+      precio_real: parseFloat(l.precio_real)||0,
+      capital_para: parseFloat(l.capital_para)||0,
+      capital_dir: parseFloat(l.capital_dir)||0,
+      intereses: parseFloat(l.intereses)||0,
+      comisiones: parseFloat(l.comisiones)||0,
+      total_liquidado: parseFloat(l.total_liquidado)||0,
+      saldo_productor: parseFloat(l.saldo_productor)||0,
+      estatus: l.estatus || 'pendiente',
+      notas: l.notas || '',
+      _uuid: l.id,
+    }));
+
     const estadoNuevo = {
       ...configPreservada,
       // ── Datos operativos: SIEMPRE frescos de Supabase (reemplazo total) ──
       productores, lotes, ciclos, operadores, maquinaria,
       insumos, diesel, egresosManual, dispersiones,
       expedientes,
+      liquidaciones,
       ordenesTrabajo,  // ← fresco de Supabase (tabla ordenes_trabajo)
       cicloActivoId: predCiclo ? predCiclo.id : (estadoExistente.cicloActivoId || 1),
       cicloActual:   predCiclo ? predCiclo.nombre : (estadoExistente.cicloActual || 'OI 2025-2026'),
