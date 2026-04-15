@@ -3,22 +3,35 @@
 // Importar este módulo inyecta CSS en el <head> (efecto lateral).
 
 export const T = {
-  soil:    "#4a3728",
-  field:   "#2d5a1b",
-  fieldLt: "#4a8c2a",
-  straw:   "#c8a84b",
-  strawLt: "#f0d87a",
-  sky:     "#d4e9f7",
-  cream:   "#faf8f3",
-  paper:   "#f2ede3",
-  sand:    "#e8dfc8",
-  mist:    "#f7f5f0",
-  rust:    "#b85c2c",
-  leaf:    "#5a8a3a",
-  fog:     "#8a8070",
-  ink:     "#1e1a14",
-  inkLt:   "#3d3525",
-  line:    "#ddd5c0",
+  // ── Fondos ──────────────────────────────────────
+  bg:      "#f8f6f2",   // fondo principal — crema cálida
+  card:    "#ffffff",   // cards y paneles
+  mist:    "#f0ede6",   // fondo alternativo suave
+  paper:   "#faf8f4",   // inputs, áreas de texto
+  warm:    "#f8f6f2",   // alias de bg
+  sand:    "#ede5d8",   // bordes/separadores (legacy usaba como sand)
+  cream:   "#f8f6f2",   // legacy alias → bg
+
+  // ── Verde principal ─────────────────────────────
+  forest:  "#1a3a0f",   // header, sidebar, botones primarios
+  field:   "#2d5a1b",   // hover primarios, acentos
+  fieldLt: "#2d5a1b",   // legacy alias
+  soil:    "#1a3a0f",   // legacy alias → forest
+  leaf:    "#7ab87a",   // texto sobre fondo oscuro
+  mint:    "#e8f5e2",   // badges claros
+
+  // ── Texto ───────────────────────────────────────
+  ink:     "#1a2e1a",   // texto principal
+  inkLt:   "#3d5a3d",   // texto secundario oscuro
+  fog:     "#b0a090",   // muted, labels
+  line:    "#ede5d8",   // bordes y separadores
+
+  // ── Semánticos ──────────────────────────────────
+  gold:    "#c8a84b",   // advertencia, costo
+  straw:   "#c8a84b",   // legacy alias
+  strawLt: "#e0c47a",   // legacy alias
+  rust:    "#c84b4b",   // peligro, pérdida
+  sky:     "#2980b9",   // información, ingreso
 };
 
 
@@ -76,10 +89,11 @@ export const css = `
   }
   .nav-item {
     display: flex; align-items: center; gap: 11px;
-    padding: 10px 24px; cursor: pointer;
+    padding: 10px 18px; cursor: pointer;
     color: #7ab87a;
     font-size: 13.5px; font-weight: 400;
     transition: all 0.18s; border-left: 3px solid transparent;
+    border-radius: 6px; margin: 0 8px;
     user-select: none;
   }
   .nav-item:hover { background: rgba(255,255,255,0.08); color: #e8f5e2; }
@@ -155,23 +169,20 @@ export const css = `
   /* STAT CARDS */
   .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
   .stat-card {
-    background: white; border-radius: 10px; padding: 20px;
+    background: #ffffff; border-radius: 10px; padding: 20px;
     border: 1px solid ${T.line};
-    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    border-top: 2px solid ${T.line};
+    box-shadow: 0 1px 6px rgba(26,58,15,0.04);
     position: relative; overflow: hidden;
   }
-  .stat-card::before {
-    content: ''; position: absolute; top: 0; left: 0;
-    width: 4px; height: 100%; border-radius: 2px 0 0 2px;
-  }
-  .stat-card.green::before { background: ${T.field}; }
-  .stat-card.gold::before { background: ${T.straw}; }
-  .stat-card.rust::before { background: ${T.rust}; }
-  .stat-card.purple::before { background: #8e44ad; }
-  .stat-card.sky::before { background: #5b9fd6; }
+  .stat-card.green { border-top-color: #2d7a2d; }
+  .stat-card.gold  { border-top-color: #c8a84b; }
+  .stat-card.rust  { border-top-color: #c84b4b; }
+  .stat-card.purple { border-top-color: #8e44ad; }
+  .stat-card.sky   { border-top-color: #2980b9; }
   .stat-icon { font-size: 22px; margin-bottom: 10px; }
-  .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: ${T.fog}; }
-  .stat-value { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: ${T.inkLt}; margin-top: 4px; line-height: 1; }
+  .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: ${T.fog}; }
+  .stat-value { font-family: Georgia, serif; font-size: 28px; font-weight: 400; color: ${T.ink}; margin-top: 4px; line-height: 1; }
   .stat-unit { font-size: 13px; font-weight: 400; color: ${T.fog}; margin-left: 3px; }
   .stat-sub { font-size: 11px; color: ${T.fog}; margin-top: 6px; }
 
@@ -198,10 +209,16 @@ export const css = `
     font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
     cursor: pointer; transition: all 0.16s; text-decoration: none;
   }
-  .btn-primary { background: #1a3a0f; color: #fff; border-color: #1a3a0f; }
+  .btn-primary {
+    background: #1a3a0f; color: #ffffff; border-color: #1a3a0f;
+    font-family: Georgia, serif; border-radius: 8px;
+  }
   .btn-primary:hover { background: #2d5a1b; border-color: #2d5a1b; }
-  .btn-secondary { background: white; color: ${T.inkLt}; border: 1px solid ${T.line}; }
-  .btn-secondary:hover { background: ${T.paper}; }
+  .btn-secondary {
+    background: transparent; color: ${T.ink}; border: 1px solid ${T.line};
+    border-radius: 8px;
+  }
+  .btn-secondary:hover { background: #f8f6f2; }
   .btn-danger { background: #fdeee8; color: ${T.rust}; }
   .btn-danger:hover { background: #f9dbd0; }
   .btn-sm { padding: 6px 12px; font-size: 12px; }
@@ -219,25 +236,32 @@ export const css = `
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   thead th {
     text-align: left; padding: 10px 14px;
-    font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
-    color: ${T.fog}; border-bottom: 2px solid ${T.line};
-    background: ${T.mist};
+    font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+    color: ${T.fog}; border-bottom: 1px solid ${T.line};
+    background: #f8f6f2;
   }
-  tbody tr { border-bottom: 1px solid ${T.line}; transition: filter 0.12s; }
-  tbody tr:hover { filter: brightness(0.91); }
-  tbody td { padding: 12px 14px; color: ${T.inkLt}; vertical-align: middle; }
+  tbody tr { border-bottom: 1px solid #f0ede6; transition: background 0.12s; }
+  tbody tr:hover { background: #faf8f4; }
+  tbody td { padding: 12px 14px; color: ${T.ink}; vertical-align: middle; }
   tbody tr:last-child { border-bottom: none; }
 
   /* FORMS */
   .form-group { margin-bottom: 16px; }
-  .form-label { display: block; font-size: 12px; font-weight: 600; color: ${T.inkLt}; margin-bottom: 6px; }
-  .form-input, .form-select, .form-textarea {
-    width: 100%; padding: 9px 13px; border-radius: 7px;
-    border: 1.5px solid ${T.line}; background: white;
-    font-family: 'DM Sans', sans-serif; font-size: 13.5px; color: ${T.inkLt};
-    transition: border-color 0.15s; outline: none;
+  .form-label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: ${T.fog}; margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: 0.8px;
   }
-  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: ${T.fieldLt}; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 10px 13px; border-radius: 8px;
+    border: 1px solid ${T.line}; background: #ffffff;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; color: ${T.ink};
+    transition: border-color 0.15s, box-shadow 0.15s; outline: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: #2d5a1b;
+    box-shadow: 0 0 0 2px rgba(45,90,27,0.1);
+  }
   .form-textarea { resize: vertical; min-height: 80px; }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
@@ -250,20 +274,22 @@ export const css = `
     animation: fadeIn 0.18s ease;
   }
   .modal {
-    background: white; border-radius: 14px; width: 540px; max-width: 95vw;
+    background: #ffffff; border-radius: 12px; width: 540px; max-width: 95vw;
     max-height: 90vh; overflow-y: auto;
+    border: 1px solid ${T.line};
     box-shadow: 0 20px 60px rgba(0,0,0,0.18);
     animation: slideUp 0.22s ease;
   }
   .modal-header {
     padding: 20px 24px 16px;
     border-bottom: 1px solid ${T.line};
+    background: #ffffff;
     display: flex; align-items: center; justify-content: space-between;
   }
-  .modal-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: ${T.inkLt}; }
+  .modal-title { font-family: Georgia, serif; font-size: 18px; font-weight: 400; color: ${T.ink}; }
   .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: ${T.fog}; padding: 4px; }
-  .modal-body { padding: 24px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .modal-footer { padding: 16px 24px; border-top: 1px solid ${T.line}; display: flex; justify-content: flex-end; gap: 10px; }
+  .modal-body { padding: 24px; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #ffffff; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid ${T.line}; background: #f8f6f2; display: flex; justify-content: flex-end; gap: 10px; }
 
   /* PROGRESS */
   .progress-bar { height: 7px; background: ${T.sand}; border-radius: 4px; overflow: hidden; }
