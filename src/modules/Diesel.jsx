@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
 import AIInsight from '../components/AIInsight.jsx';
 
 
@@ -126,7 +127,7 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
     .filter(d => !filtroActividad || (d.unidad||"").toLowerCase().includes(filtroActividad.toLowerCase()) || (d.concepto||"").toLowerCase().includes(filtroActividad.toLowerCase()) || (d.numSolicitud||"").includes(filtroActividad));
 
   // ── Guardar registro manual ───────────────────────────────────────────────────
-  const guardarRegistro = () => {
+  const guardarRegistro = async () => {
     const importe  = parseFloat(form.importe)||0;
     const cantidad = parseFloat(form.cantidad)||0;
     const esSalidaInterna = form.tipoMovimiento === 'salida_interna';
@@ -144,15 +145,53 @@ export default function DieselModule({ userRol, puedeEditar, navFiltro = {} }) {
     // Salida interna (cilindro → tractor): no requiere importe
     if (!esSalidaInterna && !importe) return;
     if (!form.fechaSolicitud) return;
-    dispatch({ type:"ADD_DIESEL", payload:{
+
+    const nuevoReg = {
       ...form, id: Date.now(),
       cantidad, importe: esSalidaInterna ? 0 : importe,
       productorId: form.productorId ? parseInt(form.productorId)||form.productorId : null,
       esAjuste: form.esAjuste || (!esSalidaInterna && cantidad===0),
       tipoMovimiento: form.tipoMovimiento || 'entrada',
-    }});
+    };
+
+    // POST a Supabase (dispara realtime para otros usuarios)
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/diesel`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify({
+          fecha: nuevoReg.fechaSolicitud || nuevoReg.fecha,
+          fecha_solicitud: nuevoReg.fechaSolicitud || null,
+          fecha_orden: nuevoReg.fechaOrden || null,
+          cantidad: nuevoReg.cantidad,
+          litros_recibidos: esSalidaInterna ? nuevoReg.cantidad : 0,
+          precio_litro: parseFloat(nuevoReg.precioLitro) || 0,
+          importe: nuevoReg.importe || 0,
+          proveedor: nuevoReg.proveedor || '',
+          productor_nombre: nuevoReg.productorId ? (nomProd(nuevoReg.productorId) || '') : '',
+          unidad: nuevoReg.unidad || 'LT',
+          ieps: nuevoReg.ieps || 'SIN IEPS',
+          num_solicitud: nuevoReg.numSolicitud || '',
+          num_orden: nuevoReg.numOrden || '',
+          es_ajuste: !!nuevoReg.esAjuste,
+          estatus: 'pendiente',
+          cancelado: false,
+          tipo_movimiento: nuevoReg.tipoMovimiento || 'entrada',
+          notas: nuevoReg.notas || '',
+        }),
+      });
+    } catch (e) {
+      console.warn('Error guardando diesel en Supabase:', e);
+    }
+
+    dispatch({ type:"ADD_DIESEL", payload: nuevoReg });
     setForm(emptyForm);
-    setVista("tabla");
+    setVista("resumen");
   };
 
   // ── Importar Excel ────────────────────────────────────────────────────────────
