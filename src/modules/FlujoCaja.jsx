@@ -154,27 +154,67 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
       </div>
       <div style={{marginTop:10,fontSize:11,color:T.fog,textAlign:"center"}}>⚠️ Flujo estimado. Solo movimientos reales ya ocurridos. Los pendientes se muestran abajo.</div>
 
-      {/* ── Pendiente de liquidar — no ocurrido aún ── */}
+      {/* Sección pendiente de liquidar */}
       <div style={{marginTop:20, background:'#f8f6f2', border:'1px solid #ede5d8', borderRadius:10, padding:'16px'}}>
-        <div style={{fontSize:12, fontWeight:500, color:'#1a2e1a', marginBottom:12}}>
-          Pendiente de liquidar — no ocurrido aún
+        <div style={{fontSize:12, fontWeight:500, color:'#1a2e1a', marginBottom:14}}>
+          Pendiente de liquidar — cuando se cobre la cosecha
         </div>
-        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10}}>
-          <div style={{background:'#fff', border:'1px solid #ede5d8', borderRadius:8, padding:'10px 14px'}}>
+
+        {/* Grid superior: 4 conceptos que se deben */}
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8, marginBottom:12}}>
+          <div style={{background:'#fff', border:'1px solid #ede5d8', borderRadius:8, padding:'10px 12px'}}>
+            <div style={{fontSize:9, color:'#b0a090', textTransform:'uppercase', letterSpacing:1, marginBottom:4}}>Capital parafinanciero</div>
+            <div style={{fontSize:16, fontFamily:'Georgia, serif', color:'#c84b4b'}}>{mxn(F.capitalAplicadoPara||0)}</div>
+            <div style={{fontSize:9, color:'#b0a090', marginTop:2}}>capital a devolver</div>
+          </div>
+          <div style={{background:'#fff', border:'1px solid #ede5d8', borderRadius:8, padding:'10px 12px'}}>
+            <div style={{fontSize:9, color:'#b0a090', textTransform:'uppercase', letterSpacing:1, marginBottom:4}}>Capital directo</div>
+            <div style={{fontSize:16, fontFamily:'Georgia, serif', color:'#c84b4b'}}>{mxn(F.capitalAplicadoDir||0)}</div>
+            <div style={{fontSize:9, color:'#b0a090', marginTop:2}}>capital a devolver</div>
+          </div>
+          <div style={{background:'#fff', border:'1px solid #ede5d8', borderRadius:8, padding:'10px 12px'}}>
             <div style={{fontSize:9, color:'#b0a090', textTransform:'uppercase', letterSpacing:1, marginBottom:4}}>Intereses acumulados</div>
-            <div style={{fontSize:18, fontFamily:'Georgia, serif', color:'#c84b4b'}}>{mxn(F.costoInteres||0)}</div>
-            <div style={{fontSize:9, color:'#b0a090', marginTop:2}}>se pagan al liquidar</div>
+            <div style={{fontSize:16, fontFamily:'Georgia, serif', color:'#c84b4b'}}>{mxn(F.costoInteres||0)}</div>
+            <div style={{fontSize:9, color:'#b0a090', marginTop:2}}>al día de hoy</div>
           </div>
-          <div style={{background:'#fff', border:'1px solid #ede5d8', borderRadius:8, padding:'10px 14px'}}>
+          <div style={{background:'#fff', border:'1px solid #ede5d8', borderRadius:8, padding:'10px 12px'}}>
             <div style={{fontSize:9, color:'#b0a090', textTransform:'uppercase', letterSpacing:1, marginBottom:4}}>Comisiones</div>
-            <div style={{fontSize:18, fontFamily:'Georgia, serif', color:'#c84b4b'}}>{mxn(F.costoComisiones||0)}</div>
-            <div style={{fontSize:9, color:'#b0a090', marginTop:2}}>se pagan al liquidar</div>
+            <div style={{fontSize:16, fontFamily:'Georgia, serif', color:'#c84b4b'}}>{mxn(F.costoComisiones||0)}</div>
+            <div style={{fontSize:9, color:'#b0a090', marginTop:2}}>fact + FEGA + AT</div>
           </div>
-          <div style={{background:'#fff', border:'1px solid #ede5d8', borderRadius:8, padding:'10px 14px'}}>
-            <div style={{fontSize:9, color:'#b0a090', textTransform:'uppercase', letterSpacing:1, marginBottom:4}}>Ingreso esperado cosecha</div>
-            <div style={{fontSize:18, fontFamily:'Georgia, serif', color:'#2d7a2d'}}>{mxn(isNaN(F.ingresoEst)?0:(F.ingresoEst||0))}</div>
-            <div style={{fontSize:9, color:'#b0a090', marginTop:2}}>cuando se venda el grano</div>
-          </div>
+        </div>
+
+        {/* Total a liquidar + flujo neto estimado */}
+        {(() => {
+          const totalLiquidar = (F.capitalAplicadoTotal||0) + (F.costoInteres||0) + (F.costoComisiones||0);
+          const ingresoEst = isNaN(F.ingresoEst) ? 0 : (F.ingresoEst||0);
+          const flujoNeto = ingresoEst - totalLiquidar;
+          return (
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8}}>
+              <div style={{background:'#fee2e2', border:'1px solid #fecaca', borderRadius:8, padding:'12px 14px'}}>
+                <div style={{fontSize:9, color:'#991b1b', textTransform:'uppercase', letterSpacing:1, marginBottom:4}}>Total a liquidar al banco</div>
+                <div style={{fontSize:20, fontFamily:'Georgia, serif', color:'#991b1b', fontWeight:400}}>{mxn(totalLiquidar)}</div>
+                <div style={{fontSize:9, color:'#991b1b', marginTop:2}}>capital + intereses + comisiones</div>
+              </div>
+              <div style={{background: flujoNeto >= 0 ? '#f0fdf4' : '#fef2f2', border:`1px solid ${flujoNeto>=0?'#bbf7d0':'#fecaca'}`, borderRadius:8, padding:'12px 14px'}}>
+                <div style={{fontSize:9, color: flujoNeto>=0?'#166534':'#991b1b', textTransform:'uppercase', letterSpacing:1, marginBottom:4}}>
+                  Flujo estimado neto
+                </div>
+                <div style={{fontSize:20, fontFamily:'Georgia, serif', color: flujoNeto>=0?'#166534':'#991b1b', fontWeight:400}}>
+                  {flujoNeto>=0?'+':''}{mxn(flujoNeto)}
+                </div>
+                <div style={{fontSize:9, color: flujoNeto>=0?'#166534':'#991b1b', marginTop:2}}>
+                  {flujoNeto>=0 ? 'Utilidad estimada tras liquidar' : 'Déficit estimado tras liquidar'}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Ingreso esperado cosecha — referencia */}
+        <div style={{marginTop:8, padding:'8px 12px', background:'rgba(45,122,45,0.06)', borderRadius:6, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+          <div style={{fontSize:11, color:'#2d7a2d'}}>Ingreso estimado por cosecha (cuando se venda el grano)</div>
+          <div style={{fontSize:14, fontFamily:'Georgia, serif', color:'#2d7a2d'}}>{mxn(isNaN(F.ingresoEst)?0:(F.ingresoEst||0))}</div>
         </div>
       </div>
     </div>
