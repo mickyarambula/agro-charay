@@ -41,15 +41,19 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
 
   // Salidas de efectivo real
   const salidas = [
-    { concepto:"Gastos del ciclo registrados", monto:F.costoGastos, tipo:"Operación", mod:"gastos" },
-    { concepto:"Diesel y combustible", monto:F.costoDiesel, tipo:"Operación", mod:"diesel" },
-    { concepto:"Insumos aplicados", monto:F.costoInsumos, tipo:"Operación", mod:"insumos" },
-    { concepto:"Renta de tierras (ciclo)", monto:F.costoRenta, tipo:"Operación", mod:"rentas" },
-    { concepto:"Personal y honorarios", monto:F.costoPersonal, tipo:"Operación", mod:"personal" },
-    { concepto:"Cosecha y maquila", monto:F.costoCosecha, tipo:"Operación", mod:"cosecha" },
+    { concepto:"Semilla", monto:F.costoSemilla||0, tipo:"Operación", mod:"insumos", filtro:{categoria:"Semilla",vista:"tabla"} },
+    { concepto:"Insumos (sin semilla)", monto:(F.costoInsumos||0)-(F.costoSemilla||0), tipo:"Operación", mod:"insumos" },
+    { concepto:"Diesel y combustible", monto:F.costoDiesel||0, tipo:"Operación", mod:"diesel" },
+    { concepto:"Renta de tierras", monto:F.costoRenta||0, tipo:"Operación", mod:"rentas" },
+    { concepto:"Agua y riego", monto:F.costoAgua||0, tipo:"Operación", mod:"gastos" },
+    { concepto:"Mano de obra", monto:F.costoManoObra||0, tipo:"Operación", mod:"gastos" },
+    { concepto:"Seguros", monto:F.costoSeguros||0, tipo:"Operación", mod:"gastos" },
+    { concepto:"Trámites y otros", monto:(F.costoTramites||0)+(F.costoOtros||0), tipo:"Operación", mod:"gastos" },
+    { concepto:"Personal y honorarios", monto:F.costoPersonal||0, tipo:"Operación", mod:"personal" },
+    { concepto:"Nómina operadores", monto:F.costoNomina||0, tipo:"Operación", mod:"operadores" },
+    { concepto:"Cosecha y maquila", monto:F.costoCosecha||0, tipo:"Operación", mod:"cosecha" },
     { concepto:"Intereses crédito habilitación", monto:F.costoInteres||0, tipo:"Financiero", mod:"credito" },
     { concepto:"Comisiones (Factoraje+FEGA+AT)", monto:F.costoComisiones||0, tipo:"Financiero", mod:"credito" },
-    { concepto:"Nómina operadores", monto:F.costoNomina, tipo:"Operación", mod:"operadores" },
     { concepto:"Abonos a crédito habilitación", monto:(state.credito?.pagos||[]).reduce((s,p)=>s+(p.monto||0),0), tipo:"Financiero", mod:"credito" },
     { concepto:"Retiros de capital", monto:F.totalRetiro, tipo:"Capital", mod:"capital" },
   ].filter(s=>s.monto>0);
@@ -86,7 +90,14 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
         <div className="stat-card green"><div className="stat-icon">📥</div><div className="stat-label">Total Entradas</div><div className="stat-value" style={{fontSize:18}}>{mxn(totalEntradas)}</div><div className="stat-sub">{entradas.length} fuentes</div></div>
         <div className="stat-card rust"><div className="stat-icon">📤</div><div className="stat-label">Total Salidas</div><div className="stat-value" style={{fontSize:18}}>{mxn(totalSalidas)}</div><div className="stat-sub">{salidas.length} conceptos</div></div>
         <div className="stat-card" style={{borderTop:`2px solid ${saldoFinal>=0?T.field:T.rust}`}}><div className="stat-icon">{saldoFinal>=0?"💧":"🔴"}</div><div className="stat-label">Saldo Neto</div><div className="stat-value" style={{fontSize:18,color:saldoFinal>=0?T.field:T.rust}}>{mxn(saldoFinal)}</div><div className="stat-sub">{saldoFinal>=0?"Posición positiva":"Déficit de caja"}</div></div>
-        <div className="stat-card" style={{borderTop:`2px solid ${saldoReal>=0?T.field:T.rust}`}}><div className="stat-icon">💵</div><div className="stat-label">Saldo real (sin cosecha)</div><div className="stat-value" style={{fontSize:18,color:saldoReal>=0?T.field:T.rust}}>{mxn(saldoReal)}</div><div className="stat-sub">Solo entradas ya realizadas</div></div>
+        <div className="stat-card" style={{borderTop:`2px solid ${saldoReal>=0?T.field:T.rust}`}}>
+          <div className="stat-icon">💵</div>
+          <div className="stat-label">Saldo real (sin cosecha)</div>
+          <div className="stat-value" style={{fontSize:18,color:saldoReal>=0?T.field:T.rust}}>{mxn(saldoReal)}</div>
+          <div className="stat-sub" style={{color:saldoReal<0?T.rust:T.fog}}>
+            {saldoReal<0 ? 'Déficit cubierto con capital propio o fuentes no registradas' : 'Entradas reales − Salidas reales'}
+          </div>
+        </div>
       </div>
 
       <div className="grid-2">
