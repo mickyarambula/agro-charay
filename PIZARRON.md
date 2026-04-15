@@ -1,1 +1,75 @@
-# AgroSistema Charay Ñ Pizarron de Trabajo> Actualizado: 14 Abril 2026---## COMPLETADO- App.jsx: 19,271 a 1,731 lineas Ñ 28 modulos separados- Supabase: productores(17), lotes(107), ciclos, operadores, maquinaria, insumos(105), diesel(30), egresos(212), dispersiones(148)- ciclo_asignaciones(107) migradas Ñ Dashboard muestra 455.88 ha- expedientes(15) migrados Ñ Credito parafinanciero funciona- Roles y permisos por usuario- Modulo Ordenes del Dia + WhatsApp tractoristas- Realtime ordenes entre Encargado y Admin (Postgres Changes)- Componentes moviles: BottomSheet, MobileCard, SkeletonCard, Toast, useIsMobile- Deploy: rama dev = produccion en agro-charay-dev.vercel.app---## SUPABASE Ñ TABLAS COMPLETAS- productores (17)- lotes (107)- ciclos (1 Ñ OI 2025-2026)- ciclo_asignaciones (107) Ñ 455.88 ha total- expedientes (15) Ñ $15.7M credito parafinanciero- operadores (5)- maquinaria (5)- insumos (105)- dispersiones (148)- egresos_manual (212)- diesel (30)- ordenes_trabajo (activo, realtime)---## MAPA DE USUARIOSadmin/123123 Ñ Tododaniela/871005 Ñ Todosocio/agro2025 Ñ Solo lectura financieroencargado/charay25 Ñ Campo, ordenes del diaingeniero/ing2025 Ñ Lotes, bitacora, insumos sin precioscompras/compras25 Ñ Insumos, diesel, inventariocampo/campo2025 Ñ Operador de campo, ve todas las ordenesTractoristas Ñ Sin usuario, reciben WhatsApp---## PRIORIDADES PENDIENTES1. Verificar Dashboard ha y credito en produccion2. Responsive movil completo3. IA embebida organica4. Rediseno UI movil---## NOTAS TECNICAS- Rama dev = produccion Vercel- Supabase: oryixvodfqojunnqbkln.supabase.co- GitHub: github.com/mickyarambula/agro-charay- Telefono prueba Renato Urias: 6682226861- Ultimo commit: 8d50d8cdaniela/871005 Ñ Admin Ñ todosocio/agro2025 Ñ Socio Ñ solo lectura financieroencargado/charay25 Ñ Encargado de Campo Ñ ordenes, bitacora, campoingeniero/ing2025 Ñ Ingeniero Ñ lotes, bitacora, insumos sin precioscompras/compras25 Ñ Compras Ñ insumos, diesel, inventariocampo/campo2025 Ñ Operador de Campo Ñ ve todas las ordenes del diaTractoristas Ñ sin usuario Ñ reciben WhatsApp con orden del dia---## NOTAS TECNICAS- Rama dev = produccion en Vercel (agro-charay-dev.vercel.app)- Supabase: oryixvodfqojunnqbkln.supabase.co- GitHub: github.com/mickyarambula/agro-charay- Telefono prueba Renato Urias: 6682226861- Ultimo commit: 2cc3145cronizacion Supabase en tiempo real- ordenesTrabajo solo vive en localStorage/state, no en Supabase realtime- Agregar ordenesTrabajo a SYNC_KEYS cuando el flujo este estable### 3. IA embebida (organica, modulo por modulo)- Al registrar insumo ? sugerir dosis por historial del lote- En dashboard ? detectar anomalias de gasto por productor- Al novedad de campo ? sugerir diagnostico segun fenologia### 4. Rediseno UI movil- Una vez funcionalidad completa- Paleta touch-friendly, botones grandes, flujos de max 3 pasos---## ? Alertas por Canal (pendiente implementar)| Evento | Admin | Encargado | Operador de Campo | Tractorista ||--------|-------|-----------|-------------------|-------------|| Orden creada | Ñ | Confirmacion | Push badge | WhatsApp ? || Novedad urgente | WhatsApp | Push | Ñ | Ñ || Trabajo completado | Badge | Push | Ñ | Ñ || Anomalia financiera | WhatsApp | Ñ | Ñ | Ñ |---## ? Notas Tecnicas- Rama dev = produccion Vercel (agro-charay-dev.vercel.app)- Supabase: oryixvodfqojunnqbkln.supabase.co- GitHub: github.com/mickyarambula/agro-charay- Telefono prueba en Renato Urias: 6682226861- Credenciales: admin/123123, daniela/871005, socio/agro2025,  encargado/charay25, ingeniero/ing2025, compras/compras25, campo/campo2025 embebida (continuo Ñ modulo por modulo)- Se agrega organicamente conforme los datos fluyan bien### 6. Rediseno UI movil (3-5 dias)- Una vez que la funcionalidad este correcta- Paleta, tipografia, componentes touch-friendly---## ? Notas Tecnicas- Rama dev = produccion en Vercel (agro-charay-dev.vercel.app)- Supabase: oryixvodfqojunnqbkln.supabase.co- GitHub: github.com/mickyarambula/agro-charay- Usuarios: admin/123123, daniela/871005, socio/agro2025, encargado/charay25, ingeniero/ing2025, compras/compras25, campo/campo2025
+# AgroSistema Charay â€” Pizarron de Trabajo
+> Actualizado: 14 Abril 2026
+
+---
+
+## COMPLETADO HOY
+
+- Realtime diesel entre admin y encargado (Postgres Changes + dieselChannel)
+- Modulo Diesel refactorizado â€” 3 modales, vista unica, sin confusion de vistas
+- Roles corregidos: encargado no ve precios, campo ve ordenes, socio ve credito
+- Bitacora: botones visibles para encargado e ingeniero
+- WhatsApp: emojis compatibles con iOS
+- Selector de lotes con productor y hectareas en Ordenes del Dia y Bitacora
+- IA embebida en 5 modulos con Edge Function en Supabase
+- Responsive movil completo en todos los modulos
+- diesel(30) restaurados con productor_legacy_id correcto
+- Estado de Cuenta muestra diesel por productor
+
+---
+
+## PENDIENTE â€” REVISAR CON CALMA
+
+- SONIA legacy_id: registro 2025-12-31 asignado a legacy_id 12 (MIRANDA) en lugar de 17 (SONIA MARLEN) â€” verificar si afecta estado de cuenta
+- Discrepancias en cuentas de diesel: asignacion manual historica vs nuevo modelo de cilindro â€” necesita revision contable
+- Diesel cargas a productor: cuando encargado carga tractor por lote, deducir productor del lote automaticamente (pendiente implementar)
+
+---
+
+## SUPABASE â€” TABLAS
+
+- productores (17)
+- lotes (107)
+- ciclos (1 â€” OI 2025-2026)
+- ciclo_asignaciones (107) â€” 455.88 ha total
+- expedientes (15) â€” $15.7M credito parafinanciero
+- operadores (5)
+- maquinaria (5)
+- insumos (105)
+- dispersiones (148)
+- egresos_manual (212)
+- diesel (30) â€” con productor_legacy_id correcto
+- ordenes_trabajo (activo, realtime)
+
+---
+
+## MAPA DE USUARIOS
+
+- admin/123123 â€” Todo
+- daniela/871005 â€” Todo
+- socio/agro2025 â€” Solo lectura financiero (+ credito y egresos)
+- encargado/charay25 â€” Campo, ordenes, bitacora, lotes, maquinaria, operadores, insumos (sin precios), diesel (sin precios ni registro)
+- ingeniero/ing2025 â€” Lotes, bitacora, insumos sin precios, ordenes (lectura)
+- compras/compras25 â€” Insumos, diesel, inventario, lotes y bitacora (lectura)
+- campo/campo2025 â€” Ordenes del dia (lectura), bitacora, lotes, diesel (lectura)
+- Tractoristas â€” sin usuario, reciben WhatsApp
+
+---
+
+## FLUJO DIESEL (nuevo modelo)
+
+- Compra â†’ Admin/Compras registra entrada al cilindro â†’ saldo sube
+- Carga tractor â†’ Encargado registra salida interna â†’ saldo baja â†’ espejo en bitacora automatico
+- Gasolinera â†’ Admin/Compras registra salida externa â†’ NO afecta cilindro
+- Saldo realtime entre todos los usuarios via Postgres Changes
+- Historico: 30 registros del ciclo OI 2025-2026 vinculados a productores
+
+---
+
+## NOTAS TECNICAS
+
+- Rama dev = produccion en Vercel (agro-charay-dev.vercel.app)
+- Supabase: oryixvodfqojunnqbkln.supabase.co
+- GitHub: github.com/mickyarambula/agro-charay
+- Telefono prueba Renato Urias: 6682226861
+- Ultimo commit: 81352b0
