@@ -380,10 +380,13 @@ export const css = `
   @media (max-width: 767px) {
     .hamburger {
       display: inline-flex; align-items: center; justify-content: center;
-      color: #e8f5e2 !important;
+      color: #ffffff !important;
+      background: rgba(255,255,255,0.15) !important;
+      border-radius: 6px;
+      padding: 4px 6px;
     }
-    .hamburger:hover { background: rgba(255,255,255,0.1) !important; }
-    .hamburger:active { background: rgba(255,255,255,0.18) !important; }
+    .hamburger:hover { background: rgba(255,255,255,0.25) !important; }
+    .hamburger:active { background: rgba(255,255,255,0.32) !important; }
     .sidebar-backdrop { display: block; }
 
     .sidebar {
@@ -441,19 +444,20 @@ export const css = `
     .grid-2, .grid-3 { grid-template-columns: 1fr !important; gap: 14px; }
 
     /* Excepciones: contenedores que deben mantener su grid en móvil */
-    .bitacora-tipos {
+    .bitacora-tipos,
+    .acciones-campo {
       grid-template-columns: 1fr 1fr !important;
       width: 100% !important;
       display: grid !important;
     }
 
     /* Colapsa también los grids inline style={{display:"grid",gridTemplateColumns:"..."}} */
-    [style*="grid-template-columns: 1fr 1fr"]:not(.bitacora-tipos),
-    [style*="grid-template-columns: 1fr 1fr 1fr"]:not(.bitacora-tipos),
-    [style*="grid-template-columns:repeat(2"]:not(.bitacora-tipos),
-    [style*="grid-template-columns: repeat(2"]:not(.bitacora-tipos),
-    [style*="grid-template-columns:repeat(3"]:not(.bitacora-tipos),
-    [style*="grid-template-columns: repeat(3"]:not(.bitacora-tipos) {
+    [style*="grid-template-columns: 1fr 1fr"]:not(.bitacora-tipos):not(.acciones-campo),
+    [style*="grid-template-columns: 1fr 1fr 1fr"]:not(.bitacora-tipos):not(.acciones-campo),
+    [style*="grid-template-columns:repeat(2"]:not(.bitacora-tipos):not(.acciones-campo),
+    [style*="grid-template-columns: repeat(2"]:not(.bitacora-tipos):not(.acciones-campo),
+    [style*="grid-template-columns:repeat(3"]:not(.bitacora-tipos):not(.acciones-campo),
+    [style*="grid-template-columns: repeat(3"]:not(.bitacora-tipos):not(.acciones-campo) {
       grid-template-columns: 1fr !important;
     }
 

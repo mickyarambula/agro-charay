@@ -413,7 +413,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
       })()}
 
       {/* ═══ ACCIONES RÁPIDAS — 2x2 grid ═══ */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
+      <div className="acciones-campo" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
         {[
           { icon:"📋", label:"Registrar trabajo", color:"#2d5a1b", bg:"#f0f8e8", onClick:abrirTrabajo },
           { icon:"⛽", label:"Registrar diesel",   color:"#e67e22", bg:"#fef5ed", onClick:abrirDiesel },
