@@ -378,7 +378,12 @@ export const css = `
 
   /* ═════════ MOBILE (<768px) ═════════ */
   @media (max-width: 767px) {
-    .hamburger { display: inline-flex; align-items: center; justify-content: center; }
+    .hamburger {
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #e8f5e2 !important;
+    }
+    .hamburger:hover { background: rgba(255,255,255,0.1) !important; }
+    .hamburger:active { background: rgba(255,255,255,0.18) !important; }
     .sidebar-backdrop { display: block; }
 
     .sidebar {
