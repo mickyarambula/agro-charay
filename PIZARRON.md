@@ -106,3 +106,35 @@ MOMENTO 2 — Cuando llegue la cosecha (Fase 2 pendiente):
 - Ingresos parciales (cuando se vende por partes)
 - Pago de crédito vinculado al ingreso real
 - Cierre de ciclo y apertura del siguiente
+
+---
+
+## CAJA CHICA — Pendiente de implementar
+
+### Concepto:
+Fondo fijo pre-asignado al encargado de campo para gastos menores urgentes
+sin pasar por el flujo normal de solicitud/aprobacion.
+
+### Flujo operativo:
+1. Admin define el monto del fondo (ej. $5,000) y lo activa
+2. Encargado registra gastos contra ese fondo: concepto, monto, foto ticket (opcional)
+3. El saldo del fondo baja en tiempo real
+4. Al llegar al 20% del fondo, alerta automatica al admin
+5. Admin revisa gastos, aprueba y repone el fondo con un clic
+6. Los gastos fluyen automaticamente a Egresos del Ciclo como categoria caja_chica
+
+### Diferencia vs Reembolsos:
+- Reembolso: el socio/encargado pago de su bolsillo, pide devolucion
+- Caja chica: hay un fondo pre-asignado, el encargado lo administra sin poner de su bolsillo
+
+### Roles:
+- Encargado: ve su saldo, registra gastos, solicita reposicion
+- Admin/Daniela: define el fondo, ve todos los movimientos, aprueba reposiciones
+- Socio: solo lectura del resumen (monto gastado, saldo actual)
+
+### Pendiente definir con Miguel:
+- Monto inicial del fondo
+- Si hay un solo fondo global o uno por encargado
+- Si los gastos necesitan foto de ticket o solo descripcion
+- Si la reposicion requiere aprobacion del socio tambien
+
