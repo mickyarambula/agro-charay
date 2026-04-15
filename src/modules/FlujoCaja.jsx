@@ -36,7 +36,6 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
     { concepto:"Crédito parafinanciero aplicado", monto:F.capitalAplicadoPara||0, tipo:"Crédito", mod:"credito" },
     { concepto:"Crédito directo aplicado", monto:F.capitalAplicadoDir||0, tipo:"Crédito", mod:"credito" },
     { concepto:"Aportaciones de capital propio", monto:F.totalAport||0, tipo:"Capital", mod:"capital" },
-    { concepto:"Ingreso estimado por cosecha (proyectado)", monto:isNaN(F.ingresoEst)?0:(F.ingresoEst||0), tipo:"Proyectado", mod:"cosecha" },
   ].filter(e=>e.monto>0);
 
   // Salidas de efectivo real
@@ -52,8 +51,6 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
     { concepto:"Personal y honorarios", monto:F.costoPersonal||0, tipo:"Operación", mod:"personal" },
     { concepto:"Nómina operadores", monto:F.costoNomina||0, tipo:"Operación", mod:"operadores" },
     { concepto:"Cosecha y maquila", monto:F.costoCosecha||0, tipo:"Operación", mod:"cosecha" },
-    { concepto:"Intereses crédito habilitación", monto:F.costoInteres||0, tipo:"Financiero", mod:"credito" },
-    { concepto:"Comisiones (Factoraje+FEGA+AT)", monto:F.costoComisiones||0, tipo:"Financiero", mod:"credito" },
     { concepto:"Abonos a crédito habilitación", monto:(state.credito?.pagos||[]).reduce((s,p)=>s+(p.monto||0),0), tipo:"Financiero", mod:"credito" },
     { concepto:"Retiros de capital", monto:F.totalRetiro, tipo:"Capital", mod:"capital" },
   ].filter(s=>s.monto>0);
@@ -165,7 +162,31 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
           </div>
         </div>
       </div>
-      <div style={{marginTop:10,fontSize:11,color:T.fog,textAlign:"center"}}>⚠️ Flujo estimado. El ingreso por cosecha es proyectado. Los montos reales dependen del precio de venta efectivo y la producción final.</div>
+      <div style={{marginTop:10,fontSize:11,color:T.fog,textAlign:"center"}}>⚠️ Flujo estimado. Solo movimientos reales ya ocurridos. Los pendientes se muestran abajo.</div>
+
+      {/* ── Pendiente de liquidar — no ocurrido aún ── */}
+      <div style={{marginTop:20, background:'#f8f6f2', border:'1px solid #ede5d8', borderRadius:10, padding:'16px'}}>
+        <div style={{fontSize:12, fontWeight:500, color:'#1a2e1a', marginBottom:12}}>
+          Pendiente de liquidar — no ocurrido aún
+        </div>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10}}>
+          <div style={{background:'#fff', border:'1px solid #ede5d8', borderRadius:8, padding:'10px 14px'}}>
+            <div style={{fontSize:9, color:'#b0a090', textTransform:'uppercase', letterSpacing:1, marginBottom:4}}>Intereses acumulados</div>
+            <div style={{fontSize:18, fontFamily:'Georgia, serif', color:'#c84b4b'}}>{mxn(F.costoInteres||0)}</div>
+            <div style={{fontSize:9, color:'#b0a090', marginTop:2}}>se pagan al liquidar</div>
+          </div>
+          <div style={{background:'#fff', border:'1px solid #ede5d8', borderRadius:8, padding:'10px 14px'}}>
+            <div style={{fontSize:9, color:'#b0a090', textTransform:'uppercase', letterSpacing:1, marginBottom:4}}>Comisiones</div>
+            <div style={{fontSize:18, fontFamily:'Georgia, serif', color:'#c84b4b'}}>{mxn(F.costoComisiones||0)}</div>
+            <div style={{fontSize:9, color:'#b0a090', marginTop:2}}>se pagan al liquidar</div>
+          </div>
+          <div style={{background:'#fff', border:'1px solid #ede5d8', borderRadius:8, padding:'10px 14px'}}>
+            <div style={{fontSize:9, color:'#b0a090', textTransform:'uppercase', letterSpacing:1, marginBottom:4}}>Ingreso esperado cosecha</div>
+            <div style={{fontSize:18, fontFamily:'Georgia, serif', color:'#2d7a2d'}}>{mxn(isNaN(F.ingresoEst)?0:(F.ingresoEst||0))}</div>
+            <div style={{fontSize:9, color:'#b0a090', marginTop:2}}>cuando se venda el grano</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
