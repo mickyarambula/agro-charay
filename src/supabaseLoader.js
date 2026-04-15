@@ -112,11 +112,28 @@ export async function loadStateFromSupabase() {
     }));
 
     const diesel = dieselRows.map(r => ({
-      id: r.legacy_id, productorId: resolveProductorId(r, productoresRows),
-      fecha: r.fecha||'', proveedor: r.proveedor||'',
-      litros: r.litros_recibidos||0, precioLitro: r.precio_litro||0,
-      importe: r.importe||0, concepto: r.concepto||'',
+      id: r.legacy_id,
+      productorId: r.productor_legacy_id || resolveProductorId(r, productoresRows),
+      productorNombre: r.productor_nombre || '',
+      fecha: r.fecha || '',
+      fechaSolicitud: r.fecha_solicitud || r.fecha || '',
+      fechaOrden: r.fecha_orden || r.fecha || '',
+      proveedor: r.proveedor || '',
+      cantidad: parseFloat(r.cantidad) || 0,
+      litros: parseFloat(r.litros_recibidos) || 0,
+      precioLitro: parseFloat(r.precio_litro) || 0,
+      precioUnitario: parseFloat(r.precio_litro) || 0,
+      importe: parseFloat(r.importe) || 0,
+      concepto: r.concepto || '',
+      unidad: r.unidad || 'LT',
+      ieps: r.ieps || '',
+      numSolicitud: r.num_solicitud || '',
+      numOrden: r.num_orden || '',
+      esAjuste: r.es_ajuste || false,
+      estatus: r.estatus || 'pendiente',
+      cancelado: r.cancelado || false,
       tipoMovimiento: r.tipo_movimiento || null,
+      notas: r.notas || '',
       _uuid: r.id,
     }));
 
