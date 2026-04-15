@@ -58,11 +58,11 @@ export default function BalanceModule({ userRol, onNavigate }) {
   const totalPasivos  = totalPasCorto + totalPasLargo;
 
   // CAPITAL
-  const patrimonioNeto = totalActivos - totalPasivos;
+  const patrimonioNeto = isNaN(totalActivos - totalPasivos) ? 0 : (totalActivos - totalPasivos);
   const capitalRows = [
     { concepto:"Aportaciones de capital", valor:F.totalAport },
     { concepto:"Retiros", valor:-F.totalRetiro },
-    { concepto:"Resultado estimado del ciclo", valor:F.utilidadBruta },
+    { concepto:"Resultado estimado del ciclo", valor:isNaN(F.utilidadBruta) ? 0 : (F.utilidadBruta||0) },
   ];
 
   const Seccion = ({titulo,rows,total,colorT}) => (

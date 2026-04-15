@@ -835,7 +835,7 @@ const CATS_PROY   = ["Insumos","Diesel","Mano de Obra","Maquinaria","Renta","Agu
 // ─── MÓDULO CONFIGURACIÓN (solo Admin) ───────────────────────────────────────
 export const TODOS_MODULOS = [
   { id:"dashboard",     label:"Dashboard",            section:"Principal" },
-  { id:"flujos",        label:"Flujos / Aprobaciones",section:"Principal" },
+  { id:"flujos",        label:"Solicitudes y Aprobaciones",section:"Principal" },
   { id:"productores",   label:"Productores",          section:"Principal" },
   { id:"ciclos",        label:"Ciclos Agrícolas",     section:"Principal" },
   { id:"lotes",         label:"Lotes y Parcelas",     section:"Campo" },
@@ -844,13 +844,13 @@ export const TODOS_MODULOS = [
   { id:"operadores",    label:"Operadores",           section:"Campo" },
   { id:"insumos",       label:"Insumos y Semilla",    section:"Insumos" },
   { id:"diesel",        label:"Diesel y Combustible", section:"Insumos" },
-  { id:"inventario",    label:"Inventario",           section:"Insumos" },
+  { id:"inventario",    label:"Inventario de Insumos",section:"Insumos" },
   { id:"capital",       label:"Capital Propio",       section:"Finanzas" },
   { id:"credito",       label:"Crédito Habilitación", section:"Finanzas" },
   { id:"creditosref",   label:"Créditos Refaccionarios",section:"Finanzas"},
   { id:"rentas",        label:"Rentas de Tierra",     section:"Finanzas" },
   { id:"gastos",        label:"Egresos del Ciclo",    section:"Finanzas" },
-  { id:"costos",        label:"Costos y Equilibrio",  section:"Finanzas" },
+  { id:"costos",        label:"Análisis de Costos",  section:"Finanzas" },
   { id:"activos",       label:"Activos",              section:"Empresa" },
   { id:"personal",      label:"Personal y Honorarios",section:"Empresa" },
   { id:"cosecha",       label:"Cosecha y Maquila",    section:"Empresa" },
@@ -858,7 +858,7 @@ export const TODOS_MODULOS = [
   { id:"asistente",     label:"Asistente Agrícola IA",section:"Inteligencia" },
   { id:"edo_resultados",label:"Estado de Resultados", section:"Financiero" },
   { id:"balance",       label:"Balance General",      section:"Financiero" },
-  { id:"flujo_caja",    label:"Flujo de Caja",        section:"Financiero" },
+  { id:"flujo_caja",    label:"Flujo de Efectivo",    section:"Financiero" },
   { id:"reportes",      label:"Reportes del Ciclo",   section:"Financiero" },
 ];
 
@@ -889,7 +889,7 @@ const NAV = [
   { section: "Principal" },
   { id:"dashboard",  label:"Dashboard",             icon:"📊" },
   { id:"ordenes",    label:"Órdenes del Día",       icon:"📋" },
-  { id:"flujos",     label:"Flujos / Aprobaciones", icon:"✅" },
+  { id:"flujos",     label:"Solicitudes y Aprobaciones", icon:"✅" },
   { id:"productores",label:"Productores",           icon:"👥" },
   { id:"ciclos",      label:"Ciclos Agrícolas", icon:"📅" },
   { section: "Campo" },
@@ -907,7 +907,7 @@ const NAV = [
   { id:"creditosref",label:"Créditos Refaccionarios", icon:"🏗" },
   { id:"rentas",      label:"Rentas de Tierra", icon:"🤝" },
   { id:"gastos",     label:"Egresos del Ciclo", icon:"💸" },
-  { id:"costos",     label:"Costos y Equilibrio", icon:"📈" },
+  { id:"costos",     label:"Análisis de Costos", icon:"📈" },
   { section: "Empresa" },
   { id:"activos",    label:"Activos", icon:"🏡" },
   { id:"personal",   label:"Personal y Honorarios", icon:"👔" },
@@ -918,17 +918,17 @@ const NAV = [
   { section: "Estados Financieros" },
   { id:"edo_resultados",  label:"Estado de Resultados", icon:"📊" },
   { id:"balance",         label:"Balance General", icon:"⚖️" },
-  { id:"flujo_caja",      label:"Flujo de Caja", icon:"💧" },
+  { id:"flujo_caja",      label:"Flujo de Efectivo", icon:"💧" },
   { id:"reportes",        label:"Reportes del Ciclo", icon:"📄" },
   { section: "Sistema" },
   { id:"configuracion",   label:"Configuración", icon:"⚙️" },
 ];
 
 const PAGE_TITLES = {
-  dashboard:"Dashboard de Ciclo", ordenes:"Órdenes del Día", flujos:"Flujos y Aprobaciones", productores:"Productores del Ciclo",ciclos:"Ciclos Agrícolas",
+  dashboard:"Dashboard de Ciclo", ordenes:"Órdenes del Día", flujos:"Solicitudes y Aprobaciones", productores:"Productores del Ciclo",ciclos:"Ciclos Agrícolas",
   lotes:"Lotes y Parcelas",bitacora:"Bitácora de Trabajos",
   maquinaria:"Control de Maquinaria",operadores:"Operadores",insumos:"Insumos y Semilla",
-  diesel:"Diesel y Combustible",inventario:"Inventario",
+  diesel:"Diesel y Combustible",inventario:"Inventario de Insumos",
   capital:"Capital Propio",credito:"Crédito Habilitación",creditosref:"Créditos Refaccionarios",
   rentas:"Rentas de Tierra",gastos:"Egresos del Ciclo",costos:"Costos y Punto de Equilibrio",
   activos:"Activos de la Agrícola",personal:"Personal y Honorarios",cosecha:"Cosecha y Maquila",
@@ -936,7 +936,7 @@ const PAGE_TITLES = {
   asistente:"Asistente Agrícola IA",
   edo_resultados:"Estado de Resultados",
   balance:"Balance General",
-  flujo_caja:"Flujo de Caja",
+  flujo_caja:"Flujo de Efectivo",
   reportes:"Reportes del Ciclo",
   configuracion:"Configuración del Sistema"
 };

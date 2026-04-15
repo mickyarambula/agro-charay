@@ -36,7 +36,7 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
     { concepto:"Aportaciones de capital propio", monto:F.totalAport, tipo:"Capital", mod:"capital" },
     { concepto:"Crédito habilitación dispuesto", monto:(state.dispersiones||[]).filter(d=>!d.cancelado&&(d.cicloId||1)===(state.cicloActivoId||1)).reduce((s,d)=>s+(parseFloat(d.monto)||0),0), tipo:"Crédito", mod:"credito" },
     { concepto:"Créditos refaccionarios dispuestos", monto:(state.creditosRef||[]).reduce((s,c)=>s+((c.ministraciones||[]).filter(m=>m.estatus==="aplicado").reduce((s2,m)=>s2+(m.monto||0),0)),0), tipo:"Crédito", mod:"creditosref" },
-    { concepto:"Ingreso estimado por cosecha", monto:F.ingresoEst, tipo:"Operación", mod:"cosecha" },
+    { concepto:"Ingreso estimado por cosecha (proyectado)", monto:F.ingresoEst, tipo:"Proyectado", mod:"cosecha" },
   ].filter(e=>e.monto>0);
 
   // Salidas de efectivo real
@@ -47,6 +47,8 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
     { concepto:"Renta de tierras (ciclo)", monto:F.costoRenta, tipo:"Operación", mod:"rentas" },
     { concepto:"Personal y honorarios", monto:F.costoPersonal, tipo:"Operación", mod:"personal" },
     { concepto:"Cosecha y maquila", monto:F.costoCosecha, tipo:"Operación", mod:"cosecha" },
+    { concepto:"Intereses crédito habilitación", monto:F.costoInteres||0, tipo:"Financiero", mod:"credito" },
+    { concepto:"Comisiones (Factoraje+FEGA+AT)", monto:F.costoComisiones||0, tipo:"Financiero", mod:"credito" },
     { concepto:"Nómina operadores", monto:F.costoNomina, tipo:"Operación", mod:"operadores" },
     { concepto:"Abonos a crédito habilitación", monto:(state.credito?.pagos||[]).reduce((s,p)=>s+(p.monto||0),0), tipo:"Financiero", mod:"credito" },
     { concepto:"Retiros de capital", monto:F.totalRetiro, tipo:"Capital", mod:"capital" },
@@ -56,7 +58,7 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
   const totalSalidas  = salidas.reduce((s,s2)=>s+s2.monto,0);
   const saldoFinal    = totalEntradas - totalSalidas;
 
-  const tipoColor = t => ({Operación:T.field,Crédito:"#5b9fd6",Capital:T.straw,Financiero:T.rust})[t]||T.fog;
+  const tipoColor = t => ({Operación:T.field,Crédito:"#5b9fd6",Capital:T.straw,Financiero:T.rust,Proyectado:"#8a7560"})[t]||T.fog;
 
   return (
     <div>

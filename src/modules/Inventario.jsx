@@ -158,6 +158,31 @@ export default function InventarioModule({ userRol, puedeEditar }) {
       <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
         {puedeEditar&&<button className="btn btn-primary" onClick={()=>{setSelItem(null);setFormItem(emptyItem);setModalItem(true);}}>＋ Agregar Producto</button>}
         {puedeEditar&&<button className="btn btn-secondary" onClick={()=>{setFormMov(emptyMov);setModalMov(true);}}>📥 Registrar Entrada/Salida</button>}
+        {userRol === 'admin' && itemsConStock.some(i => i.stock > 0) && (
+          <button
+            className="btn btn-secondary"
+            style={{fontSize:12,color:'#c84b4b',borderColor:'#c84b4b'}}
+            onClick={() => {
+              if (!window.confirm('¿Marcar todos los insumos como aplicados? Esto registrará salidas por el stock actual de cada item.')) return;
+              itemsConStock.filter(i => i.stock > 0).forEach(item => {
+                dispatch({
+                  type: 'ADD_INV_MOV',
+                  payload: {
+                    id: Date.now() + Math.random(),
+                    itemId: item.id,
+                    tipo: 'salida',
+                    cantidad: item.stock,
+                    fecha: new Date().toISOString().split('T')[0],
+                    concepto: 'Aplicado en campo — ajuste de cierre',
+                    ref: 'AJUSTE-CAMPO',
+                  }
+                });
+              });
+            }}
+          >
+            ✓ Marcar todo como aplicado
+          </button>
+        )}
         <select className="form-select" style={{width:180}} value={filtroCat} onChange={e=>setFiltroCat(e.target.value)}>
           <option value="todas">Todas las categorías</option>
           {CATEGORIAS.map(c=><option key={c} value={c}>{c}</option>)}

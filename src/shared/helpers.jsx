@@ -321,8 +321,8 @@ export function calcularFinancieros(state) {
   const costoTon      = produccionEst > 0 ? costoTotal/produccionEst : 0;
 
   // ── Capital (legacy) ────────────────────────────────────────────────────────
-  const totalAport  = (state.capital?.aportaciones||[]).reduce((s,a)=>s+a.monto,0);
-  const totalRetiro = (state.capital?.retiros||[]).reduce((s,r)=>s+r.monto,0);
+  const totalAport  = (state.capital?.aportaciones||[]).reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+  const totalRetiro = (state.capital?.retiros||[]).reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
   const capitalNeto = totalAport - totalRetiro;
   const valorActivos= (state.activos||[]).reduce((s,a)=>s+(a.valorAdq||0),0);
 

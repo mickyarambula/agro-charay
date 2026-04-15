@@ -162,6 +162,7 @@ export default function CostosModule({ userRol, puedeEditar, onNavigate }) {
                   ["💧 Agua",           F.costoAgua,     "#1a6ea8", "gastos"],
                   ["🛡️ Seguros",        F.costoSeguros,  "#8e44ad", "gastos"],
                   ["📋 Trámites/Otros", F.costoTramites+F.costoOtros,"#7f8c8d", "gastos"],
+                  ["🚜 Maquinaria",     F.costoMaquinaria||0, "#6d4c41", "maquinaria"],
                   ["✂️ Cosecha",        F.costoCosecha,  "#27ae60", "cosecha"],
                   ["📈 Intereses",      F.costoInteres,  "#c0392b", "credito"],
                   ["🏦 Comisiones (Fact+FEGA+AT)", F.costoComisiones, "#d35400", "credito"],
