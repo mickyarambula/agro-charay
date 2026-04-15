@@ -677,6 +677,8 @@ export const MOTIVOS_CANCELACION = [
 ];
 
 // ─── Constantes de dominio ─────────────────────────────────────────────────
+export const CAPACIDAD_TANQUE_DIESEL = 10000;
+
 export const CULTIVOS = ["Maíz Blanco","Maíz Dulce","Ejote","Papa","Garbanzo","Trigo","Sorgo"];
 export const ESTADOS_FENOL = ["Preparación","Siembra","Emergencia","Vegetativo","Floración","Llenado","Cosecha","Barbecho"];
 export const TIPOS_TRABAJO = ["Barbecho","Rastreo","Nivelación","Surcado","Siembra","Fertilización","Riego","Aplicación herbicida","Aplicación fungicida","Aplicación insecticida","Cosecha","Transporte","Mantenimiento","Otro"];

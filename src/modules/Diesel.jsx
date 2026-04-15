@@ -1,16 +1,16 @@
 // ─── modules/Diesel.jsx ───────────────────────────────────────────
 // Vista única con 3 modales: compra, gasolinera, carga de tractor.
-// Cilindro de 5,000 L controlado por entradas y salidas internas.
+// Cilindro de 10,000 L controlado por entradas y salidas internas.
 
 import React, { useState } from 'react';
 import { useData } from '../core/DataContext.jsx';
-import { T, mxnFmt as sharedMxn, fmt } from '../shared/utils.js';
+import { T, mxnFmt as sharedMxn, fmt, CAPACIDAD_TANQUE_DIESEL } from '../shared/utils.js';
 import { Modal } from '../shared/Modal.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
 
-const CILINDRO_CAPACIDAD = 5000;
+const CILINDRO_CAPACIDAD = CAPACIDAD_TANQUE_DIESEL;
 
 export default function DieselModule({ userRol }) {
   const { state, dispatch } = useData();
@@ -82,6 +82,14 @@ export default function DieselModule({ userRol }) {
     if (tipo === 'salida_interna') {
       if (saldoCilindro <= 0) { alert('El cilindro está vacío. Contacta a compras para reabastecer.'); return false; }
       if (litros > saldoCilindro) { alert(`No hay suficiente diesel. Saldo actual: ${saldoCilindro.toLocaleString('es-MX')} L`); return false; }
+    }
+
+    if (tipo === 'entrada') {
+      if (saldoCilindro + litros > CILINDRO_CAPACIDAD) {
+        const disponible = Math.max(0, CILINDRO_CAPACIDAD - saldoCilindro);
+        alert(`⚠️ No se puede agregar ${litros.toLocaleString('es-MX')} L. El tanque tiene ${saldoCilindro.toLocaleString('es-MX')} L y su capacidad es ${CILINDRO_CAPACIDAD.toLocaleString('es-MX')} L. Máximo ${disponible.toLocaleString('es-MX')} L disponibles.`);
+        return false;
+      }
     }
 
     const id = Date.now();
@@ -213,6 +221,9 @@ export default function DieselModule({ userRol }) {
         </div>
         <div style={{height: 12, borderRadius: 6, background: '#e5e7eb', overflow: 'hidden', marginTop: 12}}>
           <div style={{height: '100%', width: `${nivelPct}%`, background: saldoColor, transition: 'width 300ms ease'}} />
+        </div>
+        <div style={{fontSize: 10, color: '#b0a090', marginTop: 4, textAlign: 'center'}}>
+          {saldoCilindro.toLocaleString('es-MX',{maximumFractionDigits:0})} L de {CILINDRO_CAPACIDAD.toLocaleString('es-MX')} L · {Math.round(nivelPct)}% de capacidad
         </div>
 
         {/* KPIs del cilindro */}
