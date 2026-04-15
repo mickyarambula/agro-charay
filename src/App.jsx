@@ -16,7 +16,6 @@ import {
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SYNC_CHANNEL, SYNC_KEYS, supabaseClient
 } from "./core/supabase.js";
-import { solicitarPermisoPush } from "./core/push.js";
 import { initState, reducer, Ctx, useData } from "./core/DataContext.jsx";
 import {
   calcularInteresCredito, calcularInteresCargosCredito, calcularFinancieros,
@@ -1268,8 +1267,6 @@ export default function App() {
   // ─── Supabase realtime: suscripción al canal al iniciar sesión ──────────────
   useEffect(() => {
     if (!usuario || !supabaseClient) return;
-    // Pedir permiso de notificaciones push (no bloqueante)
-    solicitarPermisoPush().catch(() => {});
     const senderId = `${usuario.usuario}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     syncSenderIdRef.current = senderId;
     initialBroadcastSkipRef.current = true;

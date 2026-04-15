@@ -25,11 +25,15 @@ import {
 } from '../shared/helpers.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
+import { solicitarPermisoPush } from '../core/push.js';
 
 
 export default function DashboardCampo({ userRol, usuario, onNavigate }) {
   const { state, dispatch } = useData();
   const isMobile = useIsMobile();
+  const [notifActivas, setNotifActivas] = useState(
+    typeof Notification !== 'undefined' && Notification.permission === 'granted'
+  );
   const hoy = new Date().toISOString().split("T")[0];
 
   const bitacora   = state.bitacora   || [];
@@ -256,6 +260,31 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
         dieselHoy: diesHoy?.length || 0,
         lotesActivos: state.lotes?.filter(l => l.activo !== false)?.length || 0,
       }} />
+
+      {isMobile && !notifActivas && (
+        <button
+          onClick={async () => {
+            const sub = await solicitarPermisoPush();
+            if (sub) setNotifActivas(true);
+          }}
+          style={{
+            width: '100%',
+            padding: '12px',
+            minHeight: 48,
+            marginBottom: 12,
+            background: '#1a3a0f',
+            color: '#e8f5e2',
+            border: 'none',
+            borderRadius: 10,
+            fontSize: 14,
+            fontWeight: 500,
+            cursor: 'pointer',
+            touchAction: 'manipulation',
+          }}
+        >
+          🔔 Activar notificaciones
+        </button>
+      )}
 
       {/* ═══ ÓRDENES DEL DÍA (HOY) ═══ */}
       {(() => {
