@@ -47,11 +47,11 @@ export const css = `
   /* SIDEBAR */
   .sidebar {
     width: 240px; flex-shrink: 0;
-    background: ${T.soil};
+    background: #1a3a0f;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     display: flex; flex-direction: column;
-    box-shadow: 4px 0 20px rgba(74,55,40,0.18);
+    box-shadow: 4px 0 20px rgba(26,58,15,0.25);
     position: relative; z-index: 10;
   }
   .sidebar-logo {
@@ -59,33 +59,33 @@ export const css = `
     border-bottom: 1px solid rgba(255,255,255,0.08);
   }
   .logo-title {
-    font-family: 'Playfair Display', serif;
+    font-family: Georgia, serif;
     font-size: 18px; font-weight: 700;
-    color: ${T.strawLt}; letter-spacing: 0.02em;
+    color: #e8f5e2; letter-spacing: 0.02em;
     line-height: 1.2;
   }
   .logo-sub {
     font-size: 10px; font-weight: 500; letter-spacing: 0.14em;
-    text-transform: uppercase; color: rgba(255,255,255,0.38);
+    text-transform: uppercase; color: #4a7c3f;
     margin-top: 3px;
   }
   .sidebar-section-label {
     font-size: 9px; font-weight: 600; letter-spacing: 0.18em;
-    text-transform: uppercase; color: rgba(255,255,255,0.28);
+    text-transform: uppercase; color: #4a7c3f;
     padding: 18px 24px 6px;
   }
   .nav-item {
     display: flex; align-items: center; gap: 11px;
     padding: 10px 24px; cursor: pointer;
-    color: rgba(255,255,255,0.6);
+    color: #7ab87a;
     font-size: 13.5px; font-weight: 400;
     transition: all 0.18s; border-left: 3px solid transparent;
     user-select: none;
   }
-  .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.88); }
+  .nav-item:hover { background: rgba(255,255,255,0.08); color: #e8f5e2; }
   .nav-item.active {
-    color: ${T.strawLt}; background: rgba(200,168,75,0.12);
-    border-left-color: ${T.straw}; font-weight: 500;
+    color: #e8f5e2; background: rgba(255,255,255,0.12);
+    border-left-color: #a8d5a2; font-weight: 500;
   }
   .nav-icon { font-size: 16px; width: 20px; text-align: center; }
   .sidebar-footer {
@@ -123,14 +123,24 @@ export const css = `
     padding: 28px 32px;
     padding-bottom: max(28px, env(safe-area-inset-bottom));
     flex: 1;
+    background: #f8f6f2;
   }
 
   /* CARDS */
   .card {
-    background: white; border-radius: 10px;
-    border: 1px solid ${T.line};
-    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    background: #ffffff; border-radius: 10px;
+    border: 1px solid #ede5d8;
+    box-shadow: 0 1px 6px rgba(26,58,15,0.04);
   }
+  .stat-grid > .stat-card,
+  .stat-grid > div {
+    background: #ffffff;
+    border: 1px solid #ede5d8;
+    border-radius: 10px;
+    border-top: 2px solid #ede5d8;
+  }
+  .stat-value { font-family: Georgia, serif; }
+  .stat-card .stat-value { font-family: Georgia, serif; }
   .card-header {
     padding: 16px 20px 12px;
     border-bottom: 1px solid ${T.line};
@@ -188,8 +198,8 @@ export const css = `
     font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
     cursor: pointer; transition: all 0.16s; text-decoration: none;
   }
-  .btn-primary { background: ${T.field}; color: white; }
-  .btn-primary:hover { background: ${T.fieldLt}; }
+  .btn-primary { background: #1a3a0f; color: #fff; border-color: #1a3a0f; }
+  .btn-primary:hover { background: #2d5a1b; border-color: #2d5a1b; }
   .btn-secondary { background: white; color: ${T.inkLt}; border: 1px solid ${T.line}; }
   .btn-secondary:hover { background: ${T.paper}; }
   .btn-danger { background: #fdeee8; color: ${T.rust}; }
@@ -391,7 +401,11 @@ export const css = `
       padding-top: max(0px, env(safe-area-inset-top));
       height: 56px;
       gap: 8px;
+      background: #1a3a0f;
+      border-bottom: none;
     }
+    .topbar, .topbar .topbar-title, .topbar .topbar-date { color: #e8f5e2; }
+    .topbar .badge { color: #e8f5e2; }
     .topbar-title {
       font-size: 15px;
       white-space: nowrap;
@@ -408,6 +422,7 @@ export const css = `
     .content {
       padding: 14px 12px;
       padding-bottom: max(16px, env(safe-area-inset-bottom));
+      background: #f8f6f2;
     }
 
     /* Stats: 2 columnas en móvil, luego 1 en muy angosto */
