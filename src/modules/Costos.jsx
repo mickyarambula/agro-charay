@@ -155,7 +155,7 @@ export default function CostosModule({ userRol, puedeEditar, onNavigate }) {
               <tbody>
                 {[
                   ["🌽 Semilla",        F.costoSemilla,  "#c8a84b", "insumos",  {categoria:"Semilla",    vista:"tabla"}],
-                  ["🌿 Insumos",        F.costoInsumos-F.costoSemilla, "#2d5a1b", "insumos", {categoria:"Fertilizante",vista:"tabla"}],
+                  ["🌿 Insumos",        F.costoInsumos, "#2d5a1b", "insumos", {categoria:"Fertilizante",vista:"tabla"}],
                   ["⛽ Diesel",          F.costoDiesel,   "#e67e22", "diesel"],
                   ["🏡 Renta",          F.costoRenta,    "#9b6d3a", "rentas"],
                   ["👷 Mano de Obra",   F.costoManoObra, "#5b9fd6", "gastos"],

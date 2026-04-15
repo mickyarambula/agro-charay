@@ -39,7 +39,7 @@ export default function EdoResultadosModule({ userRol, onNavigate }) {
     { tipo:"spacer" },
     { tipo:"header",  label:"COSTOS DE PRODUCCIÓN" },
     { tipo:"item",    label:"Semilla certificada",       valor:F.costoSemilla,    mod:"insumos", filtro:{categoria:"Semilla",vista:"tabla"} },
-    { tipo:"item",    label:"Insumos aplicados (sin semilla)", valor:(F.costoInsumos||0)-(F.costoSemilla||0), mod:"insumos", filtro:{categoria:"Fertilizante",vista:"tabla"} },
+    { tipo:"item",    label:"Insumos aplicados (sin semilla)", valor:F.costoInsumos||0, mod:"insumos", filtro:{categoria:"Fertilizante",vista:"tabla"} },
     { tipo:"item",    label:"Diesel y combustible",     valor:F.costoDiesel,     mod:"diesel" },
     { tipo:"item",    label:"Renta de tierras (ciclo)", valor:F.costoRenta,      mod:"rentas" },
     { tipo:"item",    label:"Maquinaria propia (h/c)",  valor:F.costoMaquinaria, mod:"maquinaria" },

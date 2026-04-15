@@ -42,7 +42,7 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
   // Salidas de efectivo real
   const salidas = [
     { concepto:"Semilla", monto:F.costoSemilla||0, tipo:"Operación", mod:"insumos", filtro:{categoria:"Semilla",vista:"tabla"} },
-    { concepto:"Insumos (sin semilla)", monto:(F.costoInsumos||0)-(F.costoSemilla||0), tipo:"Operación", mod:"insumos" },
+    { concepto:"Insumos (sin semilla)", monto:F.costoInsumos||0, tipo:"Operación", mod:"insumos" },
     { concepto:"Diesel y combustible", monto:F.costoDiesel||0, tipo:"Operación", mod:"diesel" },
     { concepto:"Renta de tierras", monto:F.costoRenta||0, tipo:"Operación", mod:"rentas" },
     { concepto:"Agua y riego", monto:F.costoAgua||0, tipo:"Operación", mod:"gastos" },

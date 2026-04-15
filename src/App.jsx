@@ -565,7 +565,7 @@ Precio venta: ${mxn2(precioActual)}/ton · Ingreso estimado: ${mxn2(F.ingresoEst
 ── COSTOS DESGLOSADOS ──────────────────
 Costo total ciclo:   ${mxn2(F.costoTotal)} (${mxn2(costoHa)}/ha · ${mxn2(costoTon)}/ton)
   Semilla:           ${mxn2(F.costoSemilla)}
-  Insumos (sin sem): ${mxn2((F.costoInsumos||0)-F.costoSemilla)}
+  Insumos (sin sem): ${mxn2(F.costoInsumos||0)}
   Diesel:            ${mxn2(F.costoDiesel)}
   Renta de tierra:   ${mxn2(F.costoRenta)}
   Mano de obra:      ${mxn2(F.costoManoObra)}

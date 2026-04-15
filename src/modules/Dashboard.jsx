@@ -73,7 +73,7 @@ export default function Dashboard({ userRol, onNavigate }) {
   // Estructura de costos
   const costLines = [
     {l:"Semilla",            v:F.costoSemilla,                        c:"#c8a84b", mod:"insumos", filtro:{categoria:"Semilla",    vista:"tabla"}},
-    {l:"Insumos",            v:(F.costoInsumos||0)-F.costoSemilla,    c:"#1a3a0f", mod:"insumos", filtro:{categoria:"Fertilizante",vista:"tabla"}},
+    {l:"Insumos",            v:F.costoInsumos||0,    c:"#1a3a0f", mod:"insumos", filtro:{categoria:"Fertilizante",vista:"tabla"}},
     {l:"Diesel",             v:F.costoDiesel,                         c:"#e67e22", mod:"diesel"},
     {l:"Renta",              v:F.costoRenta,                          c:"#9b6d3a", mod:"rentas"},
     {l:"Mano de Obra",       v:F.costoManoObra,                       c:"#5b9fd6", mod:"gastos"},
