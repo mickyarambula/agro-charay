@@ -25,7 +25,15 @@ export const T = {
 export const css = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body, #root { height: 100%; }
-  body { font-family: 'DM Sans', sans-serif; background: ${T.cream}; color: ${T.ink}; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: ${T.cream};
+    color: ${T.ink};
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: ${T.paper}; }
   ::-webkit-scrollbar-thumb { background: ${T.sand}; border-radius: 3px; }
@@ -40,6 +48,8 @@ export const css = `
   .sidebar {
     width: 240px; flex-shrink: 0;
     background: ${T.soil};
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
     display: flex; flex-direction: column;
     box-shadow: 4px 0 20px rgba(74,55,40,0.18);
     position: relative; z-index: 10;
@@ -95,6 +105,7 @@ export const css = `
   .topbar {
     background: white; border-bottom: 1px solid ${T.line};
     padding: 0 32px; height: 60px;
+    padding-top: max(0px, env(safe-area-inset-top));
     display: flex; align-items: center; justify-content: space-between;
     flex-shrink: 0; position: sticky; top: 0; z-index: 5;
   }
@@ -108,7 +119,11 @@ export const css = `
     font-family: 'DM Mono', monospace;
   }
 
-  .content { padding: 28px 32px; flex: 1; }
+  .content {
+    padding: 28px 32px;
+    padding-bottom: max(28px, env(safe-area-inset-bottom));
+    flex: 1;
+  }
 
   /* CARDS */
   .card {
@@ -360,6 +375,8 @@ export const css = `
       position: fixed;
       top: 0; left: 0; bottom: 0;
       width: 280px; max-width: 85vw;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
       transform: translateX(-100%);
       transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
       z-index: 100;
@@ -371,6 +388,7 @@ export const css = `
 
     .topbar {
       padding: 0 12px;
+      padding-top: max(0px, env(safe-area-inset-top));
       height: 56px;
       gap: 8px;
     }
@@ -387,7 +405,10 @@ export const css = `
     .topbar-right > .badge,
     .topbar-right > .mobile-hide { display: none !important; }
 
-    .content { padding: 14px 12px; }
+    .content {
+      padding: 14px 12px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
 
     /* Stats: 2 columnas en móvil, luego 1 en muy angosto */
     .stat-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; margin-bottom: 16px; }
