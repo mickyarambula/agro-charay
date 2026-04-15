@@ -58,8 +58,6 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
   const totalEntradas = entradas.reduce((s,e)=>s+e.monto,0);
   const totalSalidas  = salidas.reduce((s,s2)=>s+s2.monto,0);
   const saldoFinal    = totalEntradas - totalSalidas;
-  const entradasReales = entradas.filter(e => e.tipo !== 'Proyectado').reduce((s,e)=>s+e.monto,0);
-  const saldoReal = entradasReales - totalSalidas;
 
   const tipoColor = t => ({Operación:T.field,Crédito:"#5b9fd6",Capital:T.straw,Financiero:T.rust,Proyectado:"#8a7560"})[t]||T.fog;
 
@@ -83,18 +81,10 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
         </div>
       </div>
 
-      <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:20}}>
+      <div className="stat-grid" style={{gridTemplateColumns:"repeat(3,1fr)",marginBottom:20}}>
         <div className="stat-card green"><div className="stat-icon">📥</div><div className="stat-label">Total Entradas</div><div className="stat-value" style={{fontSize:18}}>{mxn(totalEntradas)}</div><div className="stat-sub">{entradas.length} fuentes</div></div>
         <div className="stat-card rust"><div className="stat-icon">📤</div><div className="stat-label">Total Salidas</div><div className="stat-value" style={{fontSize:18}}>{mxn(totalSalidas)}</div><div className="stat-sub">{salidas.length} conceptos</div></div>
         <div className="stat-card" style={{borderTop:`2px solid ${saldoFinal>=0?T.field:T.rust}`}}><div className="stat-icon">{saldoFinal>=0?"💧":"🔴"}</div><div className="stat-label">Saldo Neto</div><div className="stat-value" style={{fontSize:18,color:saldoFinal>=0?T.field:T.rust}}>{mxn(saldoFinal)}</div><div className="stat-sub">{saldoFinal>=0?"Posición positiva":"Déficit de caja"}</div></div>
-        <div className="stat-card" style={{borderTop:`2px solid ${saldoReal>=0?T.field:T.rust}`}}>
-          <div className="stat-icon">💵</div>
-          <div className="stat-label">Saldo real (sin cosecha)</div>
-          <div className="stat-value" style={{fontSize:18,color:saldoReal>=0?T.field:T.rust}}>{mxn(saldoReal)}</div>
-          <div className="stat-sub" style={{color:saldoReal<0?T.rust:T.fog}}>
-            {saldoReal<0 ? 'Déficit cubierto con capital propio o fuentes no registradas' : 'Entradas reales − Salidas reales'}
-          </div>
-        </div>
       </div>
 
       <div className="grid-2">
