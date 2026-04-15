@@ -83,3 +83,26 @@
 - GitHub: github.com/mickyarambula/agro-charay
 - Telefono prueba Renato Urias: 6682226861
 - Ultimo commit: 81352b0
+
+---
+
+## FASE 2 — COSECHA Y LIQUIDACIÓN
+
+### Los dos momentos del ciclo:
+
+MOMENTO 1 — Ya ocurrió (lo que muestra el sistema hoy):
+- El banco prestó $21.1M (parafinanciero + directo)
+- Se usó en semilla, insumos, renta, agua, diesel, etc.
+- Intereses $957K y comisiones $864K acumulados pero AÚN NO pagados
+
+MOMENTO 2 — Cuando llegue la cosecha (Fase 2 pendiente):
+1. Vender el grano → registrar toneladas reales x precio real
+2. Pagar al banco → capital + intereses + comisiones
+3. El sistema calcula utilidad o pérdida REAL
+4. Estado final por productor para liquidar
+
+### Pendiente construir en Fase 2:
+- Módulo Cosecha: boletas reales, precio, humedad, merma
+- Ingresos parciales (cuando se vende por partes)
+- Pago de crédito vinculado al ingreso real
+- Cierre de ciclo y apertura del siguiente
