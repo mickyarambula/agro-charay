@@ -1,10 +1,18 @@
 # AgroSistema Charay — Pizarron de Trabajo
-> Actualizado: 14 Abril 2026
+> Actualizado: 15 Abril 2026
 
 ---
 
-## COMPLETADO HOY
+## COMPLETADO
 
+- Rediseño visual completo — paleta orgánica aprobada
+  - Sidebar y topbar: #1a3a0f verde oscuro
+  - Fondo contenido: #f8f6f2 crema
+  - KPIs: borde superior de color semántico
+  - Tipografía: Georgia serif en números y títulos
+  - Cards: borde #ede5d8, borderRadius 10px
+  - Botones: #1a3a0f con hover #2d5a1b
+  - Tag de versión: v1.0-rediseno-20260415
 - Realtime diesel entre admin y encargado (Postgres Changes + dieselChannel)
 - Modulo Diesel refactorizado — 3 modales, vista unica, sin confusion de vistas
 - Roles corregidos: encargado no ve precios, campo ve ordenes, socio ve credito
@@ -15,6 +23,8 @@
 - Responsive movil completo en todos los modulos
 - diesel(30) restaurados con productor_legacy_id correcto
 - Estado de Cuenta muestra diesel por productor
+- Notificaciones push PWA con sesión persistente 8h
+- Safe area iOS en topbar y content para PWA instalada
 
 ---
 
