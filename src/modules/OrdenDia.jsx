@@ -12,6 +12,7 @@ import MobileCard from '../components/mobile/MobileCard.jsx';
 import BottomSheet from '../components/mobile/BottomSheet.jsx';
 import SkeletonCard from '../components/mobile/SkeletonCard.jsx';
 import ToastContainer, { showToast } from '../components/mobile/Toast.jsx';
+import { enviarNotifLocal } from '../core/push.js';
 
 const TIPOS_TRABAJO = [
   "Barbecho", "Rastreo", "Nivelación", "Surcado", "Siembra", "Fertilización",
@@ -389,6 +390,13 @@ export default function OrdenDia({ userRol, usuario }) {
         if (supaId) {
           dispatch({ type: "UPD_ORDEN_TRABAJO", payload: { ...payload, supabaseId: supaId } });
           showToast('✅ Orden creada', 'success');
+          if (userRol === 'encargado') {
+            enviarNotifLocal(
+              'Nueva orden del día',
+              `${payload.tipoTrabajo} en ${nombreLote(lot)} — ${op?.nombre || '—'}`,
+              '/'
+            );
+          }
         } else {
           showToast('❌ Error al guardar en Supabase', 'error');
         }
@@ -414,6 +422,11 @@ export default function OrdenDia({ userRol, usuario }) {
     // Sync a Supabase (fire-and-forget)
     completarOrdenEnSupabase(orden);
     showToast('✅ Orden completada', 'success');
+    enviarNotifLocal(
+      '✅ Orden completada',
+      `${orden.tipoTrabajo} en ${orden.loteNombre || nombreLote(getLote(orden.loteId)) || '—'}`,
+      '/'
+    );
     // Crear registro automático en bitácora, etiquetado con origen=orden_trabajo
     // y ordenId para correlación inversa (evita doble captura manual).
     dispatch({ type: "ADD_BITACORA", payload: {
