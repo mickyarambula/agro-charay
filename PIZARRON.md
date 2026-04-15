@@ -138,3 +138,10 @@ sin pasar por el flujo normal de solicitud/aprobacion.
 - Si los gastos necesitan foto de ticket o solo descripcion
 - Si la reposicion requiere aprobacion del socio tambien
 
+
+## CAJA CHICA — Decisiones confirmadas
+
+- Monto del fondo: variable, asignado por admin (no fijo)
+- Fondo global: uno solo para todo el grupo campo
+- Foto del ticket: opcional pero solicitada (campo en el formulario)
+- Reposicion: solo requiere aprobacion del admin (no del socio)
