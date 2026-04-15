@@ -1195,20 +1195,14 @@ export default function App() {
   const [page, setPage]   = useState("dashboard");
 
   // Leer ?modulo=X del query string (para abrir desde notificación push)
-  // Espera a que la sesión esté restaurada antes de navegar. Ejecuta solo
-  // una vez por montaje (ref) para evitar loops cuando usuario cambia.
-  const moduloNavegadoRef = React.useRef(false);
   React.useEffect(() => {
-    if (!usuario) return;
-    if (moduloNavegadoRef.current) return;
     const params = new URLSearchParams(window.location.search);
     const modulo = params.get('modulo');
     if (modulo) {
-      moduloNavegadoRef.current = true;
       setPage(modulo);
       window.history.replaceState({}, '', '/');
     }
-  }, [usuario]);
+  }, []);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [bellOpen, setBellOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
