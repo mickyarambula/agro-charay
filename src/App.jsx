@@ -1352,10 +1352,54 @@ export default function App() {
       })
       .subscribe();
 
+    const dieselChannel = supabaseClient
+      .channel('diesel-db-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'diesel'
+      }, () => {
+        fetch(`${SUPABASE_URL}/rest/v1/diesel?select=*&order=fecha.desc&limit=500`, {
+          headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+        })
+        .then(r => r.json())
+        .then(rows => {
+          if (!Array.isArray(rows)) return;
+          const mapped = rows.map(r => ({
+            id: r.legacy_id || r.id,
+            fecha: r.fecha,
+            fechaSolicitud: r.fecha_solicitud || r.fecha,
+            fechaOrden: r.fecha_orden || r.fecha,
+            cantidad: parseFloat(r.cantidad) || 0,
+            precioUnitario: parseFloat(r.precio_unitario) || 0,
+            importe: parseFloat(r.importe) || 0,
+            proveedor: r.proveedor || '',
+            productorId: r.productor_legacy_id || null,
+            loteId: r.lote_legacy_id || null,
+            maquinariaId: r.maquinaria_legacy_id || null,
+            concepto: r.concepto || '',
+            unidad: r.unidad || 'LT',
+            ieps: r.ieps || '',
+            numSolicitud: r.num_solicitud || '',
+            numOrden: r.num_orden || '',
+            esAjuste: r.es_ajuste || false,
+            tipoMovimiento: r.tipo_movimiento || null,
+            cancelado: r.cancelado || false,
+            notas: r.notas || '',
+            _uuid: r.id,
+            origen: 'supabase',
+          }));
+          dispatch({ type: 'SYNC_STATE', payload: { diesel: mapped } });
+        })
+        .catch(e => console.warn('Realtime diesel:', e));
+      })
+      .subscribe();
+
     return () => {
       try { channel.unsubscribe(); } catch {}
       try { supabaseClient.removeChannel(channel); } catch {}
       try { supabaseClient.removeChannel(ordenesChannel); } catch {}
+      try { supabaseClient.removeChannel(dieselChannel); } catch {}
       syncChannelRef.current = null;
       syncSenderIdRef.current = null;
       setConnectedUsers(0);

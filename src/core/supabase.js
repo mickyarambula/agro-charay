@@ -11,7 +11,7 @@ export const SYNC_CHANNEL = 'agro-charay-sync';
 export const SYNC_KEYS = [
   'solicitudesGasto', 'solicitudesCompra', 'recomendaciones',
   'ordenesCompra', 'notificaciones', 'delegaciones',
-  'ordenesTrabajo'
+  'ordenesTrabajo', 'diesel'
 ];
 
 let _client = null;
