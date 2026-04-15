@@ -57,6 +57,8 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
   const totalEntradas = entradas.reduce((s,e)=>s+e.monto,0);
   const totalSalidas  = salidas.reduce((s,s2)=>s+s2.monto,0);
   const saldoFinal    = totalEntradas - totalSalidas;
+  const entradasReales = entradas.filter(e => e.tipo !== 'Proyectado').reduce((s,e)=>s+e.monto,0);
+  const saldoReal = entradasReales - totalSalidas;
 
   const tipoColor = t => ({Operación:T.field,Crédito:"#5b9fd6",Capital:T.straw,Financiero:T.rust,Proyectado:"#8a7560"})[t]||T.fog;
 
@@ -66,21 +68,25 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
         <div className="card-body">
           <div className="flex justify-between items-center">
             <div>
-              <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700}}>Flujo de Caja del Ciclo</div>
-              <div style={{fontSize:12,color:T.fog,marginTop:2}}>Agrícola Charay · {state.cicloActual} · Estimado + Real</div>
+              <div style={{fontFamily:"Georgia, serif",fontSize:20,fontWeight:700}}>Flujo de Efectivo del Ciclo</div>
+              <div style={{fontSize:12,color:T.fog,marginTop:2}}>Agrícola Charay · {state.cicloActual} · Real acumulado + Proyectado</div>
             </div>
             <div style={{textAlign:"right"}}>
               <div style={{fontSize:11,color:T.fog}}>Saldo neto estimado</div>
               <div style={{fontFamily:"Georgia, serif",fontSize:26,fontWeight:700,color:saldoFinal>=0?T.field:T.rust}}>{mxn(saldoFinal)}</div>
+              <div style={{fontSize:11,color:'#b0a090',marginTop:8,textAlign:'right',maxWidth:360,lineHeight:1.4}}>
+                El saldo incluye ingreso de cosecha proyectado (aún no realizado). Saldo real actual = Entradas reales − Salidas reales.
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="stat-grid" style={{gridTemplateColumns:"repeat(3,1fr)",marginBottom:20}}>
+      <div className="stat-grid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:20}}>
         <div className="stat-card green"><div className="stat-icon">📥</div><div className="stat-label">Total Entradas</div><div className="stat-value" style={{fontSize:18}}>{mxn(totalEntradas)}</div><div className="stat-sub">{entradas.length} fuentes</div></div>
         <div className="stat-card rust"><div className="stat-icon">📤</div><div className="stat-label">Total Salidas</div><div className="stat-value" style={{fontSize:18}}>{mxn(totalSalidas)}</div><div className="stat-sub">{salidas.length} conceptos</div></div>
-        <div className="stat-card" style={{borderLeft:`4px solid ${saldoFinal>=0?T.field:T.rust}`}}><div className="stat-icon">{saldoFinal>=0?"💧":"🔴"}</div><div className="stat-label">Saldo Neto</div><div className="stat-value" style={{fontSize:18,color:saldoFinal>=0?T.field:T.rust}}>{mxn(saldoFinal)}</div><div className="stat-sub">{saldoFinal>=0?"Posición positiva":"Déficit de caja"}</div></div>
+        <div className="stat-card" style={{borderTop:`2px solid ${saldoFinal>=0?T.field:T.rust}`}}><div className="stat-icon">{saldoFinal>=0?"💧":"🔴"}</div><div className="stat-label">Saldo Neto</div><div className="stat-value" style={{fontSize:18,color:saldoFinal>=0?T.field:T.rust}}>{mxn(saldoFinal)}</div><div className="stat-sub">{saldoFinal>=0?"Posición positiva":"Déficit de caja"}</div></div>
+        <div className="stat-card" style={{borderTop:`2px solid ${saldoReal>=0?T.field:T.rust}`}}><div className="stat-icon">💵</div><div className="stat-label">Saldo real (sin cosecha)</div><div className="stat-value" style={{fontSize:18,color:saldoReal>=0?T.field:T.rust}}>{mxn(saldoReal)}</div><div className="stat-sub">Solo entradas ya realizadas</div></div>
       </div>
 
       <div className="grid-2">

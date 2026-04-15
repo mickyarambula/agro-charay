@@ -33,8 +33,8 @@ export default function BalanceModule({ userRol, onNavigate }) {
 
   // ACTIVOS
   const activoCirculante = [
-    { concepto:"Inventario insumos en bodega", valor:F.valorInsumos },
-    { concepto:"Cuentas por cobrar (cosecha est.)", valor:F.ingresoEst },
+    { concepto:"Insumos aplicados al ciclo", valor:F.costoInsumos||0 },
+    { concepto:"Cosecha estimada (por cobrar)", valor:isNaN(F.ingresoEst)?0:(F.ingresoEst||0) },
   ];
   const activoFijo = state.activos.filter(a=>a.tipo!=="Tierra Rentada").map(a=>({ concepto:a.nombre, valor:a.valorAdq||0 }));
   const activoTierras = state.activos.filter(a=>a.tipo==="Tierra Propia").map(a=>({ concepto:a.nombre+" (tierra propia)", valor:a.valorAdq||0 }));
