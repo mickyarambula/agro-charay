@@ -1193,6 +1193,16 @@ export default function App() {
     }
   }, []);
   const [page, setPage]   = useState("dashboard");
+
+  // Leer ?modulo=X del query string (para abrir desde notificación push)
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const modulo = params.get('modulo');
+    if (modulo) {
+      setPage(modulo);
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [bellOpen, setBellOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer

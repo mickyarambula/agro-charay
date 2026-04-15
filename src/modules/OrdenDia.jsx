@@ -394,7 +394,7 @@ export default function OrdenDia({ userRol, usuario }) {
             enviarNotifLocal(
               'Nueva orden del día',
               `${payload.tipoTrabajo} en ${nombreLote(lot)} — ${op?.nombre || '—'}`,
-              '/'
+              '/?modulo=ordenes'
             );
           }
         } else {
@@ -425,7 +425,7 @@ export default function OrdenDia({ userRol, usuario }) {
     enviarNotifLocal(
       '✅ Orden completada',
       `${orden.tipoTrabajo} en ${orden.loteNombre || nombreLote(getLote(orden.loteId)) || '—'}`,
-      '/'
+      '/?modulo=ordenes'
     );
     // Crear registro automático en bitácora, etiquetado con origen=orden_trabajo
     // y ordenId para correlación inversa (evita doble captura manual).
