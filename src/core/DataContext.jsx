@@ -545,6 +545,28 @@ export function reducer(s, a) {
       );
       return { ...s, ciclos };
     }
+    case "SET_CAJA_CHICA_FONDO":
+      return { ...s, cajaChicaFondo: a.payload };
+    case "ADD_CAJA_CHICA_GASTO":
+      return { ...s, cajaChicaMovimientos: [a.payload, ...(s.cajaChicaMovimientos||[])] };
+    case "UPDATE_CAJA_CHICA_MOV": {
+      const movs = (s.cajaChicaMovimientos||[]).map(m =>
+        String(m.id) === String(a.payload.id) ? { ...m, ...a.payload } : m
+      );
+      if (a.payload.estatus === 'aprobado' && s.cajaChicaFondo) {
+        const nuevoDisp = Math.max(0, (s.cajaChicaFondo.monto_disponible||0) - (a.payload.monto||0));
+        return {
+          ...s,
+          cajaChicaMovimientos: movs,
+          cajaChicaFondo: {
+            ...s.cajaChicaFondo,
+            monto_disponible: nuevoDisp,
+            estatus: nuevoDisp <= 0 ? 'agotado' : 'activo',
+          },
+        };
+      }
+      return { ...s, cajaChicaMovimientos: movs };
+    }
     case "NUEVO_CICLO": {
       const nuevoCiclo = {
         id: Date.now(),

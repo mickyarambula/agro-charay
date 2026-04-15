@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -49,6 +49,8 @@ export async function loadStateFromSupabase() {
       }),
       supaFetch('expedientes', 'order=productor_legacy_id').catch(() => []),
       supaFetch('liquidaciones', 'order=fecha').catch(() => []),
+      supaFetch('caja_chica_fondos', 'estatus=eq.activo&order=created_at.desc&limit=1').catch(() => []),
+      supaFetch('caja_chica_movimientos', 'order=created_at.desc').catch(() => []),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -271,6 +273,33 @@ export async function loadStateFromSupabase() {
       _uuid: l.id,
     }));
 
+    const cajaChicaFondo = (cajaChicaFondosRows && cajaChicaFondosRows[0]) ? {
+      id: cajaChicaFondosRows[0].id,
+      cicloId: cajaChicaFondosRows[0].ciclo_id,
+      montoAsignado: parseFloat(cajaChicaFondosRows[0].monto_asignado) || 0,
+      monto_disponible: parseFloat(cajaChicaFondosRows[0].monto_disponible) || 0,
+      estatus: cajaChicaFondosRows[0].estatus || 'activo',
+      creadoPor: cajaChicaFondosRows[0].creado_por || '',
+      fechaApertura: cajaChicaFondosRows[0].fecha_apertura || '',
+      notas: cajaChicaFondosRows[0].notas || '',
+    } : null;
+
+    const cajaChicaMovimientos = (cajaChicaMovsRows || []).map(m => ({
+      id: m.id,
+      fondoId: m.fondo_id,
+      cicloId: m.ciclo_id,
+      tipo: m.tipo,
+      concepto: m.concepto || '',
+      monto: parseFloat(m.monto) || 0,
+      foto_url: m.foto_url || '',
+      estatus: m.estatus || 'pendiente',
+      registradoPor: m.registrado_por || '',
+      aprobadoPor: m.aprobado_por || '',
+      fecha: m.fecha || '',
+      notas: m.notas || '',
+      created_at: m.created_at,
+    }));
+
     const estadoNuevo = {
       ...configPreservada,
       // ── Datos operativos: SIEMPRE frescos de Supabase (reemplazo total) ──
@@ -278,6 +307,8 @@ export async function loadStateFromSupabase() {
       insumos, diesel, egresosManual, dispersiones,
       expedientes,
       liquidaciones,
+      cajaChicaFondo,
+      cajaChicaMovimientos,
       ordenesTrabajo,  // ← fresco de Supabase (tabla ordenes_trabajo)
       cicloActivoId: predCiclo ? predCiclo.id : (estadoExistente.cicloActivoId || 1),
       cicloActual:   predCiclo ? predCiclo.nombre : (estadoExistente.cicloActual || 'OI 2025-2026'),
