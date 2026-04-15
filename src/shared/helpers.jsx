@@ -235,6 +235,7 @@ export function calcularFinancieros(state) {
   const params = { ...{para_tasaAnual:1.38,para_factibilidad:1.25,para_fega:2.3,para_asistTec:200,dir_tasaAnual:1.8,dir_factibilidad:1.5,dir_fega:2.3,iva:16}, ...(state.creditoParams||{}) };
   const expedientes = state.expedientes||[];
   let costoInteresPara = 0, costoInteresDir = 0;
+  let capitalAplicadoPara = 0, capitalAplicadoDir = 0;
   let costoComisionesPara = 0, costoComisionesDir = 0;
   const hoy = new Date();
   const dispersiones = (state.dispersiones||[]).filter(d=>!d.cancelado&&((d.cicloId||1)===(state.cicloActivoId||1)));
@@ -259,6 +260,7 @@ export function calcularFinancieros(state) {
 
     // ── PARAFINANCIERO ──
     const montoAplP = creditoAut > 0 ? Math.min(gastoTot, creditoAut) : 0;
+    capitalAplicadoPara += montoAplP;
     if (montoAplP > 0) {
       let acumP = 0;
       movsAll.forEach(m => {
@@ -281,6 +283,7 @@ export function calcularFinancieros(state) {
       acumD += m.monto;
       return { fecha: m.fecha, montoDisp: enDirecto };
     }).filter(m=>m.montoDisp>0);
+    capitalAplicadoDir += movsDirecto.reduce((s,m)=>s+m.montoDisp,0);
     if (movsDirecto.length > 0) {
       let factBaseD = 0, fegaBaseD = 0;
       movsDirecto.forEach(m => {
@@ -332,6 +335,8 @@ export function calcularFinancieros(state) {
     costoManoObra, costoAgua, costoSeguros, costoTramites, costoOtros,
     costoCosecha, costoMaquinaria, costoInteres, costoInteresPara, costoInteresDir,
     costoComisiones, costoFinanciero,
+    capitalAplicadoPara, capitalAplicadoDir,
+    capitalAplicadoTotal: capitalAplicadoPara + capitalAplicadoDir,
     costoComisionesPara, costoComisionesDir,
     costoTotal, utilidadBruta, margen, peTon, peHa, costoTon,
     totalAport, totalRetiro, capitalNeto, valorActivos,

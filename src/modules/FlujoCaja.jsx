@@ -33,10 +33,10 @@ export default function FlujoCajaModule({ userRol, onNavigate }) {
 
   // Entradas de efectivo real
   const entradas = [
-    { concepto:"Aportaciones de capital propio", monto:F.totalAport, tipo:"Capital", mod:"capital" },
-    { concepto:"Crédito habilitación dispuesto", monto:(state.dispersiones||[]).filter(d=>!d.cancelado&&(d.cicloId||1)===(state.cicloActivoId||1)).reduce((s,d)=>s+(parseFloat(d.monto)||0),0), tipo:"Crédito", mod:"credito" },
-    { concepto:"Créditos refaccionarios dispuestos", monto:(state.creditosRef||[]).reduce((s,c)=>s+((c.ministraciones||[]).filter(m=>m.estatus==="aplicado").reduce((s2,m)=>s2+(m.monto||0),0)),0), tipo:"Crédito", mod:"creditosref" },
-    { concepto:"Ingreso estimado por cosecha (proyectado)", monto:F.ingresoEst, tipo:"Proyectado", mod:"cosecha" },
+    { concepto:"Crédito parafinanciero aplicado", monto:F.capitalAplicadoPara||0, tipo:"Crédito", mod:"credito" },
+    { concepto:"Crédito directo aplicado", monto:F.capitalAplicadoDir||0, tipo:"Crédito", mod:"credito" },
+    { concepto:"Aportaciones de capital propio", monto:F.totalAport||0, tipo:"Capital", mod:"capital" },
+    { concepto:"Ingreso estimado por cosecha (proyectado)", monto:isNaN(F.ingresoEst)?0:(F.ingresoEst||0), tipo:"Proyectado", mod:"cosecha" },
   ].filter(e=>e.monto>0);
 
   // Salidas de efectivo real
