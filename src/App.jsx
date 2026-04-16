@@ -202,7 +202,7 @@ function LoginScreen({ onLogin }) {
 // ─── MERCADO GLOBAL — CBOT Maíz precio en tiempo real ────────────────────────
 const _mercadoState = {
   cbot:null,tc:null,precioMXN:null,precioUSD:null,usdTon:null,
-  fechaCBOT:null,fechaTC:null,ultimaAct:null,
+  fechaCBOT:null,fechaTC:null,ultimaAct:null,fechaCaptura:null,
 };
 const _mercadoListeners = new Set();
 function _setMercado(patch){Object.assign(_mercadoState,patch);_mercadoListeners.forEach(fn=>fn({..._mercadoState}));}
@@ -225,6 +225,7 @@ function aplicarMercado({cbot,tc,base=65,fechaCBOT,fechaTC}){
     fechaCBOT:fechaCBOT??_mercadoState.fechaCBOT,
     fechaTC:fechaTC??_mercadoState.fechaTC,
     ultimaAct:new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"}),
+    fechaCaptura:new Date().toISOString().split('T')[0],
     ...calc,
   });
 }
@@ -234,6 +235,12 @@ function WidgetCBOTCompact(){
   const m=useMercadoGlobal();
   const fmt=n=>n!=null?parseFloat(n).toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:0,maximumFractionDigits:0}):null;
   const precio=fmt(m.precioMXN);
+  const diasDesdeCaptura = m.fechaCaptura ? Math.floor((new Date() - new Date(m.fechaCaptura)) / 86400000) : 999;
+  const vigencia = diasDesdeCaptura <= 3
+    ? { label:'actualizado', color:'#166534', bg:'#dcfce7' }
+    : diasDesdeCaptura <= 7
+    ? { label:`hace ${diasDesdeCaptura}d`, color:'#92400e', bg:'#fef3c7' }
+    : { label:'desactualizado', color:'#991b1b', bg:'#fee2e2' };
   return(
     <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 14px",borderRadius:20,
       background:precio?"rgba(45,90,27,0.10)":"rgba(200,168,75,0.12)",
@@ -247,6 +254,11 @@ function WidgetCBOTCompact(){
             <span style={{fontSize:9,color:"#8a8070",letterSpacing:"0.06em",textTransform:"uppercase"}}>Maíz CBOT</span>
             <span style={{fontFamily:"monospace",fontWeight:700,fontSize:13,color:"#2d5a1b"}}>{precio}<span style={{fontSize:9,fontWeight:400,color:"#8a8070"}}>/ton</span></span>
           </div>
+          {m.fechaCaptura && (
+            <span style={{fontSize:8,padding:'2px 6px',borderRadius:10,background:vigencia.bg,color:vigencia.color,fontWeight:600,letterSpacing:0.3}}>
+              {vigencia.label}
+            </span>
+          )}
           <div style={{width:1,height:26,background:"#ddd5c0"}}/>
           <div style={{display:"flex",flexDirection:"column",lineHeight:1.25}}>
             <span style={{fontSize:9,color:"#8a8070"}}>TC</span>
@@ -309,7 +321,10 @@ export function WidgetCBOTDashboard(){
                 <button onClick={()=>apCBOT(inCBOT)} style={{padding:"6px 12px",background:"#2d5a1b",color:"white",border:"none",borderRadius:6,fontWeight:700,cursor:"pointer",fontSize:13,opacity:inCBOT?1:0.35}}>✓</button>
               </div>
               {errCBOT&&<div style={{fontSize:10,color:"#c0392b",marginTop:3}}>⚠ Valor entre 100–2000</div>}
-              <div style={{fontSize:9,color:"#8a8070",marginTop:3}}>Consulta en Barchart.com o CME Group</div>
+              <a href="https://www.barchart.com/futures/quotes/ZCN25/overview" target="_blank" rel="noopener"
+                style={{fontSize:10,color:'#1a6ea8',display:'block',marginTop:4,textDecoration:'none'}}>
+                Ver CBOT en Barchart →
+              </a>
             </div>
             <div>
               <div style={{fontSize:10,fontWeight:600,color:"#3d3525",marginBottom:5}}>Tipo de Cambio <span style={{fontWeight:400,color:"#8a8070"}}>(MXN/USD)</span>{m.tc&&<span style={{marginLeft:6,fontFamily:"monospace",color:"#1a6ea8",fontWeight:700}}>{m.tc?.toFixed(4)}</span>}</div>
@@ -318,7 +333,10 @@ export function WidgetCBOTDashboard(){
                 <button onClick={()=>apTC(inTC)} style={{padding:"6px 12px",background:"#2d5a1b",color:"white",border:"none",borderRadius:6,fontWeight:700,cursor:"pointer",fontSize:13,opacity:inTC?1:0.35}}>✓</button>
               </div>
               {errTC&&<div style={{fontSize:10,color:"#c0392b",marginTop:3}}>⚠ Valor entre 5–50</div>}
-              <div style={{fontSize:9,color:"#8a8070",marginTop:3}}>Fix del día en Banxico o tu banco</div>
+              <a href="https://www.banxico.org.mx/tipcamb/main.do?page=tip&idioma=sp" target="_blank" rel="noopener"
+                style={{fontSize:10,color:'#1a6ea8',display:'block',marginTop:4,textDecoration:'none'}}>
+                Ver TC en Banxico →
+              </a>
             </div>
           </div>
           {listo&&(<div style={{marginTop:8,padding:"6px 12px",background:"#f0f7ec",borderRadius:6,fontFamily:"monospace",fontSize:10,color:"#6a8060"}}>({m.cbot} ÷ 100 × 39.3683 + {BASE_USD}) × {m.tc?.toFixed(4)} = <strong style={{color:"#2d5a1b"}}>{mxnFmt(m.precioMXN)}</strong><span style={{color:"#8a8070"}}> /ton</span></div>)}
