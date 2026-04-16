@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -54,6 +54,7 @@ export async function loadStateFromSupabase() {
       supaFetch('inventario_items', 'order=nombre').catch(() => []),
       supaFetch('inventario_movimientos', 'order=created_at.desc').catch(() => []),
       supaFetch('usuarios', 'select=usuario,password,rol,nombre,activo').catch(() => []),
+      supaFetch('maquinaria_consumos', 'order=maquinaria_id').catch(() => []),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -337,6 +338,10 @@ export async function loadStateFromSupabase() {
       cajaChicaMovimientos,
       inventario,
       usuariosDB: (usuariosDBRows||[]).filter(u => u.usuario && u.password),
+      maquinariaConsumos: (maqConsumosRows||[]).map(c => ({
+        id: c.id, maquinariaId: c.maquinaria_id || c.maquinaria_legacy_id,
+        tipoLabor: c.tipo_labor || '', litrosPorHa: parseFloat(c.litros_por_ha) || 0,
+      })),
       ordenesTrabajo,  // ← fresco de Supabase (tabla ordenes_trabajo)
       cicloActivoId: predCiclo ? predCiclo.id : (estadoExistente.cicloActivoId || 1),
       cicloActual:   predCiclo ? predCiclo.nombre : (estadoExistente.cicloActual || 'OI 2025-2026'),

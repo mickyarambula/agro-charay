@@ -28,10 +28,14 @@ export default function DieselModule({ userRol }) {
   const [modalGasolinera, setModalGasolinera] = useState(false);
   const [modalCarga, setModalCarga] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [modalDetalle, setModalDetalle] = useState(null);
+  const [motivoCancel, setMotivoCancel] = useState('');
 
   const emptyCompra = { fecha: hoy, litros: '', proveedor: '', precioLitro: '', total: '', notas: '' };
   const emptyGas    = { fecha: hoy, maquinariaId: '', litros: '', estacion: '', precioLitro: '', total: '', notas: '' };
-  const emptyCarga  = { fecha: hoy, maquinariaId: '', loteId: '', litros: '', operadorId: '', notas: '' };
+  const emptyCarga  = { fecha: hoy, maquinariaId: '', loteId: '', litros: '', operadorId: '', notas: '', tipoLabor: '', hectareas: '' };
+  const maqConsumos = state.maquinariaConsumos || [];
+  const TIPOS_LABOR = ['Barbecho','Rastreo','Siembra','Fertilización','Aplicación herbicida','Aplicación insecticida','Cosecha / apoyo'];
 
   const [formCompra, setFormCompra] = useState(emptyCompra);
   const [formGas,    setFormGas]    = useState(emptyGas);
@@ -368,12 +372,13 @@ export default function DieselModule({ userRol }) {
               : { border: '#e67e22', bg: '#fef5ed', fg: '#e67e22', label: '🛢 Cilindro' };
             const fecha = d.fechaSolicitud || d.fecha || '—';
             return (
-              <div key={d.id} style={{
+              <div key={d.id} onClick={()=>setModalDetalle(d)} style={{
                 background: '#ffffff',
                 border: '1px solid #e5e7eb',
                 borderLeft: `4px solid ${cfg.border}`,
                 borderRadius: 12,
                 padding: '12px 14px',
+                cursor: 'pointer',
                 boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
               }}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10,marginBottom:6}}>
@@ -579,6 +584,39 @@ export default function DieselModule({ userRol }) {
                 onChange={e=>setFormCarga(f=>({...f,litros:e.target.value}))}/>
             </div>
             <div>
+              <label style={labelStyle}>🔧 Tipo de labor</label>
+              <select style={fieldStyle} value={formCarga.tipoLabor}
+                onChange={e=>setFormCarga(f=>({...f,tipoLabor:e.target.value}))}>
+                <option value="">— Sin especificar —</option>
+                {TIPOS_LABOR.map(t=><option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>📐 Hectáreas a trabajar</label>
+              <input type="number" style={fieldStyle} value={formCarga.hectareas} placeholder="0"
+                onChange={e=>setFormCarga(f=>({...f,hectareas:e.target.value}))}/>
+            </div>
+            {/* Calculadora de consumo */}
+            {formCarga.maquinariaId && formCarga.tipoLabor && parseFloat(formCarga.hectareas) > 0 && (() => {
+              const consumo = maqConsumos.find(c => String(c.maquinariaId) === String(formCarga.maquinariaId) && c.tipoLabor === formCarga.tipoLabor);
+              if (!consumo) return (
+                <div style={{padding:'8px 12px',background:'#f3f4f6',borderRadius:8,fontSize:11,color:'#6b7280'}}>
+                  Sin consumo configurado para esta labor — configura en Maquinaria
+                </div>
+              );
+              const necesarios = consumo.litrosPorHa * parseFloat(formCarga.hectareas);
+              const margen = (parseFloat(formCarga.litros)||0) - necesarios;
+              const color = margen >= necesarios*0.1 ? '#166534' : margen >= 0 ? '#92400e' : '#991b1b';
+              const bg = margen >= necesarios*0.1 ? '#f0fdf4' : margen >= 0 ? '#fef3c7' : '#fee2e2';
+              return (
+                <div style={{padding:'8px 12px',background:bg,border:`1px solid ${color}22`,borderRadius:8,fontSize:11,color}}>
+                  {margen >= 0
+                    ? `✅ Diesel suficiente — necesitas ${necesarios.toFixed(0)}L, cargas ${parseFloat(formCarga.litros)||0}L (${margen.toFixed(0)}L de margen)`
+                    : `⚠ Insuficiente — necesitas ${necesarios.toFixed(0)}L para ${formCarga.hectareas} ha, faltan ${Math.abs(margen).toFixed(0)}L`}
+                </div>
+              );
+            })()}
+            <div>
               <label style={labelStyle}>👷 Operador</label>
               <select style={fieldStyle} value={formCarga.operadorId}
                 onChange={e=>setFormCarga(f=>({...f,operadorId:e.target.value}))}>
@@ -596,6 +634,66 @@ export default function DieselModule({ userRol }) {
           </div>
         </Modal>
       )}
+
+      {/* Modal detalle de movimiento */}
+      {modalDetalle && (() => {
+        const d = modalDetalle;
+        const tmov = tipoMov(d);
+        const litros = getLitros(d);
+        const cfg = tmov === 'entrada'
+          ? { bg:'#dcfce7', fg:'#15803D', label:'📥 Entrada' }
+          : tmov === 'salida_externa'
+          ? { bg:'#fee2e2', fg:'#991b1b', label:'🏪 Gasolinera' }
+          : { bg:'#fef5ed', fg:'#e67e22', label:'🛢 Salida cilindro' };
+        const puedeCancel = !d.cancelado && (
+          (userRol === 'admin') ||
+          (d.registradoPor === usuario?.usuario && d.fecha === hoy)
+        );
+        return (
+          <Modal title="Detalle del movimiento" onClose={()=>{setModalDetalle(null);setMotivoCancel('');}}>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <span style={{fontSize:12,fontWeight:700,padding:'4px 12px',borderRadius:999,background:cfg.bg,color:cfg.fg}}>{cfg.label}</span>
+                <span style={{fontSize:12,color:'#6b7280'}}>{d.fechaSolicitud||d.fecha||'—'}</span>
+              </div>
+              <div style={{fontSize:24,fontFamily:'Georgia, serif',color:'#1a2e1a'}}>{litros > 0 ? `${litros.toLocaleString('es-MX')} L` : '—'}</div>
+              {verPrecios && parseFloat(d.importe) > 0 && (
+                <div style={{fontSize:14,color:'#c84b4b',fontWeight:600}}>{mxnFmt(d.importe)} · {d.precioLitro ? `$${parseFloat(d.precioLitro).toFixed(2)}/L` : ''}</div>
+              )}
+              {d.proveedor && <div style={{fontSize:12,color:'#6b7280'}}>🏪 {d.proveedor}</div>}
+              {nomMaq(d.maquinariaId) && <div style={{fontSize:12,color:'#6b7280'}}>🚜 {nomMaq(d.maquinariaId)}</div>}
+              {nomLoteShort(d.loteId) && <div style={{fontSize:12,color:'#6b7280'}}>📍 {nomLoteShort(d.loteId)}</div>}
+              {d.notas && <div style={{fontSize:12,color:'#6b7280',fontStyle:'italic'}}>{d.notas}</div>}
+              {d.cancelado && (
+                <div style={{padding:'8px 12px',background:'#fee2e2',borderRadius:8,fontSize:12,color:'#991b1b'}}>
+                  🚫 Cancelado{d.motivoCancelacion ? ` — ${d.motivoCancelacion}` : ''}{d.canceladoPor ? ` por ${d.canceladoPor}` : ''}
+                </div>
+              )}
+              {puedeCancel && (
+                <div style={{borderTop:'1px solid #ede5d8',paddingTop:12,marginTop:4}}>
+                  <div style={{fontSize:11,color:'#b0a090',marginBottom:6}}>Cancelar este registro:</div>
+                  <input type="text" style={{...fieldStyle,marginBottom:8}} value={motivoCancel}
+                    onChange={e=>setMotivoCancel(e.target.value)} placeholder="Motivo de cancelación"/>
+                  <button onClick={async ()=>{
+                    if (!motivoCancel.trim()) { alert('Ingresa un motivo.'); return; }
+                    try {
+                      await fetch(`${SUPABASE_URL}/rest/v1/diesel?id=eq.${encodeURIComponent(String(d._uuid||d.id))}`, {
+                        method:'PATCH',
+                        headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json'},
+                        body:JSON.stringify({cancelado:true,motivo_cancelacion:motivoCancel,cancelado_por:usuario?.usuario||userRol,fecha_cancelacion:new Date().toISOString()}),
+                      });
+                    } catch(e) { console.warn('Cancel diesel sync fail:', e); }
+                    dispatch({type:'CANCEL_DIESEL',payload:{id:d.id,motivo:motivoCancel,canceladoPor:usuario?.usuario||userRol}});
+                    setModalDetalle(null); setMotivoCancel('');
+                  }} style={{width:'100%',padding:'8px',background:'#c84b4b',color:'#fff',border:'none',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                    🚫 Cancelar registro
+                  </button>
+                </div>
+              )}
+            </div>
+          </Modal>
+        );
+      })()}
     </div>
   );
 }

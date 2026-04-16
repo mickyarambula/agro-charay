@@ -553,6 +553,21 @@ export function reducer(s, a) {
       }
       return { ...s, ciclos };
     }
+    case "SET_CONSUMO_DIESEL": {
+      const list = s.maquinariaConsumos || [];
+      const idx = list.findIndex(c => c.maquinariaId === a.payload.maquinariaId && c.tipoLabor === a.payload.tipoLabor);
+      const updated = [...list];
+      if (idx >= 0) updated[idx] = a.payload;
+      else updated.push(a.payload);
+      return { ...s, maquinariaConsumos: updated };
+    }
+    case "CANCEL_DIESEL": {
+      return { ...s, diesel: (s.diesel||[]).map(d =>
+        String(d.id) === String(a.payload.id)
+          ? { ...d, cancelado: true, motivoCancelacion: a.payload.motivo, canceladoPor: a.payload.canceladoPor, fechaCancelacion: new Date().toISOString() }
+          : d
+      )};
+    }
     case "SET_CAJA_CHICA_FONDO":
       return { ...s, cajaChicaFondo: a.payload };
     case "SET_CAJA_CHICA_MOVIMIENTOS":
