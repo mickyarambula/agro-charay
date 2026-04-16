@@ -195,7 +195,8 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
                 const hBit= getHorasMaq(m.id).filter(h=>h.fuente==="bitacora").reduce((s,h)=>s+h.horas,0);
                 const bg  = i%2===0?"white":"#faf8f3";
                 return(
-                  <tr key={m.id} style={{cursor:"pointer"}} onClick={()=>setVistaH(m.id)}>
+                  <React.Fragment key={m.id}>
+                  <tr style={{cursor:"pointer"}} onClick={()=>setVistaH(m.id)}>
                     <td style={{background:bg,fontWeight:600}}>🚜 {m.nombre}</td>
                     <td style={{background:bg,fontSize:12}}>{m.tipo}</td>
                     <td style={{background:bg,fontSize:12}}>{m.marca} {m.modelo}</td>
@@ -256,6 +257,7 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
                       )}
                     </td></tr>
                   )}
+                  </React.Fragment>
                 );
               })}
             </tbody>
