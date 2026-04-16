@@ -510,23 +510,21 @@ export default function ConfiguracionModule({ userRol }) {
                   return;
                 }
                 try {
-                  const res = await fetch(`${SUPABASE_URL}/rest/v1/usuarios`, {
-                    method: 'POST',
-                    headers: {
-                      apikey: SUPABASE_ANON_KEY,
-                      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-                      'Content-Type': 'application/json',
-                      Prefer: 'resolution=merge-duplicates,return=minimal',
-                    },
-                    body: JSON.stringify({
-                      usuario: modalPass.usuario,
-                      nombre: modalPass.nombre,
-                      password: passForm.nueva,
-                      rol: modalPass.rol,
-                      activo: true,
-                      updated_at: new Date().toISOString(),
-                    }),
-                  });
+                  const res = await fetch(
+                    `${SUPABASE_URL}/rest/v1/usuarios?usuario=eq.${encodeURIComponent(modalPass.usuario)}`,
+                    {
+                      method: 'PATCH',
+                      headers: {
+                        apikey: SUPABASE_ANON_KEY,
+                        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        password: passForm.nueva,
+                        updated_at: new Date().toISOString(),
+                      }),
+                    }
+                  );
                   console.log('Guardando contraseña para:', modalPass.usuario, 'status:', res.status);
                   if (!res.ok) { const t = await res.text(); console.error('Supabase error:', t); alert('Error al guardar: ' + t); return; }
                   alert(`✅ Contraseña de "${modalPass.usuario}" actualizada. Se aplicará en el próximo login.`);
