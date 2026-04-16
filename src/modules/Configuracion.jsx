@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { TODOS_MODULOS } from "../App.jsx";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
 
 
 export default function ConfiguracionModule({ userRol }) {
@@ -47,6 +48,8 @@ export default function ConfiguracionModule({ userRol }) {
   const [guardado, setGuardado]     = useState(false);
   const [modalUsuario, setModalUsuario] = useState(false);
   const [editUsuario, setEditUsuario]   = useState(null); // null=nuevo, obj=editar
+  const [modalPass, setModalPass] = useState(null);
+  const [passForm, setPassForm] = useState({ nueva: '', confirmar: '' });
 
   // Usuarios: base hardcoded + extras del state
   const usuariosExtra  = state.usuariosExtra || [];
@@ -469,6 +472,7 @@ export default function ConfiguracionModule({ userRol }) {
                         <td style={{background:bg}}>
                           <div style={{display:"flex",gap:6}}>
                             <button className="btn btn-sm btn-secondary" onClick={()=>abrirEditarUsuario(u)} title="Editar">✏️</button>
+                            <button className="btn btn-sm btn-secondary" onClick={()=>{setModalPass(u);setPassForm({nueva:'',confirmar:''});}} title="Cambiar contraseña">🔑</button>
                             <button className="btn btn-sm btn-secondary" onClick={()=>toggleActivoUsuario(u)}
                               title={activo?"Desactivar":"Activar"}>
                               {activo?"🔒":"🔓"}
@@ -487,6 +491,66 @@ export default function ConfiguracionModule({ userRol }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal cambio de contraseña */}
+      {modalPass && (
+        <Modal title={`🔑 Cambiar contraseña — ${modalPass.usuario}`}
+          onClose={()=>setModalPass(null)}
+          footer={
+            <>
+              <button className="btn btn-secondary" onClick={()=>setModalPass(null)}>Cancelar</button>
+              <button className="btn btn-primary" onClick={async ()=>{
+                if (!passForm.nueva || passForm.nueva.length < 4) {
+                  alert('La contraseña debe tener al menos 4 caracteres.');
+                  return;
+                }
+                if (passForm.nueva !== passForm.confirmar) {
+                  alert('Las contraseñas no coinciden.');
+                  return;
+                }
+                try {
+                  await fetch(`${SUPABASE_URL}/rest/v1/usuarios`, {
+                    method: 'POST',
+                    headers: {
+                      apikey: SUPABASE_ANON_KEY,
+                      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+                      'Content-Type': 'application/json',
+                      Prefer: 'resolution=merge-duplicates,return=minimal',
+                    },
+                    body: JSON.stringify({
+                      usuario: modalPass.usuario,
+                      nombre: modalPass.nombre,
+                      password: passForm.nueva,
+                      rol: modalPass.rol,
+                      activo: true,
+                      updated_at: new Date().toISOString(),
+                    }),
+                  });
+                  alert(`✅ Contraseña de "${modalPass.usuario}" actualizada. Se aplicará en el próximo login.`);
+                } catch(e) {
+                  alert('Error al guardar en Supabase: ' + e.message);
+                }
+                setModalPass(null);
+              }}>💾 Guardar</button>
+            </>
+          }>
+          <div style={{marginBottom:12,padding:'10px 14px',background:'#fef3c7',borderRadius:8,fontSize:12,color:'#92400e'}}>
+            ⚠ La nueva contraseña se aplica en el próximo login del usuario. La sesión actual no se ve afectada.
+          </div>
+          <div className="form-group">
+            <label className="form-label">Nueva contraseña</label>
+            <input className="form-input" type="password" value={passForm.nueva}
+              onChange={e=>setPassForm(f=>({...f,nueva:e.target.value}))}
+              placeholder="Mínimo 4 caracteres"/>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Confirmar contraseña</label>
+            <input className="form-input" type="password" value={passForm.confirmar}
+              onChange={e=>setPassForm(f=>({...f,confirmar:e.target.value}))}
+              placeholder="Repetir contraseña"/>
+          </div>
+        </Modal>
       )}
 
       {/* ── TAB ALERTAS ── */}

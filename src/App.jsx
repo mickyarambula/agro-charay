@@ -102,9 +102,20 @@ function LoginScreen({ onLogin }) {
 
   const handleLogin = async () => {
     setLoading(true);
+    const inputUser = user.trim().toLowerCase();
     const baseOvr = window.__agroBaseOverrides || {};
     const todosU = [...USUARIOS.map(u => baseOvr[u.id] ? {...u,...baseOvr[u.id]} : u), ...(window.__agroExtraUsers||[])];
-    const u = todosU.find(u => u.usuario === user.trim().toLowerCase() && u.password === pass && u.activo!==false);
+
+    // 1) Buscar en contraseñas de Supabase (actualizadas por admin)
+    let savedState = {};
+    try { const s = localStorage.getItem('agroSistemaState'); if (s) savedState = JSON.parse(s); } catch {}
+    const usuariosDB = savedState.usuariosDB || [];
+    const dbMatch = usuariosDB.find(u => u.usuario === inputUser && u.password === pass);
+    const localMatch = todosU.find(u => u.usuario === inputUser && u.password === pass && u.activo!==false);
+    const u = dbMatch
+      ? todosU.find(x => x.usuario === dbMatch.usuario) || { ...dbMatch, id: Date.now(), rol: dbMatch.rol || 'campo' }
+      : localMatch;
+
     if (u) { setError(''); onLogin(u); }
     else { setError('Usuario o contraseña incorrectos'); setLoading(false); }
   };
