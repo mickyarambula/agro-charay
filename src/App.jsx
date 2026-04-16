@@ -106,17 +106,31 @@ function LoginScreen({ onLogin }) {
     const baseOvr = window.__agroBaseOverrides || {};
     const todosU = [...USUARIOS.map(u => baseOvr[u.id] ? {...u,...baseOvr[u.id]} : u), ...(window.__agroExtraUsers||[])];
 
-    // 1) Buscar en contraseñas de Supabase (actualizadas por admin)
-    let savedState = {};
-    try { const s = localStorage.getItem('agroSistemaState'); if (s) savedState = JSON.parse(s); } catch {}
-    const usuariosDB = savedState.usuariosDB || [];
-    const dbMatch = usuariosDB.find(u => u.usuario === inputUser && u.password === pass);
-    const localMatch = todosU.find(u => u.usuario === inputUser && u.password === pass && u.activo!==false);
-    const u = dbMatch
-      ? todosU.find(x => x.usuario === dbMatch.usuario) || { ...dbMatch, id: Date.now(), rol: dbMatch.rol || 'campo' }
-      : localMatch;
+    let passwordValida = false;
+    let usuarioEncontrado = null;
 
-    if (u) { setError(''); onLogin(u); }
+    // 1) Verificar directo en Supabase (fuente de verdad para contraseñas actualizadas)
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/usuarios?usuario=eq.${encodeURIComponent(inputUser)}&select=usuario,password`,
+        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+      );
+      const dbUsers = await res.json();
+      if (Array.isArray(dbUsers) && dbUsers.length > 0 && dbUsers[0].password === pass) {
+        passwordValida = true;
+        usuarioEncontrado = todosU.find(x => x.usuario === inputUser) || { ...dbUsers[0], id: Date.now(), rol: dbUsers[0].rol || 'campo' };
+      }
+    } catch (e) {
+      console.warn('Supabase login check failed, using local fallback:', e);
+    }
+
+    // 2) Fallback: contraseña hardcoded si Supabase no respondió o no matcheó
+    if (!passwordValida) {
+      const localMatch = todosU.find(u => u.usuario === inputUser && u.password === pass && u.activo !== false);
+      if (localMatch) { passwordValida = true; usuarioEncontrado = localMatch; }
+    }
+
+    if (passwordValida && usuarioEncontrado) { setError(''); onLogin(usuarioEncontrado); }
     else { setError('Usuario o contraseña incorrectos'); setLoading(false); }
   };
 
