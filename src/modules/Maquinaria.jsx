@@ -26,11 +26,16 @@ import {
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
+
+const TIPOS_LABOR_DIESEL = ['Barbecho','Rastreo','Siembra','Fertilización','Aplicación herbicida','Aplicación insecticida','Cosecha / apoyo'];
+
 export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar }) {
   // Maquinaria: CRUD restringido a admin por política de negocio
   const puedeEditar = userRol === "admin";
   const { state, dispatch } = useData();
   const isMobile = useIsMobile();
+  const [expandedConsumos, setExpandedConsumos] = useState(null);
   const [modal, setModal]   = useState(false);
   const [modalH, setModalH] = useState(false);
   const [sel, setSel]       = useState(null);
@@ -204,9 +209,53 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
                     <td style={{background:bg}}>
                       <button className="btn btn-sm btn-secondary" onClick={e=>{e.stopPropagation();setVistaH(m.id);}}>Ver →</button>
                       {puedeEditar&&<button className="btn btn-sm btn-secondary" onClick={e=>{e.stopPropagation();setSel(m);setFormM({...m});setModal(true);}}>✏️</button>}
+                      {puedeEditar&&<button className="btn btn-sm btn-secondary" onClick={e=>{e.stopPropagation();setExpandedConsumos(expandedConsumos===m.id?null:m.id);}} title="Consumos L/ha">⛽</button>}
                       {userRol==="admin"&&<button className="btn btn-sm btn-danger" onClick={e=>{e.stopPropagation();confirmarEliminar("¿Eliminar esta máquina?",()=>{ const r=puedeEliminarMaquina(m.id,state); if(r.length>0){alert("No se puede: "+r.join(", "));return;} dispatch({type:"DEL_MAQ",payload:m.id}); });}}> 🗑</button>}
                     </td>
                   </tr>
+                  {expandedConsumos===m.id && (
+                    <tr><td colSpan={8} style={{background:'#f8f6f2',padding:'12px 16px'}}>
+                      <div style={{fontSize:11,fontWeight:700,color:'#b0a090',letterSpacing:1,textTransform:'uppercase',marginBottom:8}}>
+                        ⛽ Consumos diesel por labor — {m.nombre}
+                      </div>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 120px 80px',gap:'6px 10px',alignItems:'center'}}>
+                        <div style={{fontSize:10,fontWeight:700,color:'#b0a090'}}>Labor</div>
+                        <div style={{fontSize:10,fontWeight:700,color:'#b0a090',textAlign:'right'}}>L/ha</div>
+                        <div></div>
+                        {TIPOS_LABOR_DIESEL.map(labor => {
+                          const existing = (state.maquinariaConsumos||[]).find(c => String(c.maquinariaId)===String(m.id) && c.tipoLabor===labor);
+                          const inputId = `consumo-${m.id}-${labor}`;
+                          return (
+                            <React.Fragment key={labor}>
+                              <div style={{fontSize:12,color:'#1a2e1a'}}>{labor}</div>
+                              <input id={inputId} type="number" step="0.5" min="0"
+                                defaultValue={existing?.litrosPorHa||''}
+                                placeholder="0"
+                                style={{textAlign:'right',padding:'4px 8px',border:'1px solid #ede5d8',borderRadius:6,fontSize:12,fontFamily:'monospace',width:'100%'}}/>
+                              <button onClick={()=>{
+                                const val = parseFloat(document.getElementById(inputId)?.value)||0;
+                                if (!val) return;
+                                const id = existing?.id || ((typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():`mc-${Date.now()}-${Math.random().toString(36).slice(2,6)}`);
+                                dispatch({type:'SET_CONSUMO_DIESEL',payload:{id,maquinariaId:m.id,tipoLabor:labor,litrosPorHa:val}});
+                                fetch(`${SUPABASE_URL}/rest/v1/maquinaria_consumos`,{
+                                  method:'POST',
+                                  headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},
+                                  body:JSON.stringify({id,maquinaria_id:m.id,maquinaria_legacy_id:m.id,tipo_labor:labor,litros_por_ha:val,updated_at:new Date().toISOString()}),
+                                }).catch(e=>console.warn('Consumo save fail:',e));
+                              }} style={{padding:'4px 10px',background:'#1a3a0f',color:'#fff',border:'none',borderRadius:6,fontSize:11,cursor:'pointer',fontWeight:600}}>
+                                ✓
+                              </button>
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      {(state.maquinariaConsumos||[]).filter(c=>String(c.maquinariaId)===String(m.id)&&c.litrosPorHa>0).length > 0 && (
+                        <div style={{marginTop:8,fontSize:10,color:'#6b7280'}}>
+                          Configurados: {(state.maquinariaConsumos||[]).filter(c=>String(c.maquinariaId)===String(m.id)&&c.litrosPorHa>0).map(c=>`${c.tipoLabor}: ${c.litrosPorHa} L/ha`).join(' · ')}
+                        </div>
+                      )}
+                    </td></tr>
+                  )}
                 );
               })}
             </tbody>
