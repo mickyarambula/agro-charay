@@ -17,7 +17,7 @@ export const SYNC_KEYS = [
 let _client = null;
 try {
   _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
+    auth: { persistSession: true, autoRefreshToken: true, storageKey: 'agro-charay-auth' },
     realtime: { params: { eventsPerSecond: 10 } },
   });
 } catch (e) {

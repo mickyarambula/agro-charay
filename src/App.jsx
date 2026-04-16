@@ -1267,6 +1267,26 @@ export default function App() {
       else if (u.rol === "compras") setPage("flujos");
       else setPage("dashboard");
     };
+
+    // 0) Verificar sesión activa de Supabase Auth (persistente real)
+    if (supabaseClient) {
+      supabaseClient.auth.getSession().then(({ data }) => {
+        if (usuario) return; // ya restaurado por otro camino
+        const email = data?.session?.user?.email;
+        if (email) {
+          const nombre = email.replace('@agro-charay.local', '');
+          const u = [...USUARIOS, ...(window.__agroExtraUsers||[])].find(x => x.usuario === nombre);
+          if (u) { restore(u); return; }
+        }
+      }).catch(() => {});
+      supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT') {
+          localStorage.removeItem('agro_session');
+          setUsuario(null);
+        }
+      });
+    }
+
     // 1) Bridge del reload post-login (corto plazo)
     const savedSess = sessionStorage.getItem('agroLoginUser');
     if (savedSess) {
@@ -1277,7 +1297,7 @@ export default function App() {
         return;
       } catch(e) {}
     }
-    // 2) Sesión persistente (8 horas)
+    // 2) Sesión persistente fallback (8 horas localStorage)
     const savedPers = localStorage.getItem('agro_session');
     if (savedPers) {
       try {
@@ -1543,6 +1563,19 @@ export default function App() {
       ...u,
       timestamp: Date.now(),
     }));
+    // Auth real con Supabase para sesión persistente (non-blocking)
+    if (supabaseClient) {
+      supabaseClient.auth.signInWithPassword({
+        email: `${u.usuario}@agro-charay.local`,
+        password: u.password,
+      }).catch(() => {
+        // Si no existe el usuario en Supabase Auth, intentar crear (auto-signup)
+        supabaseClient.auth.signUp({
+          email: `${u.usuario}@agro-charay.local`,
+          password: u.password,
+        }).catch(err => console.warn('Supabase auth signup failed (non-critical):', err));
+      });
+    }
     window.location.reload();
   };
 
@@ -1552,7 +1585,7 @@ export default function App() {
   if (usuario.rol === "campo") {
     return (
       <Ctx.Provider value={{ state, dispatch }}>
-        <VistaOperador usuario={usuario} onLogout={() => { localStorage.removeItem('agro_session'); setUsuario(null); }} />
+        <VistaOperador usuario={usuario} onLogout={() => { localStorage.removeItem('agro_session'); supabaseClient?.auth.signOut().catch(()=>{}); setUsuario(null); }} />
       </Ctx.Provider>
     );
   }
@@ -1696,7 +1729,7 @@ export default function App() {
               <button onClick={()=>exportarResumenCiclo(state)} title="Respaldo Excel"
                 style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:14,padding:2,flexShrink:0}}>📥</button>
             )}
-            <button onClick={()=>{ localStorage.removeItem('agro_session'); setUsuario(null); }} title="Cerrar sesión"
+            <button onClick={()=>{ localStorage.removeItem('agro_session'); supabaseClient?.auth.signOut().catch(()=>{}); setUsuario(null); }} title="Cerrar sesión"
               style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:16,padding:2,flexShrink:0}} >⏏</button>
           </div>
 
