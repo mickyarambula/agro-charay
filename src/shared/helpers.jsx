@@ -720,6 +720,80 @@ export function exportarExcelTodos(state) {
   ]);
 }
 
+// ─── RESPALDO FINANCIERO EN EXCEL ────────────────────────────────────────────
+export function exportarResumenCiclo(state) {
+  const cargarXLSX = () => new Promise((res,rej)=>{
+    if(window.XLSX){res(window.XLSX);return;}
+    const s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload=()=>res(window.XLSX); s.onerror=()=>rej(new Error("No se pudo cargar XLSX"));
+    document.head.appendChild(s);
+  });
+  return cargarXLSX().then(XLSX => {
+    const wb = XLSX.utils.book_new();
+    const F = calcularFinancieros(state);
+    const mxn = n => parseFloat(n||0).toFixed(2);
+    const hoy = new Date().toISOString().split('T')[0];
+
+    // Hoja 1: Resumen financiero
+    const resumen = [
+      ['AgroSistema Charay — Respaldo Financiero', '', hoy],
+      [''],
+      [`RESUMEN DEL CICLO ${state.cicloActual||'OI 2025-2026'}`],
+      ['Hectáreas totales', mxn(F.ha)],
+      ['Capital total aplicado', mxn(F.capitalAplicadoTotal)],
+      ['  Parafinanciero', mxn(F.capitalAplicadoPara)],
+      ['  Directo', mxn(F.capitalAplicadoDir)],
+      ['Intereses acumulados', mxn(F.costoInteres)],
+      ['Comisiones', mxn(F.costoComisiones)],
+      ['TOTAL A LIQUIDAR', mxn((F.capitalAplicadoTotal||0)+(F.costoInteres||0)+(F.costoComisiones||0))],
+      [''],
+      ['COSTOS OPERATIVOS'],
+      ['Semilla', mxn(F.costoSemilla)],
+      ['Insumos', mxn(F.costoInsumos)],
+      ['Diesel', mxn(F.costoDiesel)],
+      ['Renta de tierra', mxn(F.costoRenta)],
+      ['Mano de obra', mxn(F.costoManoObra)],
+      ['Agua y riego', mxn(F.costoAgua)],
+      ['Seguros', mxn(F.costoSeguros)],
+      ['Trámites y otros', mxn((F.costoTramites||0)+(F.costoOtros||0))],
+      ['TOTAL OPERATIVO', mxn((F.costoTotal||0)-(F.costoFinanciero||0))],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'Resumen');
+
+    // Hoja 2: Dispersiones
+    const dispH = ['Productor','Num Solicitud','Fecha','Línea','Monto'];
+    const dispR = (state.dispersiones||[]).filter(d=>!d.cancelado).map(d => [
+      d.productorNombreOriginal||d.productorId||'', d.numSolicitud||'', d.fecha||'', d.lineaCredito||'parafinanciero', mxn(d.monto),
+    ]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([dispH,...dispR]), 'Dispersiones');
+
+    // Hoja 3: Egresos
+    const egrH = ['Productor','Categoría','Concepto','Monto','Fecha'];
+    const egrR = (state.egresosManual||[]).filter(e=>!e.cancelado).map(e => [
+      e.productorId||'', e.categoria||'', e.concepto||'', mxn(e.monto), e.fecha||'',
+    ]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([egrH,...egrR]), 'Egresos');
+
+    // Hoja 4: Insumos
+    const insH = ['Productor','Categoría','Insumo','Importe','Fecha'];
+    const insR = (state.insumos||[]).filter(i=>!i.cancelado).map(i => [
+      i.productorId||'', i.categoria||'', i.insumo||'', mxn(i.importe), i.fechaSolicitud||i.fechaOrden||'',
+    ]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([insH,...insR]), 'Insumos');
+
+    // Hoja 5: Diesel
+    const dieH = ['Tipo','Litros','Importe','Proveedor','Fecha'];
+    const dieR = (state.diesel||[]).filter(d=>!d.cancelado).map(d => [
+      d.tipoMovimiento||'', d.cantidad||0, mxn(d.importe), d.proveedor||'', d.fecha||d.fechaSolicitud||'',
+    ]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([dieH,...dieR]), 'Diesel');
+
+    XLSX.writeFile(wb, `agro-charay-respaldo-${hoy}.xlsx`);
+    return true;
+  });
+}
+
 // ─── CÁLCULO DE CRÉDITO POR PRODUCTOR (fuente única de verdad) ───────────────
 // Usa la misma lógica movimiento-a-movimiento que calcularFinancieros y CreditoModule
 export function calcularCreditoProd(prodId, state) {

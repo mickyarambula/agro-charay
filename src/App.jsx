@@ -21,7 +21,7 @@ import {
   calcularInteresCredito, calcularInteresCargosCredito, calcularFinancieros,
   calcularCreditoProd, calcularVencimiento, getParamsCultivo, calcularAlertas,
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
-  generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
+  generarHTMLTodos, exportarExcelTodos, exportarResumenCiclo, navRowProps, FiltroSelect, PanelAlertas
 } from "./shared/helpers.jsx";
 import RentasModule from "./modules/Rentas.jsx";
 import VistaOperador from "./modules/VistaOperador.jsx";
@@ -1692,6 +1692,10 @@ export default function App() {
               <div style={{color:"white",fontWeight:600,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{usuario.nombre}</div>
               <div style={{color:"rgba(255,255,255,0.55)",fontSize:11}}>{rolInfo.label}</div>
             </div>
+            {(rol==='admin'||usuario?.usuario==='daniela') && (
+              <button onClick={()=>exportarResumenCiclo(state)} title="Respaldo Excel"
+                style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:14,padding:2,flexShrink:0}}>📥</button>
+            )}
             <button onClick={()=>{ localStorage.removeItem('agro_session'); setUsuario(null); }} title="Cerrar sesión"
               style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:16,padding:2,flexShrink:0}} >⏏</button>
           </div>
