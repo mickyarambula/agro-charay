@@ -510,7 +510,7 @@ export default function ConfiguracionModule({ userRol }) {
                   return;
                 }
                 try {
-                  await fetch(`${SUPABASE_URL}/rest/v1/usuarios`, {
+                  const res = await fetch(`${SUPABASE_URL}/rest/v1/usuarios`, {
                     method: 'POST',
                     headers: {
                       apikey: SUPABASE_ANON_KEY,
@@ -527,6 +527,8 @@ export default function ConfiguracionModule({ userRol }) {
                       updated_at: new Date().toISOString(),
                     }),
                   });
+                  console.log('Guardando contraseña para:', modalPass.usuario, 'status:', res.status);
+                  if (!res.ok) { const t = await res.text(); console.error('Supabase error:', t); alert('Error al guardar: ' + t); return; }
                   alert(`✅ Contraseña de "${modalPass.usuario}" actualizada. Se aplicará en el próximo login.`);
                 } catch(e) {
                   alert('Error al guardar en Supabase: ' + e.message);

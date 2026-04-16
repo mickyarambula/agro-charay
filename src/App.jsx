@@ -337,7 +337,7 @@ export function WidgetCBOTDashboard(){
                 <button onClick={()=>apCBOT(inCBOT)} style={{padding:"6px 12px",background:"#2d5a1b",color:"white",border:"none",borderRadius:6,fontWeight:700,cursor:"pointer",fontSize:13,opacity:inCBOT?1:0.35}}>✓</button>
               </div>
               {errCBOT&&<div style={{fontSize:10,color:"#c0392b",marginTop:3}}>⚠ Valor entre 100–2000</div>}
-              <a href="https://www.barchart.com/futures/quotes/ZCN25/overview" target="_blank" rel="noopener"
+              <a href="https://www.barchart.com/futures/quotes/ZCN26/overview" target="_blank" rel="noopener"
                 style={{fontSize:10,color:'#1a6ea8',display:'block',marginTop:4,textDecoration:'none'}}>
                 Ver CBOT en Barchart →
               </a>
@@ -1849,7 +1849,9 @@ export default function App() {
             <div className="topbar-right" style={{gap:12}}>
               <div className="mobile-hide" style={{display:"contents"}}>
                 {(rol === "admin" || rol === "socio") && <ProductorSelector />}
-                <WidgetCBOTCompact />
+                <div onClick={()=>{setPageStack([]);navFiltrosRef.current={};setPage("dashboard");}} style={{cursor:"pointer"}}>
+                  <WidgetCBOTCompact />
+                </div>
               </div>
               {rol !== "campo" && (()=>{
                 const notifs = state.notificaciones || [];
