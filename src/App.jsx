@@ -1513,7 +1513,10 @@ export default function App() {
   const permisosActual = getPermisosUsuario(state, usuario.id, rol);
   const accesoRol = rol === "admin"
     ? ACCESO.admin
-    : Object.keys(permisosActual).filter(m => permisosActual[m] === "ver" || permisosActual[m] === "editar");
+    : [...new Set([
+        ...(ACCESO[rol] || []),
+        ...Object.keys(permisosActual).filter(m => permisosActual[m] === "ver" || permisosActual[m] === "editar"),
+      ])];
   const puedeEditarMod = (modId) => rol === "admin" || permisosActual[modId] === "editar";
 
   // navTo — navegación programática (KPIs, links internos): guarda historial
