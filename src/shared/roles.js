@@ -13,7 +13,7 @@ export const ROLES = {
 
 // Módulos visibles por rol
 export const ACCESO = {
-  admin:      ["dashboard","flujos","ordenes","productores","ciclos","lotes","bitacora","maquinaria","operadores","insumos","diesel","inventario","capital","credito","creditosref","rentas","gastos","costos","activos","personal","cosecha","cajachica","proyeccion","asistente","edo_resultados","balance","flujo_caja","reportes","configuracion"],
+  admin:      ["dashboard","flujos","ordenes","productores","ciclos","lotes","bitacora","maquinaria","operadores","insumos","diesel","inventario","capital","credito","creditosref","rentas","gastos","costos","activos","personal","cosecha","cajachica","paneldaniela","proyeccion","asistente","edo_resultados","balance","flujo_caja","reportes","configuracion"],
   socio:      ["dashboard","flujos","lotes","bitacora","maquinaria","operadores","insumos","diesel","costos","cosecha","cajachica","rentas","proyeccion","asistente","reportes","credito","egresos"],
   encargado:  ["dashboard","flujos","ordenes","bitacora","lotes","maquinaria","operadores","insumos","diesel","cajachica"],
   ingeniero:  ["dashboard","flujos","ordenes","bitacora","lotes","insumos","inventario"],

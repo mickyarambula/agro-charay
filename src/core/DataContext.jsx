@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { ACCESO } from '../shared/roles.js';
-import { SYNC_KEYS } from './supabase.js';
+import { SYNC_KEYS, supabaseClient, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase.js';
 
 const PRODUCTORES_INIT = [];
 const LOTES_INIT = [];
@@ -543,6 +543,13 @@ export function reducer(s, a) {
           ? { ...c, estatus: 'cerrado', fechaCierre: a.payload.fecha }
           : c
       );
+      if (SUPABASE_URL) {
+        fetch(`${SUPABASE_URL}/rest/v1/ciclos?legacy_id=eq.${encodeURIComponent(String(a.payload.cicloId))}`, {
+          method: 'PATCH',
+          headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({ notas: `estatus:cerrado fecha_cierre:${a.payload.fecha}` }),
+        }).catch(e => console.warn('CERRAR_CICLO sync:', e));
+      }
       return { ...s, ciclos };
     }
     case "SET_CAJA_CHICA_FONDO":
@@ -571,7 +578,7 @@ export function reducer(s, a) {
     }
     case "NUEVO_CICLO": {
       const nuevoCiclo = {
-        id: Date.now(),
+        id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `ciclo-${Date.now()}`,
         nombre: a.payload.nombre,
         cultivo: a.payload.cultivo || 'maiz',
         fechaInicio: a.payload.fechaInicio,
@@ -580,6 +587,13 @@ export function reducer(s, a) {
         asignaciones: [],
         predeterminado: false,
       };
+      if (SUPABASE_URL) {
+        fetch(`${SUPABASE_URL}/rest/v1/ciclos`, {
+          method: 'POST',
+          headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({ nombre: nuevoCiclo.nombre, fecha_inicio: nuevoCiclo.fechaInicio, fecha_fin: nuevoCiclo.fechaFin, es_predeterminado: false, notas: `Cultivo: ${nuevoCiclo.cultivo}` }),
+        }).catch(e => console.warn('NUEVO_CICLO sync:', e));
+      }
       return {
         ...s,
         ciclos: [...(s.ciclos||[]), nuevoCiclo],

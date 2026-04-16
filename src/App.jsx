@@ -42,6 +42,7 @@ import ProyeccionModule from "./modules/Proyeccion.jsx";
 import ConfiguracionModule from "./modules/Configuracion.jsx";
 import CosechaModule from "./modules/Cosecha.jsx";
 import CajaChicaModule from "./modules/CajaChica.jsx";
+import PanelDaniela from "./modules/PanelDaniela.jsx";
 import LotesModule from "./modules/Lotes.jsx";
 import CiclosModule from "./modules/Ciclos.jsx";
 import BitacoraModule from "./modules/Bitacora.jsx";
@@ -856,6 +857,7 @@ export const TODOS_MODULOS = [
   { id:"personal",      label:"Personal y Honorarios",section:"Empresa" },
   { id:"cosecha",       label:"Cosecha y Maquila",    section:"Empresa" },
   { id:"cajachica",     label:"Caja Chica",           section:"Empresa" },
+  { id:"paneldaniela", label:"Panel Contable",        section:"Finanzas" },
   { id:"proyeccion",    label:"Proyección vs Real",   section:"Inteligencia" },
   { id:"asistente",     label:"Asistente Agrícola IA",section:"Inteligencia" },
   { id:"edo_resultados",label:"Estado de Resultados", section:"Financiero" },
@@ -915,6 +917,8 @@ const NAV = [
   { id:"personal",   label:"Personal y Honorarios", icon:"👔" },
   { id:"cosecha",    label:"Cosecha y Maquila", icon:"✂️" },
   { id:"cajachica",  label:"Caja Chica", icon:"💵" },
+  { section: "Finanzas" },
+  { id:"paneldaniela", label:"Panel Contable", icon:"📊" },
   { section: "Inteligencia" },
   { id:"proyeccion",       label:"Proyección vs Real", icon:"🎯" },
   { id:"asistente",        label:"Asistente Agrícola IA", icon:"🌾" },
@@ -1666,6 +1670,7 @@ export default function App() {
       case "personal":       return <PersonalModule userRol={rol} />;
       case "cosecha":        return <CosechaModule userRol={rol} puedeEditar={pe} />;
       case "cajachica":      return <CajaChicaModule userRol={rol} usuario={usuario} puedeEditar={pe} />;
+      case "paneldaniela":  return <PanelDaniela userRol={rol} />;
       case "credito":        return <CreditoModule userRol={rol} puedeEditar={pe} onNavigate={navTo} navFiltro={getNavFiltro("credito")} />;
       case "rentas":         return <RentasModule userRol={rol} onNavigate={navTo} />;
       case "gastos":         return <EgresosModule userRol={rol} puedeEditar={pe} onNavigate={navTo} navFiltro={getNavFiltro("gastos")} />;
