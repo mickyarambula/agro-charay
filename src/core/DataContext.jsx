@@ -547,6 +547,8 @@ export function reducer(s, a) {
     }
     case "SET_CAJA_CHICA_FONDO":
       return { ...s, cajaChicaFondo: a.payload };
+    case "SET_CAJA_CHICA_MOVIMIENTOS":
+      return { ...s, cajaChicaMovimientos: a.payload };
     case "ADD_CAJA_CHICA_GASTO":
       return { ...s, cajaChicaMovimientos: [a.payload, ...(s.cajaChicaMovimientos||[])] };
     case "UPDATE_CAJA_CHICA_MOV": {

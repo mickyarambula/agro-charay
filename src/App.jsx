@@ -1446,11 +1446,60 @@ export default function App() {
       })
       .subscribe();
 
+    const cajaChicaChannel = supabaseClient
+      .channel('caja-chica-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'caja_chica_fondos' }, () => {
+        fetch(`${SUPABASE_URL}/rest/v1/caja_chica_fondos?estatus=eq.activo&order=created_at.desc&limit=1`, {
+          headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+        })
+        .then(r => r.json())
+        .then(rows => {
+          if (!Array.isArray(rows) || !rows[0]) return;
+          const f = rows[0];
+          dispatch({ type: 'SET_CAJA_CHICA_FONDO', payload: {
+            id: f.id,
+            montoAsignado: parseFloat(f.monto_asignado)||0,
+            monto_disponible: parseFloat(f.monto_disponible)||0,
+            estatus: f.estatus,
+            creadoPor: f.creado_por,
+            fechaApertura: f.fecha_apertura,
+            notas: f.notas,
+          }});
+        })
+        .catch(e => console.warn('Realtime caja_chica_fondos:', e));
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'caja_chica_movimientos' }, () => {
+        fetch(`${SUPABASE_URL}/rest/v1/caja_chica_movimientos?order=created_at.desc`, {
+          headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+        })
+        .then(r => r.json())
+        .then(rows => {
+          if (!Array.isArray(rows)) return;
+          dispatch({ type: 'SET_CAJA_CHICA_MOVIMIENTOS', payload: rows.map(m => ({
+            id: m.id,
+            fondoId: m.fondo_id,
+            tipo: m.tipo,
+            concepto: m.concepto || '',
+            monto: parseFloat(m.monto)||0,
+            foto_url: m.foto_url || '',
+            estatus: m.estatus || 'pendiente',
+            registradoPor: m.registrado_por || '',
+            aprobadoPor: m.aprobado_por || '',
+            fecha: m.fecha || '',
+            notas: m.notas || '',
+            created_at: m.created_at,
+          }))});
+        })
+        .catch(e => console.warn('Realtime caja_chica_movimientos:', e));
+      })
+      .subscribe();
+
     return () => {
       try { channel.unsubscribe(); } catch {}
       try { supabaseClient.removeChannel(channel); } catch {}
       try { supabaseClient.removeChannel(ordenesChannel); } catch {}
       try { supabaseClient.removeChannel(dieselChannel); } catch {}
+      try { supabaseClient.removeChannel(cajaChicaChannel); } catch {}
       syncChannelRef.current = null;
       syncSenderIdRef.current = null;
       setConnectedUsers(0);
