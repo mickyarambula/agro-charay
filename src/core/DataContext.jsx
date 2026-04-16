@@ -492,12 +492,13 @@ export function reducer(s, a) {
     case "REACTIVAR_BOLETA": return { ...s, cosecha: {...s.cosecha, boletas:(s.cosecha?.boletas||[]).map(b=>b.id===a.payload?{...b,cancelado:false}:b)} };
     case "UPD_CONFIG": return { ...s, precioVentaMXN: a.payload.precioVentaMXN||s.precioVentaMXN, rendimientoEsperado: a.payload.rendimientoEsperado||s.rendimientoEsperado };
     case "UPD_PARAMS_CULTIVO": {
-      // a.payload = { key:"cicloId|cultivoId|variedad", precio, rendimiento }
+      // a.payload = { key:"cicloId|cultivoId|variedad", precio, rendimiento, fechaPrecio? }
       return { ...s,
-        paramsCultivo: { ...(s.paramsCultivo||{}), [a.payload.key]: { precio: a.payload.precio, rendimiento: a.payload.rendimiento } },
+        paramsCultivo: { ...(s.paramsCultivo||{}), [a.payload.key]: { precio: a.payload.precio, rendimiento: a.payload.rendimiento, fechaPrecio: a.payload.fechaPrecio || null } },
         // También actualizar globals para compatibilidad con módulos legacy
         precioVentaMXN: a.payload.precio,
         rendimientoEsperado: a.payload.rendimiento,
+        fechaPrecio: a.payload.fechaPrecio || s.fechaPrecio || null,
       };
     }
     case "SET_ALERTA_PARAMS": return { ...s, alertaParams: { ...(s.alertaParams||{}), ...a.payload } };

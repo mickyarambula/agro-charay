@@ -176,6 +176,7 @@ export function getParamsCultivo(state) {
   return {
     precio:      params?.precio      ?? state.precioVentaMXN      ?? 4800,
     rendimiento: params?.rendimiento ?? state.rendimientoEsperado ?? 9.1,
+    fechaPrecio: params?.fechaPrecio ?? state.fechaPrecio ?? null,
     key,
     cv,
   };

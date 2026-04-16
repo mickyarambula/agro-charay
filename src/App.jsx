@@ -233,9 +233,12 @@ const BASE_USD=65;
 
 function WidgetCBOTCompact(){
   const m=useMercadoGlobal();
+  const ctx = React.useContext(Ctx);
+  const fechaPersistente = ctx?.state?.fechaPrecio;
   const fmt=n=>n!=null?parseFloat(n).toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:0,maximumFractionDigits:0}):null;
   const precio=fmt(m.precioMXN);
-  const diasDesdeCaptura = m.fechaCaptura ? Math.floor((new Date() - new Date(m.fechaCaptura)) / 86400000) : 999;
+  const fechaRef = m.fechaCaptura || fechaPersistente;
+  const diasDesdeCaptura = fechaRef ? Math.floor((new Date() - new Date(fechaRef)) / 86400000) : 999;
   const vigencia = diasDesdeCaptura <= 3
     ? { label:'actualizado', color:'#166534', bg:'#dcfce7' }
     : diasDesdeCaptura <= 7
@@ -254,7 +257,7 @@ function WidgetCBOTCompact(){
             <span style={{fontSize:9,color:"#8a8070",letterSpacing:"0.06em",textTransform:"uppercase"}}>Maíz CBOT</span>
             <span style={{fontFamily:"monospace",fontWeight:700,fontSize:13,color:"#2d5a1b"}}>{precio}<span style={{fontSize:9,fontWeight:400,color:"#8a8070"}}>/ton</span></span>
           </div>
-          {m.fechaCaptura && (
+          {fechaRef && (
             <span style={{fontSize:8,padding:'2px 6px',borderRadius:10,background:vigencia.bg,color:vigencia.color,fontWeight:600,letterSpacing:0.3}}>
               {vigencia.label}
             </span>
@@ -276,14 +279,27 @@ function WidgetCBOTCompact(){
 
 export function WidgetCBOTDashboard(){
   const m=useMercadoGlobal();
+  const ctx = React.useContext(Ctx);
+  const dispatch = ctx?.dispatch;
+  const stateCtx = ctx?.state;
   const [abierto,setAbierto]=useState(!m.precioMXN);
   const [inCBOT,setInCBOT]=useState("");
   const [inTC,setInTC]=useState("");
   const [errCBOT,setErrCBOT]=useState(false);
   const [errTC,setErrTC]=useState(false);
   const mxnFmt=n=>parseFloat(n).toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2});
-  const apCBOT=v=>{const n=parseFloat(v);if(!n||n<100||n>2000){setErrCBOT(true);return;}setErrCBOT(false);setInCBOT("");aplicarMercado({cbot:n,base:BASE_USD,fechaCBOT:"Manual"});};
-  const apTC=v=>{const n=parseFloat(v);if(!n||n<5||n>50){setErrTC(true);return;}setErrTC(false);setInTC("");aplicarMercado({tc:n,base:BASE_USD,fechaTC:"Manual"});if(m.cbot)setAbierto(false);};
+  const persistirPrecio = () => {
+    if (!dispatch || !_mercadoState.precioMXN) return;
+    const pcp = getParamsCultivo(stateCtx || {});
+    dispatch({ type:'UPD_PARAMS_CULTIVO', payload: {
+      key: pcp.key || '1|global',
+      precio: _mercadoState.precioMXN,
+      rendimiento: pcp.rendimiento || 10,
+      fechaPrecio: new Date().toISOString().split('T')[0],
+    }});
+  };
+  const apCBOT=v=>{const n=parseFloat(v);if(!n||n<100||n>2000){setErrCBOT(true);return;}setErrCBOT(false);setInCBOT("");aplicarMercado({cbot:n,base:BASE_USD,fechaCBOT:"Manual"});setTimeout(persistirPrecio,100);};
+  const apTC=v=>{const n=parseFloat(v);if(!n||n<5||n>50){setErrTC(true);return;}setErrTC(false);setInTC("");aplicarMercado({tc:n,base:BASE_USD,fechaTC:"Manual"});setTimeout(persistirPrecio,100);if(m.cbot)setAbierto(false);};
   const listo=m.precioMXN!=null;
   const inp=(val,setV,err)=>({value:val,onChange:e=>{setV(e.target.value);err&&setErrCBOT(false)&&setErrTC(false);},style:{flex:1,padding:"6px 10px",border:`1.5px solid ${err?"#c0392b":"#ddd5c0"}`,borderRadius:6,fontFamily:"monospace",fontSize:14,fontWeight:700,outline:"none",background:err?"#fff5f5":"white"}});
   return(
