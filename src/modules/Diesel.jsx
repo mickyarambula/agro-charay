@@ -12,7 +12,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
 
 const CILINDRO_CAPACIDAD = CAPACIDAD_TANQUE_DIESEL;
 
-export default function DieselModule({ userRol }) {
+export default function DieselModule({ userRol, usuario }) {
   const { state, dispatch } = useData();
   const isMobile = useIsMobile();
 

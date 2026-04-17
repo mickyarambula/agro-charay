@@ -224,7 +224,8 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
                         <div style={{fontSize:10,fontWeight:700,color:'#b0a090',textAlign:'right'}}>L/ha</div>
                         <div></div>
                         {TIPOS_LABOR_DIESEL.map(labor => {
-                          const existing = (state.maquinariaConsumos||[]).find(c => String(c.maquinariaId)===String(m.id) && c.tipoLabor===labor);
+                          const maqKey = m._uuid || m.id;
+                          const existing = (state.maquinariaConsumos||[]).find(c => String(c.maquinariaId)===String(maqKey) && c.tipoLabor===labor);
                           const inputId = `consumo-${m.id}-${labor}`;
                           return (
                             <React.Fragment key={labor}>
@@ -237,11 +238,11 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
                                 const val = parseFloat(document.getElementById(inputId)?.value)||0;
                                 if (!val) return;
                                 const id = existing?.id || ((typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():`mc-${Date.now()}-${Math.random().toString(36).slice(2,6)}`);
-                                dispatch({type:'SET_CONSUMO_DIESEL',payload:{id,maquinariaId:m.id,tipoLabor:labor,litrosPorHa:val}});
+                                dispatch({type:'SET_CONSUMO_DIESEL',payload:{id,maquinariaId:maqKey,tipoLabor:labor,litrosPorHa:val}});
                                 fetch(`${SUPABASE_URL}/rest/v1/maquinaria_consumos`,{
                                   method:'POST',
                                   headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},
-                                  body:JSON.stringify({id,maquinaria_id:m.id,maquinaria_legacy_id:m.id,tipo_labor:labor,litros_por_ha:val,updated_at:new Date().toISOString()}),
+                                  body:JSON.stringify({id,maquinaria_id:m._uuid||null,maquinaria_legacy_id:m.id,tipo_labor:labor,litros_por_ha:val,updated_at:new Date().toISOString()}),
                                 }).catch(e=>console.warn('Consumo save fail:',e));
                               }} style={{padding:'4px 10px',background:'#1a3a0f',color:'#fff',border:'none',borderRadius:6,fontSize:11,cursor:'pointer',fontWeight:600}}>
                                 ✓
@@ -250,9 +251,9 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
                           );
                         })}
                       </div>
-                      {(state.maquinariaConsumos||[]).filter(c=>String(c.maquinariaId)===String(m.id)&&c.litrosPorHa>0).length > 0 && (
+                      {(state.maquinariaConsumos||[]).filter(c=>String(c.maquinariaId)===String(m._uuid||m.id)&&c.litrosPorHa>0).length > 0 && (
                         <div style={{marginTop:8,fontSize:10,color:'#6b7280'}}>
-                          Configurados: {(state.maquinariaConsumos||[]).filter(c=>String(c.maquinariaId)===String(m.id)&&c.litrosPorHa>0).map(c=>`${c.tipoLabor}: ${c.litrosPorHa} L/ha`).join(' · ')}
+                          Configurados: {(state.maquinariaConsumos||[]).filter(c=>String(c.maquinariaId)===String(m._uuid||m.id)&&c.litrosPorHa>0).map(c=>`${c.tipoLabor}: ${c.litrosPorHa} L/ha`).join(' · ')}
                         </div>
                       )}
                     </td></tr>

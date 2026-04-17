@@ -1756,7 +1756,7 @@ export default function App() {
       case "maquinaria":     return <MaquinariaModule userRol={rol} puedeEditar={pe} />;
       case "operadores":     return <OperadoresModule userRol={rol} puedeEditar={pe} />;
       case "insumos":        return <InsumosModule userRol={rol} puedeEditar={pe} onNavigate={navTo} navFiltro={getNavFiltro("insumos")} />;
-      case "diesel":         return <DieselModule userRol={rol} puedeEditar={pe} onNavigate={navTo} navFiltro={getNavFiltro("diesel")} />;
+      case "diesel":         return <DieselModule userRol={rol} usuario={usuario} puedeEditar={pe} onNavigate={navTo} navFiltro={getNavFiltro("diesel")} />;
       case "capital":        return <CapitalModule userRol={rol} puedeEditar={pe} />;
       case "creditosref":    return <CreditosRefModule userRol={rol} />;
       case "activos":        return <ActivosModule userRol={rol} puedeEditar={pe} />;
