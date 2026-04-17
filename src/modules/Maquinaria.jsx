@@ -239,10 +239,11 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
                                 if (!val) return;
                                 const id = existing?.id || ((typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():`mc-${Date.now()}-${Math.random().toString(36).slice(2,6)}`);
                                 dispatch({type:'SET_CONSUMO_DIESEL',payload:{id,maquinariaId:maqKey,tipoLabor:labor,litrosPorHa:val}});
+                                if (!m._uuid) { console.warn('Tractor sin UUID, no se puede guardar en Supabase:', m.nombre); return; }
                                 fetch(`${SUPABASE_URL}/rest/v1/maquinaria_consumos`,{
                                   method:'POST',
                                   headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},
-                                  body:JSON.stringify({id,maquinaria_id:m._uuid||null,maquinaria_legacy_id:m.id,tipo_labor:labor,litros_por_ha:val,updated_at:new Date().toISOString()}),
+                                  body:JSON.stringify({id,maquinaria_id:m._uuid,tipo_labor:labor,litros_por_ha:val,updated_at:new Date().toISOString()}),
                                 }).catch(e=>console.warn('Consumo save fail:',e));
                               }} style={{padding:'4px 10px',background:'#1a3a0f',color:'#fff',border:'none',borderRadius:6,fontSize:11,cursor:'pointer',fontWeight:600}}>
                                 ✓
