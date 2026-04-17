@@ -145,3 +145,34 @@ sin pasar por el flujo normal de solicitud/aprobacion.
 - Fondo global: uno solo para todo el grupo campo
 - Foto del ticket: opcional pero solicitada (campo en el formulario)
 - Reposicion: solo requiere aprobacion del admin (no del socio)
+
+---
+
+## PROCESO DE DESARROLLO — REGLAS SIEMPRE
+
+Antes de cualquier POST/PATCH a Supabase:
+1. Verificar schema real: SELECT column_name FROM information_schema.columns WHERE table_name='...'
+2. Confirmar constraints y FKs antes de escribir el body del POST
+3. Nunca enviar campos que no existan en la tabla
+4. Filosofia: efectividad y sostenibilidad primero, no velocidad
+
+---
+
+## MODO OFFLINE — ALTA PRIORIDAD
+
+### Problema detectado en prueba de campo:
+Sin internet el sistema no funciona ni guarda nada.
+Al recuperar conexion los datos no se sincronizan.
+
+### Modulos criticos para offline (encargado en campo):
+- Ordenes del Dia
+- Bitacora de Trabajos
+- Diesel — Carga de tractor
+- Caja Chica — Registrar gasto
+
+### Enfoque tecnico:
+- IndexedDB como cola de operaciones pendientes sin red
+- Al reconectar: sincronizar automaticamente con Supabase
+- Indicador visual en topbar: "Sin conexion — modo offline"
+- Al reconectar: "Sincronizando X operaciones..."
+- Workbox (Google) para Service Worker avanzado
