@@ -1744,7 +1744,7 @@ export default function App() {
     );
     const pe = puedeEditarMod(page);
     switch(page) {
-      case "dashboard":      return ["campo","encargado","ingeniero"].includes(rol) ? <DashboardCampo userRol={rol} usuario={usuario} onNavigate={navMenu}/> : <Dashboard userRol={rol} onNavigate={navTo} />;
+      case "dashboard":      return ["campo","encargado","ingeniero"].includes(rol) ? <DashboardCampo userRol={rol} usuario={usuario} onNavigate={navMenu}/> : <Dashboard userRol={rol} onNavigate={navTo} widgetCBOT={<WidgetCBOTDashboard />} />;
       case "flujos":         return <FlujoModule userRol={rol} usuario={usuario} />;
       case "ordenes":        return <OrdenDia userRol={rol} usuario={usuario} />;
       case "productores":    return <ProductoresModule userRol={rol} puedeEditar={pe} onNavigate={navTo} />;

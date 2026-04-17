@@ -23,8 +23,119 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
-import { useComboDinamico, ComboConNuevo } from "../App.jsx";
-import { MUNICIPIOS_SIN, calcSupCredito } from "../App.jsx";
+// ─── Helpers locales (movidos de App.jsx para evitar dependencia circular) ──
+const MUNICIPIOS_SINALOA = [
+  "AHOME","ANGOSTURA","BADIRAGUATO","CHOIX","CONCORDIA","COSALÁ","CULIACÁN",
+  "ELOTA","ESCUINAPA","EL FUERTE","GUASAVE","MAZATLÁN","MOCORITO","NAVOLATO",
+  "ROSARIO","SALVADOR ALVARADO","SAN IGNACIO","SINALOA DE LEYVA",
+  "CULIACÁN","MAZATLÁN"
+];
+const MUNICIPIOS_SIN = [...new Set(MUNICIPIOS_SINALOA)].sort();
+
+function useComboDinamico(inicial) {
+  const [opciones, setOpciones] = useState(inicial);
+  const agregar = (val) => {
+    const v = (val||"").trim().toUpperCase();
+    if (v && !opciones.includes(v)) setOpciones(prev => [...prev, v].sort());
+  };
+  return [opciones, agregar];
+}
+
+function calcSupCredito(sc, sm) {
+  const a = parseFloat(sc) || 0;
+  const b = parseFloat(sm) || 0;
+  if (a > 0 && b > 0) return Math.min(a, b);
+  if (a > 0) return a;
+  if (b > 0) return b;
+  return 0;
+}
+
+function ComboConNuevo({label, value, opts, onSelect, placeholder}) {
+  const [texto, setTexto]     = useState(value||"");
+  const [abierto, setAbierto] = useState(false);
+  const [destacado, setDest]  = useState(-1);
+
+  // Sincronizar cuando el padre cambia value (al abrir edición)
+  useEffect(()=>{ setTexto(value||""); }, [value]);
+
+  const filtradas = texto.trim()===""
+    ? opts
+    : opts.filter(o => o.toLowerCase().includes(texto.toLowerCase()));
+
+  const seleccionar = (op) => {
+    setTexto(op);
+    onSelect(op);
+    setAbierto(false);
+    setDest(-1);
+  };
+
+  const onKeyDown = (e) => {
+    if (!abierto) { setAbierto(true); return; }
+    if (e.key==="ArrowDown") { e.preventDefault(); setDest(d=>Math.min(d+1,filtradas.length-1)); }
+    else if (e.key==="ArrowUp") { e.preventDefault(); setDest(d=>Math.max(d-1,0)); }
+    else if (e.key==="Enter") {
+      e.preventDefault();
+      if (destacado>=0 && filtradas[destacado]) seleccionar(filtradas[destacado]);
+      else if (texto.trim()) { onSelect(texto.trim().toUpperCase()); setAbierto(false); }
+    }
+    else if (e.key==="Escape") { setAbierto(false); setDest(-1); }
+  };
+
+  return (
+    <div className="form-group" style={{position:"relative"}}>
+      <label className="form-label">{label}</label>
+      <div style={{position:"relative"}}>
+        <input
+          className="form-input"
+          value={texto}
+          onChange={e=>{ const v=e.target.value.toUpperCase(); setTexto(v); onSelect(v); setAbierto(true); setDest(-1); }}
+          onFocus={()=>setAbierto(true)}
+          onBlur={()=>setTimeout(()=>{ setAbierto(false); setDest(-1); },160)}
+          onKeyDown={onKeyDown}
+          placeholder={placeholder||"Escribir o buscar…"}
+          autoComplete="off"
+        />
+        <div style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:"#8a8070",fontSize:11,pointerEvents:"none"}}>▾</div>
+      </div>
+      {abierto && (
+        <div style={{
+          position:"absolute",zIndex:999,left:0,right:0,
+          background:"white",border:"1.5px solid #2d5a1b",borderRadius:8,
+          boxShadow:"0 8px 24px rgba(0,0,0,0.12)",maxHeight:220,overflowY:"auto",marginTop:2,
+        }}>
+          {filtradas.length===0 ? (
+            <div style={{padding:"10px 14px",fontSize:12,color:"#8a8070"}}>
+              Sin coincidencias — presiona Enter para guardar "{texto}"
+            </div>
+          ) : filtradas.map((op,i)=>(
+            <div key={op} onMouseDown={()=>seleccionar(op)}
+              style={{
+                padding:"9px 14px",fontSize:13,cursor:"pointer",
+                background: i===destacado ? "#2d5a1b" : "white",
+                color: i===destacado ? "white" : "#3d3525",
+                fontWeight: op===value ? 600 : 400,
+                borderBottom: i<filtradas.length-1 ? "1px solid #ddd5c0" : "none",
+              }}>
+              {op}
+            </div>
+          ))}
+          {texto.trim() && !opts.map(o=>o.toUpperCase()).includes(texto.trim().toUpperCase()) && (
+            <div onMouseDown={()=>seleccionar(texto.trim().toUpperCase())}
+              style={{padding:"9px 14px",fontSize:12,color:"#2d5a1b",fontWeight:600,
+                borderTop:"1px solid #ddd5c0",background:"#f0f7f0",cursor:"pointer"}}>
+              ＋ Guardar "{texto.trim().toUpperCase()}" como nuevo
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+
+
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 

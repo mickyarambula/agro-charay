@@ -23,7 +23,8 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
-import { TIPOS_PERSONAL, PUESTOS_SUGERIDOS } from "../App.jsx";
+const TIPOS_PERSONAL = ["Empleado Fijo","Honorarios por Ciclo","Consultoría / Servicio","Eventual"];
+const PUESTOS_SUGERIDOS = ["Asesor Agrónomo","Administrador","Contador","Gerente General","Técnico de Campo","Guardián / Velador","Chofer","Otro"];
 const mxn = n => (parseFloat(n)||0).toLocaleString('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:2,maximumFractionDigits:2});
 
 

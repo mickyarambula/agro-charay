@@ -23,7 +23,36 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
-import { TODOS_MODULOS } from "../App.jsx";
+const TODOS_MODULOS = [
+  { id:"dashboard",     label:"Dashboard",            section:"Principal" },
+  { id:"flujos",        label:"Solicitudes y Aprobaciones",section:"Principal" },
+  { id:"productores",   label:"Productores",          section:"Principal" },
+  { id:"ciclos",        label:"Ciclos Agrícolas",     section:"Principal" },
+  { id:"lotes",         label:"Lotes y Parcelas",     section:"Campo" },
+  { id:"bitacora",      label:"Bitácora de Trabajos", section:"Campo" },
+  { id:"maquinaria",    label:"Maquinaria",           section:"Campo" },
+  { id:"operadores",    label:"Operadores",           section:"Campo" },
+  { id:"insumos",       label:"Insumos y Semilla",    section:"Insumos" },
+  { id:"diesel",        label:"Diesel y Combustible", section:"Insumos" },
+  { id:"inventario",    label:"Inventario de Insumos",section:"Insumos" },
+  { id:"capital",       label:"Capital Propio",       section:"Finanzas" },
+  { id:"credito",       label:"Crédito Habilitación", section:"Finanzas" },
+  { id:"creditosref",   label:"Créditos Refaccionarios",section:"Finanzas"},
+  { id:"rentas",        label:"Rentas de Tierra",     section:"Finanzas" },
+  { id:"gastos",        label:"Egresos del Ciclo",    section:"Finanzas" },
+  { id:"costos",        label:"Análisis de Costos",  section:"Finanzas" },
+  { id:"activos",       label:"Activos",              section:"Empresa" },
+  { id:"personal",      label:"Personal y Honorarios",section:"Empresa" },
+  { id:"cosecha",       label:"Cosecha y Maquila",    section:"Empresa" },
+  { id:"cajachica",     label:"Caja Chica",           section:"Empresa" },
+  { id:"paneldaniela", label:"Panel Contable",        section:"Finanzas" },
+  { id:"proyeccion",    label:"Proyección vs Real",   section:"Inteligencia" },
+  { id:"asistente",     label:"Asistente Agrícola IA",section:"Inteligencia" },
+  { id:"edo_resultados",label:"Estado de Resultados", section:"Financiero" },
+  { id:"balance",       label:"Balance General",      section:"Financiero" },
+  { id:"flujo_caja",    label:"Flujo de Efectivo",    section:"Financiero" },
+  { id:"reportes",      label:"Reportes del Ciclo",   section:"Financiero" },
+];
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
 
 

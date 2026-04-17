@@ -23,12 +23,12 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
-import { WidgetCBOTDashboard } from "../App.jsx";
+// WidgetCBOTDashboard passed as prop to avoid circular dep
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
 
 
-export default function Dashboard({ userRol, onNavigate }) {
+export default function Dashboard({ userRol, onNavigate, widgetCBOT }) {
   const { state } = useData();
   const isMobile = useIsMobile();
   const [cbotAbierto, setCbotAbierto] = useState(false);
@@ -143,10 +143,10 @@ export default function Dashboard({ userRol, onNavigate }) {
             <span>📈 Precios CBOT</span>
             <span style={{fontSize:12,color:"#6b7280"}}>{cbotAbierto?"▲ Ocultar":"▼ Ver"}</span>
           </button>
-          {cbotAbierto && <div style={{marginTop:10}}><WidgetCBOTDashboard /></div>}
+          {cbotAbierto && <div style={{marginTop:10}}>{widgetCBOT}</div>}
         </div>
       ) : (
-        <WidgetCBOTDashboard />
+        {widgetCBOT}
       )}
 
       {/* ── Fila 1: KPIs principales clicables ── */}

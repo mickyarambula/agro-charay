@@ -23,7 +23,241 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
-import { MODULO_INFO, CAPTURE_SYSTEM, QUICK_PROMPTS, TarjetaConfirmacion, _gk } from "../App.jsx";
+// ─── Asiste helpers (movidos de App.jsx para evitar dep circular) ──
+const CAPTURE_SYSTEM = (state) => {
+  const F = calcularFinancieros(state);
+  const vcto = calcularVencimiento(state.credito);
+  const haTot = F.ha;
+  const costoHa = haTot > 0 ? Math.round(F.costoTotal / haTot) : 0;
+  const costoTon = F.produccionEst > 0 ? Math.round(F.costoTotal / F.produccionEst) : 0;
+  const precioActual = F.precio;
+  const mxn2 = n => `$${(parseFloat(n)||0).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  const fmt2 = (n,d=2) => (parseFloat(n)||0).toFixed(d);
+
+  // ── Datos del ciclo activo ───────────────────────────────────────────────────
+  const cicloPred = (state.ciclos||[]).find(c=>c.id===state.cicloActivoId)||(state.ciclos||[])[0];
+  const asigsCiclo = cicloPred?.asignaciones||[];
+  const cid = state.cicloActivoId||1;
+  const params = { para_tasaAnual:1.38, para_factibilidad:1.25, para_fega:2.3, para_asistTec:200, dir_tasaAnual:1.8, dir_factibilidad:1.5, dir_fega:2.3, iva:16, ...(state.creditoParams||{}) };
+
+  // ── Productores con ha ───────────────────────────────────────────────────────
+  const prodResumen = (state.productores||[]).map(p => {
+    const ha = asigsCiclo.filter(a=>String(a.productorId)===String(p.id)).reduce((s,a)=>s+(parseFloat(a.supAsignada)||0),0);
+    const ins = (state.insumos||[]).filter(i=>!i.cancelado&&String(i.productorId)===String(p.id)&&(i.cicloId||1)===cid).reduce((s,i)=>s+(parseFloat(i.importe)||0),0);
+    const die = (state.diesel||[]).filter(d=>!d.cancelado&&String(d.productorId)===String(p.id)&&(d.cicloId||1)===cid).reduce((s,d)=>s+(parseFloat(d.importe)||0),0);
+    const efe = (state.egresosManual||[]).filter(e=>!e.cancelado&&String(e.productorId)===String(p.id)&&(e.cicloId||1)===cid).reduce((s,e)=>s+(parseFloat(e.monto)||0),0);
+    const gastoOp = ins + die + efe;
+    const exp = (state.expedientes||[]).find(e=>e.productorId===p.id);
+    const creditoAut = exp?.montoPorHa ? ha * exp.montoPorHa : 0;
+    const montoAplP = creditoAut>0 ? Math.min(gastoOp, creditoAut) : 0;
+    const disps = (state.dispersiones||[]).filter(d=>!d.cancelado&&String(d.productorId)===String(p.id)&&(d.cicloId||1)===cid);
+    const totalDisp = disps.reduce((s,d)=>s+(parseFloat(d.monto)||0),0);
+    const hoy = new Date();
+    // Interés parafinanciero por movimiento
+    const movsAll = [
+      ...(state.insumos||[]).filter(i=>!i.cancelado&&String(i.productorId)===String(p.id)&&(i.cicloId||1)===cid).map(i=>({fecha:i.fechaSolicitud||i.fechaOrden||"",monto:parseFloat(i.importe)||0})),
+      ...(state.diesel||[]).filter(d=>!d.cancelado&&String(d.productorId)===String(p.id)&&(d.cicloId||1)===cid).map(d=>({fecha:d.fechaSolicitud||d.fechaOrden||"",monto:parseFloat(d.importe)||0})),
+      ...(state.egresosManual||[]).filter(e=>!e.cancelado&&String(e.productorId)===String(p.id)&&(e.cicloId||1)===cid).map(e=>({fecha:e.fecha||e.semanaFechaInicio||"",monto:parseFloat(e.monto)||0})),
+    ].filter(m=>m.monto>0).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
+    const diasDesde = f => f ? Math.max(0,Math.round((hoy-new Date(f))/86400000)) : 0;
+    let acumP=0, intP=0, factP=0, fegaP=0;
+    movsAll.forEach(m=>{ const md=Math.min(m.monto,Math.max(0,montoAplP-acumP)); acumP+=md; intP+=((md*(params.para_tasaAnual/100))/30)*diasDesde(m.fecha); });
+    if(montoAplP>0){ factP=creditoAut*(params.para_factibilidad/100)*(1+params.iva/100); fegaP=montoAplP*(params.para_fega/100)*(1+params.iva/100); }
+    let acumD2=0, intD=0, factD=0, fegaD=0;
+    movsAll.forEach(m=>{ const yP=Math.min(m.monto,Math.max(0,creditoAut-acumD2)); const enD=m.monto-yP; acumD2+=m.monto; const dias=diasDesde(m.fecha); intD+=((enD*(params.dir_tasaAnual/100))/30)*dias; factD+=enD*(params.dir_factibilidad/100); fegaD+=((enD*dias)/360)*(params.dir_fega/100); });
+    factD=(factD+fegaD)*(1+params.iva/100);
+    const asistTec = ha * params.para_asistTec;
+    const totalInteres = intP + intD;
+    const totalComisiones = factP + fegaP + asistTec + factD;
+    const totalALiquidar = montoAplP + (gastoOp-montoAplP>0?gastoOp-montoAplP:0) + totalInteres + totalComisiones;
+    return { nombre: p.alias||p.apPat||p.nombres, ha: fmt2(ha,2), gastoOp: mxn2(gastoOp), creditoAut: mxn2(creditoAut), montoAplP: mxn2(montoAplP), totalDisp: mxn2(totalDisp), interes: mxn2(totalInteres), comisiones: mxn2(totalComisiones), totalLiquidar: mxn2(totalALiquidar) };
+  }).filter(p=>parseFloat(p.ha)>0||parseFloat(p.gastoOp.replace(/[$,]/g,""))>0);
+
+  // ── Últimos egresos ──────────────────────────────────────────────────────────
+  const ultEgresos = (state.egresosManual||[]).filter(e=>!e.cancelado&&(e.cicloId||1)===cid).slice(-15).map(e=>"  • "+(e.fecha||"")+" | "+e.categoria+" | "+mxn2(e.monto)+" | "+(e.concepto||"")).join("\n");
+  const ultInsumos = (state.insumos||[]).filter(i=>!i.cancelado&&(i.cicloId||1)===cid).slice(-10).map(i=>"  • "+(i.fechaSolicitud||"")+" | "+(i.insumo||i.categoria)+" | "+mxn2(i.importe)+" | Prod:"+((state.productores||[]).find(p=>String(p.id)===String(i.productorId))?.alias||i.productorId)).join("\n");
+  const ultDiesel = (state.diesel||[]).filter(d=>!d.cancelado&&(d.cicloId||1)===cid).slice(-10).map(d=>"  • "+(d.fechaSolicitud||"")+" | "+(d.litros||"")+" lts | "+mxn2(d.importe)+" | "+((state.productores||[]).find(p=>String(p.id)===String(d.productorId))?.alias||d.productorId)).join("\n");
+  const dispersiones = (state.dispersiones||[]).filter(d=>!d.cancelado&&(d.cicloId||1)===cid);
+  const ultDisps = dispersiones.slice(-10).map(d=>"  • "+(d.fecha||"")+" | "+d.lineaCredito+" | "+mxn2(d.monto)+" | "+((state.productores||[]).find(p=>String(p.id)===String(d.productorId))?.alias||d.productorId)).join("\n");
+  const totalDispersado = dispersiones.reduce((s,d)=>s+(parseFloat(d.monto)||0),0);
+
+  return `Eres el asistente de AgroSistema Charay. Tu función es DUAL:
+1. Responder preguntas agronómicas, financieras y de rentabilidad con datos reales del rancho.
+2. Detectar y extraer datos capturables de mensajes, fotos o documentos.
+
+════════════════════════════════════════
+DATOS REALES DEL RANCHO — CICLO ${state.cicloActual}  |  Hoy: ${new Date().toLocaleDateString("es-MX")}
+════════════════════════════════════════
+
+── PRODUCCIÓN ──────────────────────────
+Hectáreas sembradas: ${fmt2(haTot,2)} ha en ${(state.lotes||[]).length} lotes · ${(state.productores||[]).length} productores
+Producción estimada: ${fmt2(F.produccionEst,1)} ton (${fmt2(haTot>0?F.produccionEst/haTot:0,2)} t/ha)
+Precio venta: ${mxn2(precioActual)}/ton · Ingreso estimado: ${mxn2(F.ingresoEst)}
+
+── COSTOS DESGLOSADOS ──────────────────
+Costo total ciclo:   ${mxn2(F.costoTotal)} (${mxn2(costoHa)}/ha · ${mxn2(costoTon)}/ton)
+  Semilla:           ${mxn2(F.costoSemilla)}
+  Insumos (sin sem): ${mxn2(F.costoInsumos||0)}
+  Diesel:            ${mxn2(F.costoDiesel)}
+  Renta de tierra:   ${mxn2(F.costoRenta)}
+  Mano de obra:      ${mxn2(F.costoManoObra)}
+  Agua:              ${mxn2(F.costoAgua)}
+  Seguros:           ${mxn2(F.costoSeguros)}
+  Trámites/Otros:    ${mxn2((F.costoTramites||0)+(F.costoOtros||0))}
+  Intereses:         ${mxn2(F.costoInteres)}
+  Comisiones:        ${mxn2(F.costoComisiones)}
+
+── RENTABILIDAD ────────────────────────
+Utilidad estimada: ${mxn2(F.utilidadBruta)} (${fmt2(F.margen,1)}% margen)
+Punto de equilibrio: ${fmt2(F.peTon,1)} ton · ${fmt2(haTot>0?F.peTon/haTot:0,2)} t/ha mínimo
+
+── CRÉDITO HABILITACIÓN (parámetros) ───
+Parafin: tasa ${params.para_tasaAnual}%/mes · Factibilidad ${params.para_factibilidad}% · FEGA ${params.para_fega}% · AT $${params.para_asistTec}/ha
+Directo: tasa ${params.dir_tasaAnual}%/mes · Factibilidad ${params.dir_factibilidad}% · FEGA ${params.dir_fega}%
+IVA: ${params.iva}%
+Total dispersado al ciclo: ${mxn2(totalDispersado)} (${dispersiones.length} movimientos)
+
+── ESTADO POR PRODUCTOR (crédito + gasto) ──────────────────────────────────────
+PRODUCTOR         | HA    | GASTO OP     | CRÉD AUT     | APLICADO     | DISPERSADO   | INTERÉS      | COMISIONES   | TOTAL A LIQUIDAR
+${prodResumen.map(p=>p.nombre.padEnd(17)+"| "+p.ha.padEnd(6)+"| "+p.gastoOp.padEnd(13)+"| "+p.creditoAut.padEnd(13)+"| "+p.montoAplP.padEnd(13)+"| "+p.totalDisp.padEnd(13)+"| "+p.interes.padEnd(13)+"| "+p.comisiones.padEnd(13)+"| "+p.totalLiquidar).join("\n")}
+")}
+
+── ÚLTIMAS DISPERSIONES (${dispersiones.length} total) ─────
+${ultDisps||"Sin dispersiones"}
+
+── ÚLTIMOS INSUMOS ─────────────────────
+${ultInsumos||"Sin registros"}
+
+── ÚLTIMOS EGRESOS MANUALES ────────────
+${ultEgresos||"Sin registros"}
+
+── ÚLTIMO DIESEL ───────────────────────
+${ultDiesel||"Sin registros"}
+
+── CRÉDITOS REFACCIONARIOS ─────────────
+${(state.creditosRef||[]).length===0 ? "Ninguno" : (state.creditosRef||[]).map(c => { const {saldoCapital,interesTotal} = calcularInteresCredito(c); return "  • "+c.institucion+" · saldo "+mxn2(saldoCapital)+" · interés "+mxn2(interesTotal); }).join("\n")}
+")}
+
+── CAPITAL PROPIO ───────────────────────
+Aportado: ${mxn2(F.totalAport)} · Retiros: ${mxn2(F.totalRetiro)} · Capital neto: ${mxn2(F.capitalNeto)}
+
+── LOTES DEL CICLO (primeros 20) ───────
+${asigsCiclo.slice(0,20).map(a=>{const l=(state.lotes||[]).find(x=>x.id===a.loteId);const p2=(state.productores||[]).find(x=>String(x.id)===String(a.productorId));return"  • "+(l?.apodo||l?.lote||a.loteId)+": "+a.supAsignada+"ha · "+(a.cultivoNombre||"Maíz")+" · "+(p2?.alias||"");}).join("\n")||"Sin asignaciones"}
+")||"Sin asignaciones"}
+
+════════════════════════════════════════
+INSTRUCCIONES
+════════════════════════════════════════
+FINANCIERO/RENTABILIDAD: Usa SIEMPRE los datos reales de la tabla de productores y los parámetros de crédito para calcular intereses. La fórmula de interés es: ((monto × tasa%/mes) / 30) × días. Para proyectar al 31-jul u otra fecha, calcula los días desde la fecha del primer movimiento de cada productor hasta esa fecha. Sé concreto y da cifras exactas.
+
+AGRONÓMICO: Especialista en norte de Sinaloa, Valle del Fuerte, Charay. Maíz blanco/amarillo, ejote, papa. Siempre en español, práctico y orientado a la acción.
+
+CAPTURA DE DATOS: Si el mensaje contiene gastos, actividades o documentos capturables, extrae en JSON:
+{ "capturas": [ { modulo, ...campos } ], "texto": "respuesta" }
+
+MÓDULOS DISPONIBLES:
+- GASTO: { modulo:"gasto", fecha, concepto, monto, categoria, formaPago("contado"|"credito"), proveedor, notas }
+- DIESEL: { modulo:"diesel", fecha, litros, precioLitro, concepto, formaPago, notas }
+- INSUMO: { modulo:"insumo", nombre, categoria, unidad, stockInicial, stockActual, costoUnitario, proveedor, fechaEntrada }
+- TRABAJO: { modulo:"trabajo", fecha, tipo, loteNombre, operador, horas, observaciones }
+- APORTACION: { modulo:"aportacion", fecha, monto, concepto, socio, notas }
+- MINISTRACION: { modulo:"ministracion", fecha, monto, concepto, estatus("aplicado") }
+
+Si NO hay nada capturable: { "capturas": [], "texto": "tu respuesta" }
+Responde siempre en español.`;
+};
+
+const QUICK_PROMPTS = [
+  { label:"💊 Registrar fertilizante", text:"Apliqué fertilizante hoy" },
+  { label:"⛽ Carga de diesel", text:"Cargué diesel hoy" },
+  { label:"🌱 Análisis de suelo", text:"Interpreta mi análisis de suelo" },
+  { label:"🐛 Plagas", text:"¿Qué plagas debo vigilar en esta etapa?" },
+  { label:"💵 Anotar gasto", text:"Tuve un gasto hoy de " },
+  { label:"💧 Registro de riego", text:"Regué el lote " },
+];
+
+const MODULO_INFO = {
+  gasto:       { icon:"💸", label:"Gasto del Ciclo",     color:"#b85c2c" },
+  diesel:      { icon:"⛽", label:"Diesel / Combustible", color:"#e67e22" },
+  insumo:      { icon:"📦", label:"Insumo / Inventario",  color:"#2d5a1b" },
+  trabajo:     { icon:"🚜", label:"Bitácora de Trabajo",  color:"#4a8c2a" },
+  aportacion:  { icon:"💵", label:"Aportación de Capital",color:"#c8a84b" },
+  ministracion:{ icon:"🏦", label:"Ministración Crédito", color:"#5b9fd6" },
+};
+
+function TarjetaConfirmacion({ captura, lotes, onConfirm, onEdit, onDiscard }) {
+  const [editado, setEditado] = useState({ ...captura });
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const info = MODULO_INFO[captura.modulo] || { icon:"📋", label:captura.modulo, color:"#666" };
+
+  const campos = Object.entries(editado).filter(([k]) => k !== "modulo");
+
+  return (
+    <div style={{
+      border:`2px solid ${info.color}`,
+      borderRadius:12,
+      overflow:"hidden",
+      background:"white",
+      maxWidth:420,
+      boxShadow:"0 4px 16px rgba(0,0,0,0.10)"
+    }}>
+      {/* Header */}
+      <div style={{ background:info.color, padding:"10px 14px", display:"flex", alignItems:"center", gap:8 }}>
+        <span style={{fontSize:18}}>{info.icon}</span>
+        <div style={{color:"white",fontWeight:700,fontSize:13}}>{info.label}</div>
+        <div style={{marginLeft:"auto",color:"rgba(255,255,255,0.8)",fontSize:11}}>Pendiente de confirmar</div>
+      </div>
+
+      {/* Campos */}
+      <div style={{padding:"10px 14px"}}>
+        {modoEdicion ? (
+          campos.map(([k,v])=>(
+            <div key={k} style={{marginBottom:8}}>
+              <div style={{fontSize:10,fontWeight:700,color:T.fog,textTransform:"uppercase",marginBottom:2}}>{k}</div>
+              <input
+                style={{width:"100%",padding:"5px 8px",border:`1px solid ${T.line}`,borderRadius:6,fontSize:12,fontFamily:"'DM Mono',monospace"}}
+                value={String(v??"")}
+                onChange={e=>setEditado(ed=>({...ed,[k]:e.target.value}))}
+              />
+            </div>
+          ))
+        ) : (
+          <table style={{width:"100%",fontSize:12,borderCollapse:"collapse"}}>
+            <tbody>
+              {campos.map(([k,v])=>(
+                <tr key={k} style={{borderBottom:`1px solid ${T.line}`}}>
+                  <td style={{padding:"5px 4px",color:T.fog,width:"38%",fontWeight:500,textTransform:"capitalize"}}>{k.replace(/([A-Z])/g," $1")}</td>
+                  <td style={{padding:"5px 4px",fontFamily:"'DM Mono',monospace",fontWeight:600,color:T.inkLt}}>
+                    {typeof v==="number" && (k==="monto"||k==="costoUnitario"||k==="precioLitro")
+                      ? mxn(v)
+                      : String(v??"")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Acciones */}
+      <div style={{padding:"8px 14px 12px",display:"flex",gap:8,borderTop:`1px solid ${T.line}`}}>
+        <button
+          onClick={()=>onConfirm(editado)}
+          style={{flex:1,padding:"8px 0",background:info.color,color:"white",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}
+        >✓ Guardar</button>
+        {modoEdicion
+          ? <button onClick={()=>setModoEdicion(false)} style={{padding:"8px 12px",background:T.mist,border:`1px solid ${T.line}`,borderRadius:8,fontSize:12,cursor:"pointer"}}>Listo</button>
+          : <button onClick={()=>setModoEdicion(true)} style={{padding:"8px 12px",background:T.mist,border:`1px solid ${T.line}`,borderRadius:8,fontSize:12,cursor:"pointer"}}>✏️ Editar</button>
+        }
+        <button onClick={onDiscard} style={{padding:"8px 12px",background:"#fdf0ef",border:`1px solid ${T.rust}`,color:T.rust,borderRadius:8,fontSize:12,cursor:"pointer"}}>✕</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── IA KEY (ofuscada) ───────────────────────────────────────────────────────
+const _gk = () => atob("QUl6YVN5QXNVbXNYcy1LeV9yZEpaOHpnVDNzX25VQUUxWFRadzJR");
+
 
 
 export default function AsisteModule() {
