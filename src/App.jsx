@@ -835,7 +835,7 @@ function Placeholder({ icon, title, desc }) {
 }
 
 // ─── MXN FORMATTER ────────────────────────────────────────────────────────────
-export const mxn = n => (typeof n==="number" ? n.toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2}) : "$0.00");
+const mxn = n => (typeof n==="number" ? n.toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2}) : "$0.00");
 
 // ─── INSUMOS MODULE ───────────────────────────────────────────────────────────
 

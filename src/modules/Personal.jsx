@@ -23,7 +23,8 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
-import { TIPOS_PERSONAL, PUESTOS_SUGERIDOS, mxn } from "../App.jsx";
+import { TIPOS_PERSONAL, PUESTOS_SUGERIDOS } from "../App.jsx";
+import { mxn } from "../shared/utils.js";
 
 
 export default function PersonalModule() {
