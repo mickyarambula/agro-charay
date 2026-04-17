@@ -141,6 +141,9 @@ export default function DieselModule({ userRol }) {
           estatus: 'pendiente',
           cancelado: false,
           tipo_movimiento: tipo,
+          operador: tipo==='salida_interna' ? ((state.operadores||[]).find(o=>String(o.id)===String(datos.operadorId))?.nombre || '') : null,
+          concepto: tipo==='salida_interna' ? `${(state.maquinaria||[]).find(m=>String(m.id)===String(datos.maquinariaId))?.nombre||''} — ${datos.tipoLabor||''}`.trim() : '',
+          registrado_por: usuario?.usuario || userRol || 'desconocido',
           notas: datos.notas || '',
         }),
       });
@@ -647,37 +650,77 @@ export default function DieselModule({ userRol }) {
           : { bg:'#fef5ed', fg:'#e67e22', label:'🛢 Salida cilindro' };
         const puedeCancel = !d.cancelado && (
           (userRol === 'admin') ||
-          (d.registradoPor === usuario?.usuario && d.fecha === hoy)
+          (d.registradoPor === usuario?.usuario && (d.fechaSolicitud||d.fecha) === hoy)
         );
+        const row = (icon, label, val) => val ? (
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:12,padding:'4px 0',borderBottom:'1px solid #f0ede6'}}>
+            <span style={{color:'#b0a090'}}>{icon} {label}</span>
+            <span style={{color:'#1a2e1a',fontWeight:500}}>{val}</span>
+          </div>
+        ) : null;
         return (
           <Modal title="Detalle del movimiento" onClose={()=>{setModalDetalle(null);setMotivoCancel('');}}>
-            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <span style={{fontSize:12,fontWeight:700,padding:'4px 12px',borderRadius:999,background:cfg.bg,color:cfg.fg}}>{cfg.label}</span>
                 <span style={{fontSize:12,color:'#6b7280'}}>{d.fechaSolicitud||d.fecha||'—'}</span>
               </div>
-              <div style={{fontSize:24,fontFamily:'Georgia, serif',color:'#1a2e1a'}}>{litros > 0 ? `${litros.toLocaleString('es-MX')} L` : '—'}</div>
-              {verPrecios && parseFloat(d.importe) > 0 && (
-                <div style={{fontSize:14,color:'#c84b4b',fontWeight:600}}>{mxnFmt(d.importe)} · {d.precioLitro ? `$${parseFloat(d.precioLitro).toFixed(2)}/L` : ''}</div>
-              )}
-              {d.proveedor && <div style={{fontSize:12,color:'#6b7280'}}>🏪 {d.proveedor}</div>}
-              {nomMaq(d.maquinariaId) && <div style={{fontSize:12,color:'#6b7280'}}>🚜 {nomMaq(d.maquinariaId)}</div>}
-              {nomLoteShort(d.loteId) && <div style={{fontSize:12,color:'#6b7280'}}>📍 {nomLoteShort(d.loteId)}</div>}
-              {d.notas && <div style={{fontSize:12,color:'#6b7280',fontStyle:'italic'}}>{d.notas}</div>}
+              <div style={{fontSize:28,fontFamily:'Georgia, serif',color:'#1a2e1a',marginBottom:4}}>{litros > 0 ? `${litros.toLocaleString('es-MX')} L` : '—'}</div>
+
+              {/* Campos comunes */}
+              {verPrecios && parseFloat(d.importe) > 0 && row('💵','Importe',mxnFmt(d.importe))}
+              {verPrecios && d.precioLitro && parseFloat(d.precioLitro)>0 && row('💲','Precio/L',`$${parseFloat(d.precioLitro).toFixed(2)}`)}
+              {row('🏪','Proveedor',d.proveedor)}
+              {/* Salida interna */}
+              {row('🚜','Tractor',nomMaq(d.maquinariaId))}
+              {row('📍','Lote',nomLoteShort(d.loteId))}
+              {row('👷','Operador',d.operador || ((state.operadores||[]).find(o=>String(o.id)===String(d.operadorId))?.nombre))}
+              {row('🔧','Concepto',d.concepto)}
+              {row('📝','Notas',d.notas)}
+              {row('👤','Registrado por',d.registradoPor)}
+              {row('🕐','Creado',d.created_at ? new Date(d.created_at).toLocaleString('es-MX') : null)}
+
               {d.cancelado && (
-                <div style={{padding:'8px 12px',background:'#fee2e2',borderRadius:8,fontSize:12,color:'#991b1b'}}>
-                  🚫 Cancelado{d.motivoCancelacion ? ` — ${d.motivoCancelacion}` : ''}{d.canceladoPor ? ` por ${d.canceladoPor}` : ''}
+                <div style={{padding:'10px 14px',background:'#fee2e2',borderRadius:8,fontSize:12,color:'#991b1b',marginTop:4}}>
+                  🚫 Cancelado{d.motivoCancelacion ? ` — ${d.motivoCancelacion}` : ''}{d.canceladoPor ? ` por ${d.canceladoPor}` : ''}{d.fechaCancelacion ? ` el ${new Date(d.fechaCancelacion).toLocaleDateString('es-MX')}` : ''}
                 </div>
               )}
+
+              {/* Acciones admin: editar litros/notas */}
+              {userRol === 'admin' && !d.cancelado && (
+                <div style={{borderTop:'1px solid #ede5d8',paddingTop:10,marginTop:4}}>
+                  <div style={{fontSize:11,color:'#b0a090',marginBottom:6}}>Edición rápida (admin):</div>
+                  <div style={{display:'flex',gap:8,marginBottom:8}}>
+                    <input id="edit-litros" type="number" defaultValue={litros} placeholder="Litros" style={{...fieldStyle,flex:1}}/>
+                    <input id="edit-notas" type="text" defaultValue={d.notas||''} placeholder="Notas" style={{...fieldStyle,flex:2}}/>
+                    <button onClick={async ()=>{
+                      const newLitros = parseFloat(document.getElementById('edit-litros')?.value)||litros;
+                      const newNotas = document.getElementById('edit-notas')?.value||d.notas||'';
+                      try {
+                        await fetch(`${SUPABASE_URL}/rest/v1/diesel?id=eq.${encodeURIComponent(String(d._uuid||d.id))}`,{
+                          method:'PATCH',
+                          headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json'},
+                          body:JSON.stringify({cantidad:newLitros,litros_recibidos:newLitros,notas:newNotas}),
+                        });
+                      } catch(e){console.warn('Edit diesel fail:',e);}
+                      dispatch({type:'UPDATE_DIESEL',payload:{id:d.id,cantidad:newLitros,notas:newNotas}});
+                      setModalDetalle({...d,cantidad:newLitros,notas:newNotas});
+                    }} style={{padding:'6px 14px',background:'#1a3a0f',color:'#fff',border:'none',borderRadius:6,fontSize:12,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>
+                      💾
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {puedeCancel && (
-                <div style={{borderTop:'1px solid #ede5d8',paddingTop:12,marginTop:4}}>
+                <div style={{borderTop:'1px solid #ede5d8',paddingTop:10,marginTop:4}}>
                   <div style={{fontSize:11,color:'#b0a090',marginBottom:6}}>Cancelar este registro:</div>
                   <input type="text" style={{...fieldStyle,marginBottom:8}} value={motivoCancel}
                     onChange={e=>setMotivoCancel(e.target.value)} placeholder="Motivo de cancelación"/>
                   <button onClick={async ()=>{
                     if (!motivoCancel.trim()) { alert('Ingresa un motivo.'); return; }
                     try {
-                      await fetch(`${SUPABASE_URL}/rest/v1/diesel?id=eq.${encodeURIComponent(String(d._uuid||d.id))}`, {
+                      await fetch(`${SUPABASE_URL}/rest/v1/diesel?id=eq.${encodeURIComponent(String(d._uuid||d.id))}`,{
                         method:'PATCH',
                         headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json'},
                         body:JSON.stringify({cancelado:true,motivo_cancelacion:motivoCancel,cancelado_por:usuario?.usuario||userRol,fecha_cancelacion:new Date().toISOString()}),

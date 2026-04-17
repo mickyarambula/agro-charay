@@ -213,6 +213,38 @@ function LoginScreen({ onLogin }) {
 // ─── INJECT STYLES ─────────────────────────────────────────────────────────
 // [removed: styleEl → imported from shared/core]
 
+// ─── ERROR BOUNDARY GLOBAL ────────────────────────────────────────────────────
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  componentDidCatch(error, errorInfo) {
+    try {
+      fetch(`${SUPABASE_URL}/rest/v1/error_logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({
+          usuario: 'desconocido', dispositivo: navigator.userAgent, pagina: window.location.href,
+          error_mensaje: error?.message || String(error),
+          error_stack: (errorInfo?.componentStack || '').slice(0, 2000),
+          contexto: { timestamp: new Date().toISOString() },
+        }),
+      }).catch(() => {});
+    } catch {}
+  }
+  render() {
+    if (this.state.hasError) return (
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'100vh',padding:32,background:'#f8f6f2',textAlign:'center'}}>
+        <div style={{fontSize:48,marginBottom:16}}>⚠️</div>
+        <div style={{fontSize:20,fontWeight:500,color:'#1a2e1a',marginBottom:8}}>Algo salió mal</div>
+        <div style={{fontSize:14,color:'#8a8070',marginBottom:24,maxWidth:400}}>El error fue reportado automáticamente. Por favor recarga la página.</div>
+        <button onClick={()=>window.location.reload()} style={{background:'#1a3a0f',color:'#e8f5e2',border:'none',borderRadius:8,padding:'10px 24px',fontSize:14,cursor:'pointer'}}>Recargar página</button>
+        <div style={{fontSize:11,color:'#b0a090',marginTop:12}}>Error: {this.state.error?.message}</div>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
 // ─── MERCADO GLOBAL — CBOT Maíz precio en tiempo real ────────────────────────
 const _mercadoState = {
   cbot:null,tc:null,precioMXN:null,precioUSD:null,usdTon:null,
@@ -1647,9 +1679,11 @@ export default function App() {
   // ─── Vista minimalista para operadores de campo (bypass total del layout) ─
   if (usuario.rol === "campo") {
     return (
+      <ErrorBoundary>
       <Ctx.Provider value={{ state, dispatch }}>
         <VistaOperador usuario={usuario} onLogout={() => { localStorage.removeItem('agro_session'); supabaseClient?.auth.signOut().catch(()=>{}); setUsuario(null); }} />
       </Ctx.Provider>
+      </ErrorBoundary>
     );
   }
 
@@ -1770,6 +1804,7 @@ export default function App() {
   const rolInfo = getRolInfo(state, rol);
 
   return (
+    <ErrorBoundary>
     <Ctx.Provider value={{ state, dispatch }}>
       <div className="app">
         {/* SIDEBAR */}
@@ -2084,5 +2119,6 @@ export default function App() {
         </div>
       </div>
     </Ctx.Provider>
+    </ErrorBoundary>
   );
 }

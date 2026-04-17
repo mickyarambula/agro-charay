@@ -561,6 +561,9 @@ export function reducer(s, a) {
       else updated.push(a.payload);
       return { ...s, maquinariaConsumos: updated };
     }
+    case "UPDATE_DIESEL": {
+      return { ...s, diesel: (s.diesel||[]).map(d => String(d.id)===String(a.payload.id) ? {...d,...a.payload} : d) };
+    }
     case "CANCEL_DIESEL": {
       return { ...s, diesel: (s.diesel||[]).map(d =>
         String(d.id) === String(a.payload.id)
