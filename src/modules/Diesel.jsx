@@ -2,7 +2,7 @@
 // Vista única con 3 modales: compra, gasolinera, carga de tractor.
 // Cilindro de 10,000 L controlado por entradas y salidas internas.
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../core/DataContext.jsx';
 import { T, mxnFmt as sharedMxn, fmt, CAPACIDAD_TANQUE_DIESEL } from '../shared/utils.js';
 import { Modal } from '../shared/Modal.jsx';
@@ -34,12 +34,45 @@ export default function DieselModule({ userRol, usuario }) {
   const emptyCompra = { fecha: hoy, litros: '', proveedor: '', precioLitro: '', total: '', notas: '' };
   const emptyGas    = { fecha: hoy, maquinariaId: '', litros: '', estacion: '', precioLitro: '', total: '', notas: '' };
   const emptyCarga  = { fecha: hoy, maquinariaId: '', loteId: '', litros: '', operadorId: '', notas: '', tipoLabor: '', hectareas: '' };
-  const maqConsumos = state.maquinariaConsumos || [];
+  const maqConsumos = localConsumos.length > 0
+    ? localConsumos
+    : (state.maquinariaConsumos || []);
   const TIPOS_LABOR = ['Barbecho','Rastreo','Siembra','Fertilización','Aplicación herbicida','Aplicación insecticida','Cosecha / apoyo'];
 
   const [formCompra, setFormCompra] = useState(emptyCompra);
   const [formGas,    setFormGas]    = useState(emptyGas);
   const [formCarga,  setFormCarga]  = useState(emptyCarga);
+
+  const [localConsumos, setLocalConsumos] = useState([]);
+  const [loadingConsumos, setLoadingConsumos] = useState(false);
+
+  useEffect(() => {
+    if (!modalCarga) return;
+    setLoadingConsumos(true);
+    fetch(
+      `${SUPABASE_URL}/rest/v1/maquinaria_consumos?select=*&order=maquinaria_id`,
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        }
+      }
+    )
+      .then(r => r.json())
+      .then(rows => {
+        if (Array.isArray(rows)) {
+          setLocalConsumos(rows.map(r => ({
+            id: r.id,
+            maquinariaId: r.maquinaria_id,
+            tipoLabor: r.tipo_labor,
+            litrosPorHa: parseFloat(r.litros_por_ha) || 0,
+            notas: r.notas || '',
+          })));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingConsumos(false));
+  }, [modalCarga]);
 
   const cerrarCompra = () => { setModalCompra(false); setFormCompra(emptyCompra); };
   const cerrarGas    = () => { setModalGasolinera(false); setFormGas(emptyGas); };
@@ -604,7 +637,9 @@ export default function DieselModule({ userRol, usuario }) {
               const consumo = maqConsumos.find(c => String(c.maquinariaId) === String(formCarga.maquinariaId) && c.tipoLabor === formCarga.tipoLabor);
               if (!consumo) return (
                 <div style={{padding:'8px 12px',background:'#f3f4f6',borderRadius:8,fontSize:11,color:'#6b7280'}}>
-                  Sin consumo configurado para esta labor — configura en Maquinaria
+                  {loadingConsumos
+                    ? '⏳ Cargando consumos...'
+                    : 'Sin consumo configurado para esta labor — configura en Maquinaria'}
                 </div>
               );
               const necesarios = consumo.litrosPorHa * parseFloat(formCarga.hectareas);
