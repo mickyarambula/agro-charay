@@ -564,7 +564,7 @@ export default function DieselModule({ userRol, usuario }) {
                 onChange={e=>setFormCarga(f=>({...f,maquinariaId:e.target.value}))}>
                 <option value="">— Seleccionar —</option>
                 {(state.maquinaria||[]).map(m=>(
-                  <option key={m.id} value={m.id}>{m.nombre}{m.tipo?` (${m.tipo})`:''}</option>
+                  <option key={m.id} value={m._uuid||m.id}>{m.nombre}{m.tipo?` (${m.tipo})`:''}</option>
                 ))}
               </select>
             </div>

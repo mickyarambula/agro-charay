@@ -36,6 +36,7 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
   const { state, dispatch } = useData();
   const isMobile = useIsMobile();
   const [expandedConsumos, setExpandedConsumos] = useState(null);
+  const [savedConsumo, setSavedConsumo] = useState({});
   const [modal, setModal]   = useState(false);
   const [modalH, setModalH] = useState(false);
   const [sel, setSel]       = useState(null);
@@ -240,13 +241,16 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
                                 const id = existing?.id || ((typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():`mc-${Date.now()}-${Math.random().toString(36).slice(2,6)}`);
                                 dispatch({type:'SET_CONSUMO_DIESEL',payload:{id,maquinariaId:maqKey,tipoLabor:labor,litrosPorHa:val}});
                                 if (!m._uuid) { console.warn('Tractor sin UUID, no se puede guardar en Supabase:', m.nombre); return; }
+                                const skey = `${maqKey}-${labor}`;
                                 fetch(`${SUPABASE_URL}/rest/v1/maquinaria_consumos`,{
                                   method:'POST',
                                   headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},
                                   body:JSON.stringify({id,maquinaria_id:m._uuid,tipo_labor:labor,litros_por_ha:val,updated_at:new Date().toISOString()}),
+                                }).then(res=>{
+                                  if(res.ok){setSavedConsumo(p=>({...p,[skey]:true}));setTimeout(()=>setSavedConsumo(p=>({...p,[skey]:false})),2000);}
                                 }).catch(e=>console.warn('Consumo save fail:',e));
-                              }} style={{padding:'4px 10px',background:'#1a3a0f',color:'#fff',border:'none',borderRadius:6,fontSize:11,cursor:'pointer',fontWeight:600}}>
-                                ✓
+                              }} style={{padding:'4px 10px',background:savedConsumo[`${maqKey}-${labor}`]?'#2d7a2d':'#1a3a0f',color:'#fff',border:'none',borderRadius:6,fontSize:11,cursor:'pointer',fontWeight:600,transition:'background 0.2s'}}>
+                                {savedConsumo[`${maqKey}-${labor}`] ? '✅' : '✓'}
                               </button>
                             </React.Fragment>
                           );
