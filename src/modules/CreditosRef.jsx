@@ -23,7 +23,7 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
-import { mxn } from "../shared/utils.js";
+import { mxn } from "../App.jsx";
 
 
 // Stub temporal — función original nunca fue definida en el código base.

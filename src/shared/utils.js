@@ -757,5 +757,3 @@ export const fenologiaColor = (f) => {
 
 export const estadoColor = (e) =>
   ({ activo: 'green', cosechando: 'gold', barbecho: 'gray' }[e] || 'gray');
-
-export const mxn = n => (typeof n==="number" ? n.toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2}) : "$0.00");
