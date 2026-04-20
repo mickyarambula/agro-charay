@@ -243,17 +243,17 @@ export const initState = {
 export function reducer(s, a) {
   switch(a.type) {
     // Lotes
-    case "ADD_LOTE":    return { ...s, lotes: [...s.lotes, { ...a.payload, id: Date.now() }] };
+    case "ADD_LOTE":    return { ...s, lotes: [...s.lotes, { ...a.payload, id: a.payload.id ?? Date.now() }] };
     case "UPD_LOTE":   return { ...s, lotes: s.lotes.map(l => l.id===a.payload.id ? a.payload : l) };
     case "DEL_LOTE":   return { ...s, lotes: s.lotes.filter(l => l.id!==a.payload) };
     // Trabajos
-    case "ADD_TRABAJO":  return { ...s, trabajos: [{ ...a.payload, id: Date.now() }, ...s.trabajos] };
+    case "ADD_TRABAJO":  return { ...s, trabajos: [{ ...a.payload, id: a.payload.id ?? Date.now() }, ...s.trabajos] };
     case "DEL_TRABAJO":  return { ...s, trabajos: s.trabajos.filter(t => t.id!==a.payload) };
     // Bitácora de campo
-    case "ADD_BITACORA": return { ...s, bitacora: [{ ...a.payload, id: Date.now() }, ...(s.bitacora||[]) ] };
+    case "ADD_BITACORA": return { ...s, bitacora: [{ ...a.payload, id: a.payload.id ?? Date.now() }, ...(s.bitacora||[]) ] };
     case "DEL_BITACORA": return { ...s, bitacora: (s.bitacora||[]).filter(b => b.id!==a.payload) };
     // Insumos
-    case "ADD_INSUMO":   return { ...s, insumos: [{ cicloId:s.cicloActivoId||1, ...a.payload, id: Date.now(), estatus:a.payload.estatus||"pedido", recepciones:a.payload.recepciones||[] }, ...s.insumos] };
+    case "ADD_INSUMO":   return { ...s, insumos: [{ cicloId:s.cicloActivoId||1, ...a.payload, id: a.payload.id ?? Date.now(), estatus:a.payload.estatus||"pedido", recepciones:a.payload.recepciones||[] }, ...s.insumos] };
     case "ADD_RECEPCION": return { ...s, insumos: s.insumos.map(ins => ins.id!==a.payload.insumoId ? ins : {
         ...ins, recepciones:[...(ins.recepciones||[]),{...a.payload,id:Date.now()}],
         cantidadRecibida:(parseFloat(ins.cantidadRecibida)||0)+parseFloat(a.payload.cantidad||0),
@@ -262,7 +262,7 @@ export function reducer(s, a) {
     case "RECIBIR_INSUMO": {
       const insumos2 = s.insumos.map(ins => {
         if (ins.id !== a.payload.insumoId) return ins;
-        const receps = [...(ins.recepciones||[]), { id:Date.now(), ...a.payload }];
+        const receps = [...(ins.recepciones||[]), { id: a.payload.id ?? Date.now(), ...a.payload }];
         const totRec = (receps||[]).reduce((sum,r)=>sum+(parseFloat(r.cantidad)||0),0);
         const estatus = totRec >= (parseFloat(ins.cantidad)||0) ? "recibido" : "parcial";
         return { ...ins, recepciones: receps, cantidadRecibida: totRec, estatus };
@@ -288,7 +288,7 @@ export function reducer(s, a) {
     case "RECIBIR_DIESEL": {
       const diesel2 = s.diesel.map(d => {
         if (d.id !== a.payload.dieselId) return d;
-        const receps = [...(d.recepciones||[]), { id:Date.now(), ...a.payload }];
+        const receps = [...(d.recepciones||[]), { id: a.payload.id ?? Date.now(), ...a.payload }];
         const totRec  = (receps||[]).reduce((sum,r)=>sum+(parseFloat(r.litros)||0),0);
         const pedido  = parseFloat(d.cantidad)||0;
         const estatus = totRec >= pedido ? "recibido" : "parcial";
@@ -307,11 +307,11 @@ export function reducer(s, a) {
         }
       };
     }
-    case "ADD_DIESEL":   return { ...s, diesel: [{ cicloId: s.cicloActivoId||1, ...a.payload, id: Date.now(), estatus: a.payload.estatus||"pedido" }, ...s.diesel] };
+    case "ADD_DIESEL":   return { ...s, diesel: [{ cicloId: s.cicloActivoId||1, ...a.payload, id: a.payload.id ?? Date.now(), estatus: a.payload.estatus||"pedido" }, ...s.diesel] };
     case "DEL_DIESEL":   return { ...s, diesel: s.diesel.filter(d => d.id!==a.payload) };
     case "IMPORT_DIESEL":  return { ...s, diesel: [...(s.diesel||[]), ...a.payload] };
     // Gastos
-    case "ADD_GASTO":    return { ...s, gastos: [{ ...a.payload, id: Date.now() }, ...s.gastos] };
+    case "ADD_GASTO":    return { ...s, gastos: [{ ...a.payload, id: a.payload.id ?? Date.now() }, ...s.gastos] };
     case "DEL_GASTO":    return { ...s, gastos: s.gastos.filter(g => g.id!==a.payload) };
     // Dispersiones (crédito parafinanciero / directo)
     case "ADD_DISPERSION":      return { ...s, dispersiones: [{ cicloId:s.cicloActivoId||1, ...a.payload }, ...(s.dispersiones||[])] };
@@ -345,20 +345,20 @@ export function reducer(s, a) {
       return s;
     }
     // Maquinaria
-    case "ADD_MAQ":      return { ...s, maquinaria: [...s.maquinaria, { ...a.payload, id: Date.now() }] };
+    case "ADD_MAQ":      return { ...s, maquinaria: [...s.maquinaria, { ...a.payload, id: a.payload.id ?? Date.now() }] };
     case "UPD_MAQ":      return { ...s, maquinaria: s.maquinaria.map(m => m.id===a.payload.id ? a.payload : m) };
     case "DEL_MAQ":      return { ...s, maquinaria: s.maquinaria.filter(m => m.id!==a.payload) };
-    case "ADD_HORAS":    return { ...s, horasMaq: [{ ...a.payload, id: Date.now() }, ...s.horasMaq] };
+    case "ADD_HORAS":    return { ...s, horasMaq: [{ ...a.payload, id: a.payload.id ?? Date.now() }, ...s.horasMaq] };
     case "DEL_HORAS":    return { ...s, horasMaq: s.horasMaq.filter(h => h.id!==a.payload) };
     // Operadores
-    case "ADD_OPER":     return { ...s, operadores: [...s.operadores, { ...a.payload, id: Date.now() }] };
+    case "ADD_OPER":     return { ...s, operadores: [...s.operadores, { ...a.payload, id: a.payload.id ?? Date.now() }] };
     case "UPD_OPER":     return { ...s, operadores: s.operadores.map(o => o.id===a.payload.id ? a.payload : o) };
     case "DEL_OPER":     return { ...s, operadores: s.operadores.filter(o => o.id!==a.payload) };
     case "UPD_TARIFA_STD": return { ...s, tarifaStd: { ...s.tarifaStd, ...a.payload } };
-    case "ADD_ASISTENCIA":  return { ...s, asistencias: [...(s.asistencias||[]), { ...a.payload, id: Date.now() }] };
+    case "ADD_ASISTENCIA":  return { ...s, asistencias: [...(s.asistencias||[]), { ...a.payload, id: a.payload.id ?? Date.now() }] };
     case "UPD_ASISTENCIA":  return { ...s, asistencias: (s.asistencias||[]).map(x=>x.id===a.payload.id?a.payload:x) };
     case "DEL_ASISTENCIA":  return { ...s, asistencias: (s.asistencias||[]).filter(x=>x.id!==a.payload) };
-    case "ADD_PAGO_SEM":    return { ...s, pagosSemana: [...(s.pagosSemana||[]), { ...a.payload, id: Date.now() }] };
+    case "ADD_PAGO_SEM":    return { ...s, pagosSemana: [...(s.pagosSemana||[]), { ...a.payload, id: a.payload.id ?? Date.now() }] };
     case "UPD_PAGO_SEM":    return { ...s, pagosSemana: (s.pagosSemana||[]).map(x=>x.id===a.payload.id?a.payload:x) };
     case "DEL_PAGO_SEM":    return { ...s, pagosSemana: (s.pagosSemana||[]).filter(x=>x.id!==a.payload) };
     case "RESTORE_KEY":     return { ...s, [a.payload.key]: a.payload.val };
@@ -399,9 +399,9 @@ export function reducer(s, a) {
     case "ADD_DELEGACION":   return { ...s, delegaciones: [...(s.delegaciones||[]), { ...a.payload, id:Date.now(), creadoEn:new Date().toISOString(), activa:true }] };
     case "REV_DELEGACION":   return { ...s, delegaciones: (s.delegaciones||[]).map(d=>d.id===a.payload?{...d,activa:false,revocadaEn:new Date().toISOString()}:d) };
     // Crédito habilitación (global legacy)
-    case "ADD_MINISTRACION": return { ...s, credito: { ...s.credito, ministraciones: [...s.credito.ministraciones, { ...a.payload, id: Date.now() }] } };
+    case "ADD_MINISTRACION": return { ...s, credito: { ...s.credito, ministraciones: [...s.credito.ministraciones, { ...a.payload, id: a.payload.id ?? Date.now() }] } };
     case "DEL_MINISTRACION": return { ...s, credito: { ...s.credito, ministraciones: s.credito.ministraciones.filter(m => m.id!==a.payload) } };
-    case "ADD_PAGO_CREDITO": return { ...s, credito: { ...s.credito, pagos: [...s.credito.pagos, { ...a.payload, id: Date.now() }] } };
+    case "ADD_PAGO_CREDITO": return { ...s, credito: { ...s.credito, pagos: [...s.credito.pagos, { ...a.payload, id: a.payload.id ?? Date.now() }] } };
     case "DEL_PAGO_CREDITO": return { ...s, credito: { ...s.credito, pagos: s.credito.pagos.filter(p => p.id!==a.payload) } };
     case "UPD_CREDITO_INFO": return { ...s, credito: { ...s.credito, ...a.payload } };
     // Expedientes por RESICO
@@ -422,18 +422,18 @@ export function reducer(s, a) {
     case "ADD_DOC_EXP":      return { ...s, expedientes: s.expedientes.map(e => e.id===a.payload.expId ? {...e, documentos:[...e.documentos,{...a.payload,id:Date.now()}]} : e) };
     case "DEL_DOC_EXP":      return { ...s, expedientes: s.expedientes.map(e => e.id===a.payload.expId ? {...e, documentos:e.documentos.filter(d=>d.id!==a.payload.id)} : e) };
     // Activos
-    case "ADD_ACTIVO":   return { ...s, activos: [...s.activos, { ...a.payload, id: Date.now() }] };
+    case "ADD_ACTIVO":   return { ...s, activos: [...s.activos, { ...a.payload, id: a.payload.id ?? Date.now() }] };
     case "UPD_ACTIVO":   return { ...s, activos: s.activos.map(a2 => a2.id===a.payload.id ? a.payload : a2) };
     case "DEL_ACTIVO":   return { ...s, activos: s.activos.filter(a2 => a2.id!==a.payload) };
     // Rentas de tierra
-    case "ADD_RENTA":      return { ...s, rentas: [...s.rentas, { ...a.payload, id: Date.now(), pagos:[] }] };
+    case "ADD_RENTA":      return { ...s, rentas: [...s.rentas, { ...a.payload, id: a.payload.id ?? Date.now(), pagos:[] }] };
     case "UPD_RENTA":      return { ...s, rentas: s.rentas.map(r => r.id===a.payload.id ? a.payload : r) };
     case "DEL_RENTA":      return { ...s, rentas: s.rentas.filter(r => r.id!==a.payload) };
     case "ADD_PAGO_RENTA": return { ...s, rentas: s.rentas.map(r => r.id===a.payload.rentaId ? {...r, pagos:[...r.pagos,{...a.payload,id:Date.now()}]} : r) };
     case "UPD_PAGO_RENTA": return { ...s, rentas: s.rentas.map(r => r.id===a.payload.rentaId ? {...r, pagos:r.pagos.map(p=>p.id===a.payload.id?a.payload:p)} : r) };
     case "DEL_PAGO_RENTA": return { ...s, rentas: s.rentas.map(r => r.id===a.payload.rentaId ? {...r, pagos:r.pagos.filter(p=>p.id!==a.payload.id)} : r) };
     // Créditos refaccionarios
-    case "ADD_CRED_REF": return { ...s, creditosRef: [...s.creditosRef, { ...a.payload, id: Date.now(), ministraciones:[], pagos:[] }] };
+    case "ADD_CRED_REF": return { ...s, creditosRef: [...s.creditosRef, { ...a.payload, id: a.payload.id ?? Date.now(), ministraciones:[], pagos:[] }] };
     case "UPD_CRED_REF": return { ...s, creditosRef: s.creditosRef.map(c => c.id===a.payload.id ? {...c,...a.payload} : c) };
     case "DEL_CRED_REF": return { ...s, creditosRef: s.creditosRef.filter(c => c.id!==a.payload) };
     case "ADD_MIN_REF":  return { ...s, creditosRef: s.creditosRef.map(c => c.id===a.payload.credId ? {...c, ministraciones:[...c.ministraciones,{...a.payload,id:Date.now()}]} : c) };
@@ -441,22 +441,22 @@ export function reducer(s, a) {
     case "ADD_PAGO_REF": return { ...s, creditosRef: s.creditosRef.map(c => c.id===a.payload.credId ? {...c, pagos:[...c.pagos,{...a.payload,id:Date.now()}]} : c) };
     case "DEL_PAGO_REF": return { ...s, creditosRef: s.creditosRef.map(c => c.id===a.payload.credId ? {...c, pagos:c.pagos.filter(p=>p.id!==a.payload.id)} : c) };
     // Capital propio
-    case "ADD_APORTACION": return { ...s, capital: { ...s.capital, aportaciones: [...s.capital.aportaciones, { ...a.payload, id: Date.now() }] } };
+    case "ADD_APORTACION": return { ...s, capital: { ...s.capital, aportaciones: [...s.capital.aportaciones, { ...a.payload, id: a.payload.id ?? Date.now() }] } };
     case "DEL_APORTACION": return { ...s, capital: { ...s.capital, aportaciones: s.capital.aportaciones.filter(a2=>a2.id!==a.payload) } };
-    case "ADD_RETIRO":     return { ...s, capital: { ...s.capital, retiros: [...s.capital.retiros, { ...a.payload, id: Date.now() }] } };
+    case "ADD_RETIRO":     return { ...s, capital: { ...s.capital, retiros: [...s.capital.retiros, { ...a.payload, id: a.payload.id ?? Date.now() }] } };
     case "DEL_RETIRO":     return { ...s, capital: { ...s.capital, retiros: s.capital.retiros.filter(r=>r.id!==a.payload) } };
     // Personal
-    case "ADD_PERSONAL":   return { ...s, personal: [...s.personal, { ...a.payload, id: Date.now() }] };
+    case "ADD_PERSONAL":   return { ...s, personal: [...s.personal, { ...a.payload, id: a.payload.id ?? Date.now() }] };
     case "UPD_PERSONAL":   return { ...s, personal: s.personal.map(p => p.id===a.payload.id ? a.payload : p) };
     case "DEL_PERSONAL":   return { ...s, personal: s.personal.filter(p => p.id!==a.payload) };
     // Cosecha
-    case "ADD_CUADRILLA":  return { ...s, cosecha: { ...s.cosecha, cuadrillas: [...s.cosecha.cuadrillas, { ...a.payload, id: Date.now() }] } };
+    case "ADD_CUADRILLA":  return { ...s, cosecha: { ...s.cosecha, cuadrillas: [...s.cosecha.cuadrillas, { ...a.payload, id: a.payload.id ?? Date.now() }] } };
     case "DEL_CUADRILLA":  return { ...s, cosecha: { ...s.cosecha, cuadrillas: s.cosecha.cuadrillas.filter(c=>c.id!==a.payload) } };
-    case "ADD_FLETE":      return { ...s, cosecha: { ...s.cosecha, fletes: [...s.cosecha.fletes, { ...a.payload, id: Date.now() }] } };
+    case "ADD_FLETE":      return { ...s, cosecha: { ...s.cosecha, fletes: [...s.cosecha.fletes, { ...a.payload, id: a.payload.id ?? Date.now() }] } };
     case "DEL_FLETE":      return { ...s, cosecha: { ...s.cosecha, fletes: s.cosecha.fletes.filter(f=>f.id!==a.payload) } };
-    case "ADD_MAQUILA":    return { ...s, cosecha: { ...s.cosecha, maquila: [...s.cosecha.maquila, { ...a.payload, id: Date.now() }] } };
+    case "ADD_MAQUILA":    return { ...s, cosecha: { ...s.cosecha, maquila: [...s.cosecha.maquila, { ...a.payload, id: a.payload.id ?? Date.now() }] } };
     case "DEL_MAQUILA":    return { ...s, cosecha: { ...s.cosecha, maquila: s.cosecha.maquila.filter(m=>m.id!==a.payload) } };
-    case "ADD_SECADO":     return { ...s, cosecha: { ...s.cosecha, secado: [...s.cosecha.secado, { ...a.payload, id: Date.now() }] } };
+    case "ADD_SECADO":     return { ...s, cosecha: { ...s.cosecha, secado: [...s.cosecha.secado, { ...a.payload, id: a.payload.id ?? Date.now() }] } };
     case "DEL_SECADO":     return { ...s, cosecha: { ...s.cosecha, secado: s.cosecha.secado.filter(s2=>s2.id!==a.payload) } };
     // Config
     case "SET_PRECIO_VENTA": return { ...s, precioVentaMXN: parseFloat(a.payload)||0 };
@@ -466,7 +466,7 @@ export function reducer(s, a) {
     case "DEL_PROY":    return { ...s, proyeccion: s.proyeccion.filter(p => p.id!==a.payload) };
     case "SET_REND_ESP": return { ...s, rendimientoEsperado: parseFloat(a.payload)||0 };
     case "SET_PRODUCTOR_ACTIVO": return { ...s, productorActivo: a.payload };
-    case "ADD_PRODUCTOR":   return { ...s, productores: [...s.productores, { ...a.payload, id: Date.now() }] };
+    case "ADD_PRODUCTOR":   return { ...s, productores: [...s.productores, { ...a.payload, id: a.payload.id ?? Date.now() }] };
     case "UPD_PRODUCTOR":   return { ...s, productores: s.productores.map(p => p.id===a.payload.id ? a.payload : p) };
     case "DEL_PRODUCTOR":   return { ...s, productores: s.productores.filter(p => p.id!==a.payload) };
     // ── CICLOS ──
