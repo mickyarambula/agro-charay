@@ -8,8 +8,9 @@ Sistema de gestión agrícola integral para operación de riego en Sinaloa. Cubr
 ## FASE 0 — Estabilización (URGENTE — esta semana)
 Objetivo: app sin crashes, funcional para todos los roles.
 
-- [ ] Fix crash "Minified React error #31" — WidgetCBOTDashboard como prop sin pasar en todas las ocurrencias
-- [ ] Verificar cero imports circulares: `grep -rn "from.*App.jsx" src/modules/` = vacío
+- [x] Fix crash "Minified React error #31" — WidgetCBOTDashboard como prop sin pasar en todas las ocurrencias (c7004a3)
+- [x] Verificar cero imports circulares: `grep -rn "from.*App.jsx" src/modules/` = vacío
+- [x] Fix GENERAL-02 (reducer pisa id con Date.now) — 26 reducers corregidos (eae6d0e)
 - [ ] Prueba completa por rol: admin, encargado, ingeniero, daniela
 - [ ] Fix bug calculadora diesel: fetch directo a maquinaria_consumos al abrir modal
 
@@ -43,7 +44,7 @@ Objetivo: el encargado puede registrar sin internet y sincroniza al tener señal
 ## FASE 3 — Finanzas completas (antes de cosecha)
 Objetivo: estados financieros precisos, Daniela puede exportar sin pedir ayuda.
 
-- [ ] Capital propio: migrar aportaciones/retiros a Supabase
+- [x] Capital propio: migrar aportaciones/retiros a Supabase (3b2d789)
 - [ ] Balance General: capital propio real (hoy vacío)
 - [ ] Panel Daniela: exportación a formatos contables
 - [ ] CBOT: precio en vivo desde API (hoy manual)

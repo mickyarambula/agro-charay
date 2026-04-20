@@ -71,6 +71,9 @@ Contraseñas actualizables desde Configuración → Usuarios (admin). Se persist
 
 ## Decisiones técnicas clave
 
+### Reducers — preservar payload.id
+Usar SIEMPRE `id: a.payload.id ?? Date.now()` en reducers ADD_*. Nunca `{ ...a.payload, id: Date.now() }` porque eso pisa el legacy_id que manda el componente después del POST a Supabase. GENERAL-02 (20-abr-2026).
+
 ### calcularCreditoProd — fuente única de verdad
 En helpers.jsx. Calcula para un productor: capital para, capital directo, intereses, comisiones, total a liquidar. NO duplicar esta lógica en ningún módulo.
 

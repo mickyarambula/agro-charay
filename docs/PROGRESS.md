@@ -1,5 +1,32 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 20 Abril 2026 (AM)
+
+### ✅ Completado
+
+**Fix GENERAL-02: reducers preservan payload.id**
+- Bug: patrón `{ ...a.payload, id: Date.now() }` en 26 reducers pisaba el id del payload con un timestamp nuevo, rompiendo correlación local↔Supabase cuando los componentes mandan legacy_id ya asignado después del POST
+- Fix aplicado: cambiar a `id: a.payload.id ?? Date.now()` en 26 casos
+- Reducers arreglados: ADD_LOTE, ADD_TRABAJO, ADD_BITACORA, ADD_INSUMO, ADD_DIESEL, ADD_GASTO, ADD_MAQ, ADD_HORAS, ADD_OPER, ADD_ASISTENCIA, ADD_PAGO_SEM, ADD_MINISTRACION, ADD_PAGO_CREDITO, ADD_ACTIVO, ADD_RENTA, ADD_CRED_REF, ADD_APORTACION, ADD_RETIRO, ADD_PERSONAL, ADD_CUADRILLA, ADD_FLETE, ADD_MAQUILA, ADD_SECADO, ADD_PRODUCTOR, RECIBIR_INSUMO (recepciones), RECIBIR_DIESEL (recepciones)
+- Líneas 275 y 301 intactas: son movimientos de inventario auto-generados por el reducer, no vienen del payload
+- Commits: eae6d0e (fix) + 70bf11b (trigger redeploy)
+- Deploy productivo: dpl_v1mip2zCrrU4MatRdoVdD8RuhLZT READY
+
+**Infraestructura**
+- Integración Vercel↔GitHub estaba desconectada desde hace días. Reconectada durante la sesión. Por eso los pushes desde 16-abril no disparaban deploys.
+
+### 📋 Pendientes al cierre
+
+Sin cambios mayores respecto a sesión anterior. Nuevo ítem menor:
+- Considerar cleanup de sessionStorage/localStorage al logout. Síntoma observado: login con admin cargó vista de operador por sesión pegada de usuario `campo` en localStorage. Fix temporal: Clear Storage manual desde DevTools.
+
+### 📝 Aprendizaje
+
+- Anti-pattern: `{ ...payload, id: Date.now() }` en reducers que reciben datos post-Supabase. Usar siempre `id: payload.id ?? Date.now()`.
+- sed con delimitador simple no captura casos con props trailing (ej: `id: Date.now(), estatus:...`). Segundo pase requerido.
+
+---
+
 ## Sesión 20 Abril 2026 (mañana)
 
 ### ✅ Completado
