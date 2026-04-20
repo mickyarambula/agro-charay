@@ -23,6 +23,7 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
 
 
 export default function CapitalModule({ userRol, puedeEditar }) {
@@ -34,6 +35,8 @@ export default function CapitalModule({ userRol, puedeEditar }) {
   const emptyR = { fecha:hoy, monto:"", concepto:"", referencia:"" };
   const [formA, setFormA] = useState(emptyA);
   const [formR, setFormR] = useState(emptyR);
+  const [savingA, setSavingA] = useState(false);
+  const [savingR, setSavingR] = useState(false);
   const mxnFmt = n => (parseFloat(n)||0).toLocaleString("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2});
 
   const capital    = state.capital || { aportaciones:[], retiros:[] };
@@ -41,8 +44,73 @@ export default function CapitalModule({ userRol, puedeEditar }) {
   const totalRetir = (capital.retiros||[]).reduce((s,r)=>s+(r.monto||0),0);
   const neto       = totalAport - totalRetir;
 
-  const saveA = () => { if(!formA.monto) return; dispatch({type:"ADD_APORTACION",payload:{...formA,id:Date.now(),monto:parseFloat(formA.monto)||0}}); setModalA(false); setFormA(emptyA); };
-  const saveR = () => { if(!formR.monto) return; dispatch({type:"ADD_RETIRO",payload:{...formR,id:Date.now(),monto:parseFloat(formR.monto)||0}}); setModalR(false); setFormR(emptyR); };
+  const postCapital = async (signo, form) => {
+    const monto = parseFloat(form.monto) || 0;
+    if (monto <= 0) { alert('Monto debe ser mayor a 0'); return null; }
+    const legacyId = Date.now();
+    const body = {
+      legacy_id: legacyId,
+      signo,
+      monto,
+      fecha: form.fecha,
+      concepto: form.concepto || '',
+      notas: form.referencia || '',
+    };
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/capital_movimientos`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        console.error('[Capital] POST falló:', res.status, err);
+        alert('Error al guardar: ' + res.status);
+        return null;
+      }
+      const rows = await res.json();
+      return { ...rows[0], id: legacyId };
+    } catch (e) {
+      console.error('[Capital] POST excepcion:', e);
+      alert('Error de red: ' + e.message);
+      return null;
+    }
+  };
+
+  const saveA = async () => {
+    if (!formA.monto) return;
+    if (savingA) return;
+    setSavingA(true);
+    try {
+      const saved = await postCapital(1, formA);
+      if (!saved) return;
+      dispatch({ type: "ADD_APORTACION", payload: { ...formA, id: saved.id, monto: parseFloat(formA.monto) || 0 } });
+      setModalA(false);
+      setFormA(emptyA);
+    } finally {
+      setSavingA(false);
+    }
+  };
+
+  const saveR = async () => {
+    if (!formR.monto) return;
+    if (savingR) return;
+    setSavingR(true);
+    try {
+      const saved = await postCapital(-1, formR);
+      if (!saved) return;
+      dispatch({ type: "ADD_RETIRO", payload: { ...formR, id: saved.id, monto: parseFloat(formR.monto) || 0 } });
+      setModalR(false);
+      setFormR(emptyR);
+    } finally {
+      setSavingR(false);
+    }
+  };
 
   const movimientos = [
     ...(capital.aportaciones||[]).map(a=>({...a,signo:1,tipo:"Aportación"})),
@@ -80,12 +148,12 @@ export default function CapitalModule({ userRol, puedeEditar }) {
           </table>
         </div>
       </div>
-      {modalA&&<Modal title="Nueva Aportación" onClose={()=>setModalA(false)} footer={<><button className="btn btn-secondary" onClick={()=>setModalA(false)}>Cancelar</button><button className="btn btn-primary" onClick={saveA}>💾 Guardar</button></>}>
+      {modalA&&<Modal title="Nueva Aportación" onClose={()=>setModalA(false)} footer={<><button className="btn btn-secondary" onClick={()=>setModalA(false)}>Cancelar</button><button className="btn btn-primary" onClick={saveA} disabled={savingA} style={savingA ? {opacity:0.6, cursor:'wait'} : {}}>{savingA ? 'Guardando...' : '💾 Guardar'}</button></>}>
         <div className="form-row"><div className="form-group"><label className="form-label">Fecha</label><input className="form-input" type="date" value={formA.fecha} onChange={e=>setFormA(f=>({...f,fecha:e.target.value}))}/></div><div className="form-group"><label className="form-label">Monto ($)</label><input className="form-input" type="number" value={formA.monto} onChange={e=>setFormA(f=>({...f,monto:e.target.value}))}/></div></div>
         <div className="form-group"><label className="form-label">Concepto</label><input className="form-input" value={formA.concepto} onChange={e=>setFormA(f=>({...f,concepto:e.target.value}))}/></div>
         <div className="form-group"><label className="form-label">Referencia</label><input className="form-input" value={formA.referencia} onChange={e=>setFormA(f=>({...f,referencia:e.target.value}))}/></div>
       </Modal>}
-      {modalR&&<Modal title="Registrar Retiro" onClose={()=>setModalR(false)} footer={<><button className="btn btn-secondary" onClick={()=>setModalR(false)}>Cancelar</button><button className="btn btn-primary" onClick={saveR}>💾 Guardar</button></>}>
+      {modalR&&<Modal title="Registrar Retiro" onClose={()=>setModalR(false)} footer={<><button className="btn btn-secondary" onClick={()=>setModalR(false)}>Cancelar</button><button className="btn btn-primary" onClick={saveR} disabled={savingR} style={savingR ? {opacity:0.6, cursor:'wait'} : {}}>{savingR ? 'Guardando...' : '💾 Guardar'}</button></>}>
         <div className="form-row"><div className="form-group"><label className="form-label">Fecha</label><input className="form-input" type="date" value={formR.fecha} onChange={e=>setFormR(f=>({...f,fecha:e.target.value}))}/></div><div className="form-group"><label className="form-label">Monto ($)</label><input className="form-input" type="number" value={formR.monto} onChange={e=>setFormR(f=>({...f,monto:e.target.value}))}/></div></div>
         <div className="form-group"><label className="form-label">Concepto</label><input className="form-input" value={formR.concepto} onChange={e=>setFormR(f=>({...f,concepto:e.target.value}))}/></div>
       </Modal>}

@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -55,6 +55,7 @@ export async function loadStateFromSupabase() {
       supaFetch('inventario_movimientos', 'order=created_at.desc').catch(() => []),
       supaFetch('usuarios', 'select=usuario,password,rol,nombre,activo').catch(() => []),
       supaFetch('maquinaria_consumos', 'order=maquinaria_id').catch(() => []),
+      supaFetch('capital_movimientos', 'order=fecha.desc').catch(e => { console.warn('[Supabase] capital_movimientos fetch falló:', e.message); return []; }),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -213,7 +214,7 @@ export async function loadStateFromSupabase() {
       asistencias:        estadoExistente.asistencias        || [],
       pagosSemana:        estadoExistente.pagosSemana        || [],
       horasMaq:           estadoExistente.horasMaq           || [],
-      capital:            estadoExistente.capital            || undefined,
+      // capital: ahora viene de Supabase (ver mapeo abajo)
       creditosRef:        estadoExistente.creditosRef        || [],
       activos:            estadoExistente.activos            || [],
       rentas:             estadoExistente.rentas             || [],
@@ -345,6 +346,24 @@ export async function loadStateFromSupabase() {
       ordenesTrabajo,  // ← fresco de Supabase (tabla ordenes_trabajo)
       cicloActivoId: predCiclo ? predCiclo.id : (estadoExistente.cicloActivoId || 1),
       cicloActual:   predCiclo ? predCiclo.nombre : (estadoExistente.cicloActual || 'OI 2025-2026'),
+      capital: {
+        aportaciones: (capitalRows||[]).filter(r => r.signo === 1).map(r => ({
+          id: r.legacy_id || r.id,
+          fecha: r.fecha,
+          monto: parseFloat(r.monto) || 0,
+          concepto: r.concepto || '',
+          referencia: r.notas || '',
+          _uuid: r.id,
+        })),
+        retiros: (capitalRows||[]).filter(r => r.signo === -1).map(r => ({
+          id: r.legacy_id || r.id,
+          fecha: r.fecha,
+          monto: parseFloat(r.monto) || 0,
+          concepto: r.concepto || '',
+          referencia: r.notas || '',
+          _uuid: r.id,
+        })),
+      },
       _supabaseCargado: Date.now(),
     };
 
