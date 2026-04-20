@@ -27,6 +27,34 @@ Sin cambios mayores respecto a sesión anterior. Nuevo ítem menor:
 
 ---
 
+## Sesión 20 Abril 2026 (mediodía)
+
+### ✅ Completado
+
+**Fix: Cleanup completo de storage en logout**
+
+Bug observado en producción: al hacer logout de un usuario (ej: `campo`) y loguear después como otro (ej: `admin`), la app cargaba vista del rol anterior por sesión pegada en localStorage. Los 3 handlers de logout inline (topbar ⏏, VistaOperador onLogout, listener onAuthStateChange) solo limpiaban `agro_session` y dejaban intacto el resto del localStorage + sessionStorage + token Supabase.
+
+Cambios:
+- Nuevo helper `handleLogout` unificado en App.jsx (línea 1655 aprox)
+- Limpia selectivamente localStorage con prefijos: `agro_`, `agroSistema`, `sb-`, `supabase.auth`
+- `sessionStorage.clear()` (solo usamos `agroLoginUser` como bridge, seguro borrar todo)
+- `supabase.auth.signOut()` con catch no bloqueante
+- `setUsuario(null)` al final para forzar render del login
+- Reemplazados los 3 call sites duplicados por llamadas a `handleLogout`
+- Listener `onAuthStateChange` ahora solo hace `setUsuario(null)` en SIGNED_OUT (NO `handleLogout` — causaba loop porque `handleLogout` llama `signOut()` → Supabase re-emite SIGNED_OUT → loop → pantalla en blanco)
+
+Commit: d806aa2
+
+### 🎓 Lección aprendida
+
+Al arreglar un bug de logout, el fix inicial (llamar `handleLogout` desde el listener de `onAuthStateChange`) causó pantalla en blanco al clic ⏏. Root cause: `handleLogout` llama `signOut()`, que dispara otro SIGNED_OUT, que volvía a llamar `handleLogout` — loop. Regla: **un handler que llama `signOut()` no puede vivir dentro del propio `onAuthStateChange` de SIGNED_OUT**. El listener de SIGNED_OUT solo debe reaccionar a señales externas (token expirado por Supabase, logout desde otra pestaña) limpiando el estado local sin volver a llamar signOut.
+
+### 📋 Pendientes al cierre de sesión
+Ver `docs/HANDOFF.md` para tabla actualizada. Próxima sesión recomendada: Fix GENERAL-02 (reducer pisa id con Date.now()).
+
+---
+
 ## Sesión 20 Abril 2026 (mañana)
 
 ### ✅ Completado
