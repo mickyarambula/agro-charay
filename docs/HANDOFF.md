@@ -39,33 +39,59 @@ Severidad: Alta. App.jsx lee localStorage al montar, supabaseLoader re-escribe l
 ### Bug DIESEL-01
 Manifestación de GENERAL-01 en el módulo Diesel.
 
+### Bug GENERAL-03: Tercera capa de persistencia desconocida (PWA/Service Worker/IndexedDB)
+
+Severidad: Alta. Descubierto al intentar limpiar registros de prueba de Bitácora al cierre de sesión 20-abr noche.
+
+Síntoma: después de
+1. `DELETE FROM bitacora_trabajos;` en Supabase (0 filas confirmado)
+2. Vaciar `state.bitacora = []` dentro de `localStorage.agroSistemaState` (verificado con console.log antes/después)
+3. Reload completo de la página
+
+…la UI seguía mostrando los 6 registros de prueba. El supabaseLoader reportaba `productores: 18, lotes: 107, insumos: 105, egresos: 212` pero la bitácora con 6 entradas apareció de otra fuente.
+
+Hipótesis: el Service Worker del PWA (`[PWA] SW registrado, scope: ...`) está cacheando respuestas de API o sirviendo state desde IndexedDB que no se está invalidando en el reload normal. Esto significa que actualmente existen TRES fuentes de datos en paralelo: Supabase, localStorage y una tercera capa (SW cache + probable IndexedDB).
+
+Implicaciones:
+- La migración de LECTURA a Supabase (#1 del HANDOFF) no es suficiente por sí sola — también hay que identificar y limpiar la tercera capa, o el problema persistirá.
+- Cualquier "DELETE en Supabase" no tiene efecto real en dispositivos donde el SW ya cacheó la data.
+- Es plausible que GENERAL-01 y GENERAL-03 sean manifestaciones del mismo problema arquitectónico, pero hay que confirmarlo con diagnóstico (no asumir).
+
+Siguiente paso cuando se ataque: SOLO diagnóstico — abrir DevTools → Application → Service Workers + IndexedDB + Cache Storage para mapear qué guarda el SW y qué vive en IndexedDB. NO intentar limpieza sin tener el mapa completo.
+
 ## Tabla de pendientes actualizada
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
 | 1 | Alta | Bitácora: migrar LECTURA — agregar fetch de bitacora_trabajos a supabaseLoader.js | 45 min | Migración |
 | 2 | Alta | Bitácora: migrar bulk import Excel (el 7° flujo que no se ha tocado) | 30 min | Migración |
-| 3 | Alta | Fix GENERAL-01 (doble persistencia) | 60 min | Bug estructural crítico |
-| 4 | Media | Fix DIESEL-01 (consecuencia de #3) | 15 min después de #3 | Bug |
-| 5 | Media | Merge dev → main cuando #1 esté terminado | 10 min | Deploy |
-| 6 | Media | Refactor App.jsx — extraer routes | 45 min | Refactor |
-| 7 | Media | Asignar productor auto desde lote al cargar tractor | 30 min | Feature Diesel |
-| 8 | Baja | Actualizar supabase-js | 15 min | Infra |
-| 9 | Baja | Alertas WhatsApp al socio (resumen semanal) | 2 hrs | Feature |
-| 10 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
-| 11 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
-| 12 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
-| 13 | Futuro | saveFoto: opción de ligar foto a lote/operador si hace falta | 20 min | Mejora Bitácora |
+| 3 | Alta | Fix GENERAL-01 (doble persistencia localStorage↔Supabase) | 60 min | Bug estructural crítico |
+| 4 | Alta | Diagnóstico GENERAL-03 (tercera capa PWA/SW/IndexedDB) — solo mapeo, sin tocar | 30 min | Bug estructural crítico |
+| 5 | Media | Fix DIESEL-01 (consecuencia de #3) | 15 min después de #3 | Bug |
+| 6 | Media | Merge dev → main cuando #1, #3 y #4 estén terminados | 10 min | Deploy |
+| 7 | Media | Refactor App.jsx — extraer routes | 45 min | Refactor |
+| 8 | Media | Asignar productor auto desde lote al cargar tractor | 30 min | Feature Diesel |
+| 9 | Baja | Actualizar supabase-js (warning de httpSend en consola) | 15 min | Infra |
+| 10 | Baja | Alertas WhatsApp al socio (resumen semanal) | 2 hrs | Feature |
+| 11 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
+| 12 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
+| 13 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
+| 14 | Futuro | saveFoto: opción de ligar foto a lote/operador si hace falta | 20 min | Mejora Bitácora |
 
 ## Siguiente sesión — recomendación
 
-Arrancar con #1 (migración de LECTURA a supabaseLoader.js). Esta es la tarea de mayor riesgo del plan — cambia cómo arranca la app. Antes de tocar nada:
-1. Ver supabaseLoader.js completo y expandido
-2. Entender configPreservada
-3. Revisar cómo capital_movimientos se integró al Promise.all (es el patrón a replicar)
-4. Probar en local primero, luego dev, nunca directo a main
+Orden recomendado (NO cambiar sin pensar):
+1. Empezar con #4 (diagnóstico GENERAL-03, 30 min, sin tocar nada). Necesitamos entender la tercera capa antes de cualquier migración de lectura. Si #4 revela que el SW está cacheando la app entera pero no los datos del state, se puede saltar a #1. Si revela que IndexedDB guarda state, #1 se complica y hay que replantear.
+2. Después #1 (migración de lectura a supabaseLoader.js).
+3. Después #3 (fix GENERAL-01, que puede volverse trivial si #1 y #4 ya resolvieron la raíz).
 
-Después de #1, si sobra tiempo: #2 (bulk import Excel) con testing propio.
+Antes de tocar supabaseLoader.js:
+- Ver el archivo completo y expandido
+- Entender configPreservada
+- Revisar cómo capital_movimientos se integró al Promise.all (patrón a replicar)
+- Probar en local primero, luego dev, nunca directo a main
+
+Mientras tanto: los 6 registros "fantasma" de bitácora visibles en dev son puras pruebas y no estorban. Se limpiarán solos cuando #4+#1 estén resueltos. Tolerancia cero con limpiezas improvisadas mientras no entendamos la tercera capa.
 
 ## Reglas de trabajo (reforzadas esta sesión)
 
@@ -84,3 +110,4 @@ Después de #1, si sobra tiempo: #2 (bulk import Excel) con testing propio.
 - Probar el cambio en local primero, luego dev, nunca directo a main
 - Cuidado con listeners de Supabase: handler que llama signOut() nunca dentro de onAuthStateChange(SIGNED_OUT)
 - Limpiar datos de prueba de Supabase con DELETE filtrado por timestamp al cierre (no a mano uno por uno)
+- Si una limpieza "simple" (DELETE + borrar localStorage) no produce el efecto esperado en la UI, PARAR de inmediato. No improvisar más limpiezas. Documentar lo descubierto y cerrar sesión. Las sorpresas de persistencia son síntoma de arquitectura no entendida — requieren diagnóstico planeado, no parches.

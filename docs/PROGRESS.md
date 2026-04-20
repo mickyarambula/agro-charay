@@ -27,6 +27,17 @@ Cuando varios handlers comparten la misma estructura (en este caso postBitacora(
 
 Anti-patrón a evitar: correr el SELECT de verificación antes de terminar todos los POSTs del lote. Pasó una vez en esta sesión (solo salió 1 fila en vez de 4 esperadas) porque la query se lanzó prematuramente. No es error de código, es de secuencia de pasos.
 
+### 🎓 Lección aprendida adicional (post-commit fb32dc8)
+
+Al intentar limpiar los 4 registros de prueba al cierre, descubrimos que después de
+(a) `DELETE FROM bitacora_trabajos` en Supabase (verificado 0 filas), y
+(b) vaciar `state.bitacora = []` dentro de `localStorage.agroSistemaState` (verificado con console.log antes/después),
+la UI SEGUÍA mostrando los 6 registros tras un reload completo.
+
+Esto reveló un bug estructural nuevo — documentado como **GENERAL-03** en HANDOFF.md: hay una tercera capa de persistencia (presumiblemente Service Worker del PWA y/o IndexedDB) que no se está invalidando. Implica que actualmente existen TRES fuentes de datos en paralelo, no dos como asumimos.
+
+Decisión: parar la limpieza, NO improvisar más parches, documentar y cerrar sesión. Se agregó #4 al plan: diagnóstico GENERAL-03 con mapeo de SW + IndexedDB + Cache Storage antes de cualquier acción. También se añadió una regla nueva al WORKFLOW: si una limpieza simple no produce el efecto esperado, parar de inmediato.
+
 ### 📋 Pendientes al cierre de sesión
 Ver `docs/HANDOFF.md`. Próximo: migrar LECTURA de Bitácora a supabaseLoader.js (#1 del HANDOFF).
 
