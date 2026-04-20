@@ -146,7 +146,7 @@ export default function Dashboard({ userRol, onNavigate, widgetCBOT }) {
           {cbotAbierto && <div style={{marginTop:10}}>{widgetCBOT}</div>}
         </div>
       ) : (
-        {widgetCBOT}
+        <>{widgetCBOT}</>
       )}
 
       {/* ── Fila 1: KPIs principales clicables ── */}

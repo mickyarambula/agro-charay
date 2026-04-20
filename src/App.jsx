@@ -1773,8 +1773,8 @@ export default function App() {
       case "edo_resultados": return <EdoResultadosModule userRol={rol} onNavigate={navTo} />;
       case "balance":        return <BalanceModule userRol={rol} onNavigate={navTo} />;
       case "flujo_caja":     return <FlujoCajaModule userRol={rol} onNavigate={navTo} />;
-      case "configuracion":  return rol==="admin" ? <ConfiguracionModule userRol={rol} /> : <Dashboard userRol={rol} />;
-      default: return <Dashboard userRol={rol} />;
+      case "configuracion":  return rol==="admin" ? <ConfiguracionModule userRol={rol} /> : <Dashboard userRol={rol} onNavigate={navTo} widgetCBOT={<WidgetCBOTDashboard />} />;
+      default: return <Dashboard userRol={rol} onNavigate={navTo} widgetCBOT={<WidgetCBOTDashboard />} />;
     }
   };
 

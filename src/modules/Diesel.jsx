@@ -34,9 +34,6 @@ export default function DieselModule({ userRol, usuario }) {
   const emptyCompra = { fecha: hoy, litros: '', proveedor: '', precioLitro: '', total: '', notas: '' };
   const emptyGas    = { fecha: hoy, maquinariaId: '', litros: '', estacion: '', precioLitro: '', total: '', notas: '' };
   const emptyCarga  = { fecha: hoy, maquinariaId: '', loteId: '', litros: '', operadorId: '', notas: '', tipoLabor: '', hectareas: '' };
-  const maqConsumos = localConsumos.length > 0
-    ? localConsumos
-    : (state.maquinariaConsumos || []);
   const TIPOS_LABOR = ['Barbecho','Rastreo','Siembra','Fertilización','Aplicación herbicida','Aplicación insecticida','Cosecha / apoyo'];
 
   const [formCompra, setFormCompra] = useState(emptyCompra);
@@ -45,6 +42,9 @@ export default function DieselModule({ userRol, usuario }) {
 
   const [localConsumos, setLocalConsumos] = useState([]);
   const [loadingConsumos, setLoadingConsumos] = useState(false);
+  const maqConsumos = localConsumos.length > 0
+    ? localConsumos
+    : (state.maquinariaConsumos || []);
 
   useEffect(() => {
     if (!modalCarga) return;
