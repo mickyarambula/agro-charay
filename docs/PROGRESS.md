@@ -1,5 +1,22 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 20 Abril 2026 (tarde — diagnóstico)
+
+### ✅ Completado
+- Diagnóstico exhaustivo de persistencia en Chrome desktop vs agro-charay-dev.vercel.app
+- Mapeadas las capas reales del PWA: SW, Cache Storage, IndexedDB, localStorage, session storage
+- **GENERAL-03 retirado como bug separado** — confirmado que es una manifestación de GENERAL-01
+- Mapa final de persistencia documentado en HANDOFF.md con estado de cada capa
+- Cero cambios de código (sesión disciplinada a solo diagnóstico, como se planeó)
+
+### 🎓 Lección aprendida
+Las "sorpresas de persistencia" pueden venir de una capa conocida comportándose raro, no necesariamente de una nueva capa. Antes de teorizar sobre "tercera capa PWA/SW/IndexedDB", verificar con DevTools qué contiene cada una. En este caso: Cache Storage solo tenía assets (37 entries JS/HTML, cero supabase), IndexedDB ni siquiera existía ("No indexedDB detected"), y los 6 registros fantasma vivían simplemente en localStorage — la capa que ya sabíamos que existe. La hipótesis original de "tercera capa" era especulativa; el diagnóstico real tomó 15 minutos y descartó toda la teoría.
+
+Segunda lección: la disciplina de "solo diagnóstico" funcionó. A mitad de sesión apareció la tentación de "ya que sabemos, arreglemos" — se resistió y se difirió GENERAL-01 a sesión propia con presupuesto adecuado. Un bug por sesión.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md. Próxima sesión recomendada: #1 de la tabla (migrar LECTURA de bitácora a supabaseLoader.js).
+
 ## Sesión 20 Abril 2026 (noche)
 
 ### ✅ Completado
