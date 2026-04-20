@@ -1,5 +1,43 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 20 Abril 2026 (tarde)
+
+### ✅ Completado
+
+**Migración de ESCRITURA de Bitácora a Supabase**
+
+Bug a resolver: los registros de bitácora de trabajos vivían solo en localStorage del navegador. Si el encargado capturaba en campo, nadie más podía verlos. Si borraba caché, se perdía todo.
+
+Cambios:
+- Tabla `bitacora_trabajos` creada en Supabase: 16 columnas (id uuid, legacy_id, tipo, lote_id, lote_ids jsonb, fecha, operador, operador_id, maquinaria_id, horas, notas, data jsonb, fuente, ciclo_id, created_at, updated_at) + 5 índices + trigger updated_at + 8 políticas RLS (4 para authenticated, 4 para anon consistente con capital_movimientos)
+- Decisión de diseño: NO se incluyó columna `foto` — las fotos base64 quedan solo en estado local por ahora (migrar a Supabase Storage es tarea futura)
+- Bitacora.jsx modificado: import de SUPABASE_URL/KEY, helper postBitacora() con legacy_id+ciclo_id, 6 guards savingX anti doble-click, los 6 handlers (saveInsumo, saveDiesel, saveRiego, saveFenol, saveReporte, saveFoto) reescritos a async con POST previo al dispatch local
+- Si el POST falla → NO hay dispatch local → UI consistente con DB (no zombie data)
+- Bulk import Excel (7° flujo) NO migrado — queda para sesión separada con testing propio
+
+Commits:
+- e4b0df7 docs(handoff): sync con estado real post GENERAL-02
+- 90faaf3 feat(bitacora): POST a Supabase antes del dispatch local
+
+Probado en dev.vercel.app:
+- saveReporte → status 201 + fila en Supabase ✅
+- saveRiego → status 201 + fila en Supabase ✅
+- Los otros 4 handlers (insumo, diesel, fenol, foto) no fueron probados — tienen estructura idéntica, se verificarán en sesión siguiente
+
+NO tocado:
+- supabaseLoader.js (la lectura sigue por localStorage) — migrar en sesión siguiente
+
+### 🎓 Lecciones aprendidas
+
+**Primera, sobre documentación:** empecé la sesión creyendo que GENERAL-02 estaba pendiente (lo decía HANDOFF.md) cuando en realidad ya estaba resuelto (lo decía PROGRESS.md). La inconsistencia se coló porque cerré la sesión anterior regenerando HANDOFF.md desde el estado inicial del chat, no desde el estado real al final del día. Regla nueva: si hubo varios cambios de estado durante el día, releer el HANDOFF más reciente antes de regenerarlo.
+
+**Segunda, sobre RLS de Supabase:** la tabla nueva se creó solo con policies para `authenticated`, pero el código (patrón heredado de Capital) hace POST con la anon key. Resultado: 401 en el primer intento. Fix: agregar policies espejo para rol `anon`. A futuro todo el sistema debería migrar a JWT de usuario + policies basadas en el usuario logueado, pero eso es refactor grande — por ahora mantener consistencia con capital_movimientos.
+
+**Tercera, sobre trabajar con datos reales:** a la mitad de la sesión pausé para reafirmar reglas antes de tocar supabaseLoader.js (que carga TODO el state inicial). Decisión: dividir la migración en dos fases — ESCRITURA ahora (bajo riesgo, solo agrega datos nuevos), LECTURA en sesión separada (alto riesgo, cambia cómo arranca la app). Mejor dos sesiones de 30 min con deploys verificados que una sesión de 60 min sin red de seguridad.
+
+### 📋 Pendientes al cierre de sesión
+Ver `docs/HANDOFF.md`. Próximo: probar los 4 handlers restantes de Bitácora en dev, luego migrar LECTURA a supabaseLoader.js.
+
 ## Sesión 20 Abril 2026 (AM)
 
 ### ✅ Completado
