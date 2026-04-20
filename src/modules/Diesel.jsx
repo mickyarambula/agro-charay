@@ -397,7 +397,7 @@ export default function DieselModule({ userRol, usuario }) {
         </div>
       ) : (
         <div style={{display:'flex',flexDirection:'column',gap:10}}>
-          {historial.map(d => {
+          {historial.map((d, idx) => {
             const tmov = tipoMov(d);
             const litros = getLitros(d);
             const litrosLabel = litros > 0 ? `${litros.toLocaleString('es-MX')} L` : '—';
@@ -408,7 +408,7 @@ export default function DieselModule({ userRol, usuario }) {
               : { border: '#e67e22', bg: '#fef5ed', fg: '#e67e22', label: '🛢 Cilindro' };
             const fecha = d.fechaSolicitud || d.fecha || '—';
             return (
-              <div key={d.id} onClick={()=>setModalDetalle(d)} style={{
+              <div key={d.id ?? `diesel-${idx}`} onClick={()=>setModalDetalle(d)} style={{
                 background: '#ffffff',
                 border: '1px solid #e5e7eb',
                 borderLeft: `4px solid ${cfg.border}`,

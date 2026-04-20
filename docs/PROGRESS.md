@@ -9,6 +9,9 @@
 - Fix TDZ en Diesel.jsx: `maqConsumos` (línea 37) usaba `localConsumos` antes de su declaración (línea 46). Movido el bloque después de las declaraciones useState
 - Commit de los 3 fixes: c7004a3 (pusheado a dev)
 - Dashboard y módulo Diesel cargan correctamente con datos reales (18 productores, 107 lotes, 212 egresos, $23M costo total)
+- Calculadora L/ha verificada en vivo: 6.9 ha × 10 L/ha = 69 L correcto (bug del HANDOFF original resuelto implícitamente por el fix de TDZ)
+- Warning React key=null en Diesel.jsx:411 resuelto con fallback `diesel-${idx}`
+- Bug DIESEL-01 diagnosticado (doble fuente de datos en historial — causa síntomas de cancelación fantasma y saldo visual incorrecto). Detalle técnico completo documentado en HANDOFF.md
 
 ### 📋 Pendientes al cierre de sesión
 Ver `docs/HANDOFF.md` para tabla actualizada.
