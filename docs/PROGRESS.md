@@ -1,5 +1,22 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 20 Abril 2026 (tarde — tercera de la tarde)
+
+### ✅ Completado
+- **Migración de LECTURA de bitácora a Supabase (#1 del HANDOFF).** Añadido fetch de `bitacora_trabajos` al `Promise.all` de `supabaseLoader.js`, replicando el patrón de `capital_movimientos`. Tres cambios atómicos en `src/supabaseLoader.js`:
+  1. `bitacoraRows` añadido al destructuring + `supaFetch('bitacora_trabajos', 'order=fecha.desc')` al array de promesas con `.catch` defensivo.
+  2. Línea `bitacora: estadoExistente.bitacora || []` eliminada de `configPreservada` — reemplazada por comentario explicativo.
+  3. Mapper `const bitacora = (bitacoraRows || []).map(...)` con prioridad `lote_ids` (jsonb array) + fallback a `lote_id` (text único). Incluido en `estadoNuevo` entre `inventario,` y `usuariosDB:`.
+- Commit: feat(bitacora): migrar lectura a Supabase (fuera de localStorage)
+- Verificación end-to-end: registro de prueba creado en UI → aparece en Supabase con schema correcto (`tipo: insumo, fuente: bitacora, lote_ids: [1], data: {dosis: ".350"...}`) → sobrevive reload (viene de Supabase, no localStorage) → deploy a dev confirmado desde incógnito.
+- **Resultado:** los 6 registros fantasma que persistían en localStorage desaparecen de la UI al cargar desde Supabase (que ya estaba vacío). GENERAL-01 parcialmente mitigado para el módulo bitácora.
+
+### 🎓 Lección aprendida
+**`localStorage` sucio de sesiones previas puede hacer que un cambio correcto se vea como roto.** En la primera recarga local tras el cambio, el dashboard apareció en ceros (0 ha, 0 productores) aunque el log decía `Cargado: {productores: 18, lotes: 107...}`. La causa: localStorage contenía datos residuales de sesiones anteriores que el merge con `configPreservada` estaba arrastrando. Un `clear site data` + reload resolvió todo. Implicación para producción: al desplegar este cambio, cualquier usuario con la app previamente abierta puede necesitar un login limpio o clear de sitio para que el localStorage viejo deje de interferir. No es un bug del cambio — es residuo del esquema de doble persistencia (GENERAL-01) que seguiremos atacando.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md actualizado.
+
 ## Sesión 20 Abril 2026 (tarde — diagnóstico)
 
 ### ✅ Completado

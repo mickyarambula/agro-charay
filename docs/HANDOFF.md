@@ -1,114 +1,90 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 20 Abril 2026 (tarde — sesión diagnóstico)
+**Última actualización:** 20 Abril 2026 (tarde — migración lectura bitácora)
 **Branch activo:** dev
-**Último commit:** 70e028e (docs: descubierto GENERAL-03 al cierre) — esta sesión no tocó código
-**Estado:** diagnóstico GENERAL-03 completado. GENERAL-03 NO existe como bug separado — es GENERAL-01.
+**Último commit:** bb31030 (feat(bitacora): migrar lectura a Supabase — fuera de localStorage)
+**Estado:** migración de LECTURA de bitácora a Supabase completada y desplegada en dev. Los 6 registros fantasma resueltos. Queda pendiente migrar el bulk import Excel (7° flujo de bitácora) y atacar GENERAL-01 de raíz.
 
 ## Estado al cierre
 
-- Sesión de diagnóstico PWA/SW/IndexedDB completada en ~20 min. Mapeo exhaustivo hecho en Chrome desktop vs agro-charay-dev.vercel.app.
-- **Conclusión principal: NO hay tercera capa de persistencia.** Solo existen dos: Supabase y localStorage. GENERAL-03 se reclasifica como manifestación de GENERAL-01.
-- Cero cambios de código esta sesión — solo inspección DevTools.
-- Los 6 registros fantasma de bitácora siguen visibles en dev (y en localStorage). Se quedan ahí hasta atacar GENERAL-01.
+- Sesión de ~45 min. Un objetivo, un commit, un deploy verificado.
+- `supabaseLoader.js` ahora hidrata bitácora desde `bitacora_trabajos` en el `Promise.all`. Mapper normaliza `lote_ids` (jsonb) + fallback `lote_id` (text). `configPreservada` ya NO preserva bitácora de localStorage.
+- Ciclo completo verificado end-to-end: crear registro en UI → POST a Supabase → reload → aparece en UI leído desde Supabase. Confirmado también en `agro-charay-dev.vercel.app` desde incógnito.
+- Supabase `bitacora_trabajos` quedó con 0 filas al cierre (el registro de prueba se borró con `DELETE WHERE legacy_id = 1776725608364`).
+- Main sigue intacto. Este cambio vive solo en dev.
 
-## Mapa de persistencia (diagnóstico 20-abr tarde)
+## Cómo quedó la hidratación de bitácora
 
-| Capa | Estado | Contenido |
-|------|--------|-----------|
-| Supabase `bitacora_trabajos` | Vacío | 0 filas (DELETE confirmado sesión anterior) |
-| Service Worker `sw.js` | Activo (#74) | Solo registrado, sin cachear data |
-| Cache Storage `agro-charay-v1` | 37 entries | 100% assets (JS/HTML) — **cero URLs de supabase** |
-| IndexedDB | **No existe** | "No indexedDB detected" — nunca se creó |
-| localStorage `agroSistemaState` | **6 registros** | La bitácora "fantasma" vive aquí, hidratada al montar |
-| localStorage `agro_session` | 1 entrada | Sesión del usuario (Miguel admin) |
+| Capa | Antes | Ahora |
+|------|-------|-------|
+| Escritura (6 handlers) | Supabase ✅ | Supabase ✅ (sin cambio) |
+| Lectura al login | localStorage ❌ | Supabase ✅ |
+| `configPreservada.bitacora` | Preservaba de localStorage | Removido — comentario explicativo |
+| Fuente de verdad | localStorage | `bitacora_trabajos` en Supabase |
 
-Verificación final en Console:
-`JSON.parse(localStorage.getItem('agroSistemaState')).bitacora` → `(6) [{…}, {…}, {…}, {…}, {…}, {…}]`
-
-## Hipótesis de por qué los 6 registros persisten
-
-Anoche se hizo:
-1. DELETE en Supabase ✅ (confirmado 0 filas)
-2. Setear `state.bitacora = []` en localStorage ✅ (verificado con console.log)
-3. Reload → 6 registros vuelven ❌
-
-Con supabaseLoader.js sin migrar la LECTURA de bitácora (pendiente #1 del HANDOFF anterior), al recargar:
-- App.jsx lee `agroSistemaState` desde localStorage (bitacora vacío en ese instante)
-- supabaseLoader hidrata el resto del state
-- En el reducer/merge, algo reintroduce bitacora desde una fuente (state inicial, fallback, configPreservada, o memoria de React anterior al reload)
-- React serializa el nuevo state a localStorage → bitacora vuelve a tener 6 registros
-
-Esto es exactamente el patrón de GENERAL-01. **GENERAL-03 queda retirado como bug separado.**
-
-## Flujos Bitácora — estado sin cambio
+## Flujos Bitácora — estado
 
 | Handler | Escritura Supabase | Lectura Supabase |
 |---------|-------------------|------------------|
-| saveInsumo | ✅ | ❌ (localStorage) |
-| saveDiesel | ✅ | ❌ (localStorage) |
-| saveRiego | ✅ | ❌ (localStorage) |
-| saveFenol | ✅ | ❌ (localStorage) |
-| saveReporte | ✅ | ❌ (localStorage) |
-| saveFoto | ✅ | ❌ (localStorage) |
-| Bulk import Excel | ❌ (pendiente) | N/A |
+| saveInsumo | ✅ | ✅ (via supabaseLoader) |
+| saveDiesel | ✅ | ✅ |
+| saveRiego | ✅ | ✅ |
+| saveFenol | ✅ | ✅ |
+| saveReporte | ✅ | ✅ |
+| saveFoto | ✅ | ✅ |
+| Bulk import Excel | ❌ PENDIENTE | N/A |
 
 ## Bugs estructurales pendientes
 
-### Bug GENERAL-01: Doble capa de persistencia (CONFIRMADO como raíz)
-Severidad: Alta. App.jsx lee localStorage al montar, supabaseLoader re-escribe localStorage pero el reducer ya no se entera. Además, algo reintroduce bitácora en el state después del reload. Fix: dejar de inicializar reducer desde localStorage, o limpiar bitácora del initState cuando se migre la lectura. Solo Supabase como fuente.
+### Bug GENERAL-01: Doble capa de persistencia (parcialmente mitigado)
+Severidad: Alta. El problema raíz sigue vivo: `App.jsx` inicializa el reducer desde `localStorage.agroSistemaState`, y `supabaseLoader` escribe encima a ese mismo localStorage. Para el módulo bitácora ya NO hay conflicto (su único origen ahora es Supabase), pero para otros módulos que aún se preservan de localStorage (`creditosRef, activos, rentas, personal, proyeccion`, workflow local) el patrón sigue. Fix completo: dejar de inicializar reducer desde localStorage, usar solo Supabase. 60 min estimados.
 
 ### Bug DIESEL-01
-Manifestación de GENERAL-01 en el módulo Diesel.
+Manifestación de GENERAL-01 en Diesel. Pendiente hasta fix de #2.
 
-### ~~Bug GENERAL-03~~ (retirado)
-Diagnóstico 20-abr tarde demostró que no existe tercera capa. Re-clasificado como manifestación de GENERAL-01.
+### ~~Bug GENERAL-03~~ (retirado previamente)
+No existe tercera capa. Ya documentado.
 
 ## Tabla de pendientes actualizada
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Alta | Bitácora: migrar LECTURA — agregar fetch de bitacora_trabajos a supabaseLoader.js | 45 min | Migración |
-| 2 | Alta | Fix GENERAL-01 (doble persistencia localStorage↔Supabase) | 60 min | Bug estructural crítico |
-| 3 | Alta | Bitácora: migrar bulk import Excel (el 7° flujo) | 30 min | Migración |
-| 4 | Media | Fix DIESEL-01 (consecuencia de #2) | 15 min después de #2 | Bug |
-| 5 | Media | Merge dev → main cuando #1 y #2 estén terminados | 10 min | Deploy |
-| 6 | Media | Refactor App.jsx — extraer routes | 45 min | Refactor |
-| 7 | Media | Asignar productor auto desde lote al cargar tractor | 30 min | Feature Diesel |
-| 8 | Baja | Actualizar supabase-js (warning de httpSend en consola) | 15 min | Infra |
-| 9 | Baja | Alertas WhatsApp al socio (resumen semanal) | 2 hrs | Feature |
-| 10 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
-| 11 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
-| 12 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
-| 13 | Futuro | saveFoto: opción de ligar foto a lote/operador si hace falta | 20 min | Mejora Bitácora |
+| 1 | Alta | Fix GENERAL-01 (doble persistencia localStorage↔Supabase, de raíz) | 60 min | Bug estructural crítico |
+| 2 | Alta | Bitácora: migrar bulk import Excel (7° flujo) | 30 min | Migración |
+| 3 | Media | Fix DIESEL-01 (consecuencia de #1) | 15 min tras #1 | Bug |
+| 4 | Media | Merge dev → main cuando #1 y #2 estén terminados | 10 min | Deploy |
+| 5 | Media | Refactor App.jsx — extraer routes | 45 min | Refactor |
+| 6 | Media | Asignar productor auto desde lote al cargar tractor | 30 min | Feature Diesel |
+| 7 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 8 | Baja | Alertas WhatsApp al socio (resumen semanal) | 2 hrs | Feature |
+| 9 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
+| 10 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
+| 11 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
+| 12 | Futuro | saveFoto: opción de ligar foto a lote/operador | 20 min | Mejora Bitácora |
 
 ## Siguiente sesión — recomendación
 
-**Objetivo propuesto: #1 del HANDOFF — migrar LECTURA de bitácora a Supabase.**
+**Objetivo propuesto: #2 — migrar bulk import Excel de bitácora.**
+
+Es más chico (30 min), cierra el último flujo pendiente del módulo bitácora, y deja el módulo 100% limpio antes de atacar GENERAL-01 de raíz (que es más invasivo). Si queda tiempo en esa misma sesión, empezar #1.
 
 Preparación antes de abrir chat nuevo:
-- Tener a mano `src/supabaseLoader.js` y `src/core/DataContext.jsx` completos
-- Tener a mano el schema de `bitacora_trabajos` en Supabase (`SELECT column_name, data_type FROM information_schema.columns WHERE table_name='bitacora_trabajos' ORDER BY ordinal_position;`)
-- Revisar cómo se integró `capital_movimientos` al Promise.all de supabaseLoader — es el patrón a replicar
-- Plan: leer archivos → proponer cambio → probar en local → deploy a dev → verificar que los 6 registros fantasma desaparecen por sí solos al cargar desde Supabase (que ya está vacío) → commit
-
-Si la migración de lectura funciona y los 6 registros desaparecen de la UI sin tocar localStorage, eso es evidencia fuerte de que GENERAL-01 también se arregla parcialmente con #1. Después se ataca #2 (fix GENERAL-01 completo) como segunda sesión.
+- Tener a mano el componente de bulk import (`src/modules/Bitacora.jsx` o similar — buscar la función que dispara `ADD_BITACORA` N veces al leer Excel).
+- Entender cómo el mapper construye el payload — debe igualar los campos de los 6 handlers ya migrados (`tipo`, `fuente`, `lote_id`/`lote_ids`, `fecha`, `operador_id`, `maquinaria_id`, `horas`, `notas`, `data`, `ciclo_id`).
+- Plan: leer archivo → identificar función de import → añadir POST a `bitacora_trabajos` por cada fila (o bulk insert con `Prefer: resolution=merge-duplicates` si aplica) → probar con Excel pequeño en local → dev → commit.
 
 ## Reglas de trabajo (reforzadas esta sesión)
 
 - Sesiones cortas (30-50 min), un objetivo claro
-- **Diagnóstico antes que fix**: no improvisar "limpiezas rápidas" sobre arquitectura no entendida
-- **Un hallazgo por sesión cuando es estructural**: esta sesión se disciplinó a diagnóstico puro y entregó claridad — no se encimó un fix apresurado encima
-- Preserve log en DevTools Network es esencial para testing de varios POSTs seguidos
-- Commit y push al cierre, siempre (esta sesión: sin commit de código, solo docs)
-- Actualizar PROGRESS.md y HANDOFF.md antes de cerrar
-- Un bug/feature por sesión — verificar, commit, cerrar
-- Nunca importar desde App.jsx en módulos
-- Verificar schema Supabase antes de POST
+- Diagnóstico antes que fix
 - Ver archivo completo y EXPANDIDO antes de editar
-- Un cambio a la vez, con prueba inmediata en dev antes de pensar en main
+- Un cambio a la vez, con prueba inmediata
+- Probar en local primero, luego dev, nunca directo a main
+- **Nueva:** cuando un cambio de hidratación parece "romper" el dashboard en local, probar primero con `clear site data` antes de diagnosticar como bug. localStorage residual de sesiones anteriores puede arrastrar estado incompatible y simular un fallo que no existe.
+- **Nueva:** el criterio "los fantasmas desaparecen por sí solos al cargar desde Supabase vacío" es una verificación limpia y rápida cuando se migra lectura de un módulo. Sirve de smoke test.
+- Verificar schema Supabase antes de POST (`information_schema.columns`)
+- Verificar sintaxis con Babel parse después de editar
+- Commit y push al cierre, siempre
+- Nunca importar desde App.jsx en módulos
 - Datos reales = tolerancia cero al cambio sin respaldo previo y sin prueba explícita
-- Probar el cambio en local primero, luego dev, nunca directo a main
-- Cuidado con listeners de Supabase: handler que llama signOut() nunca dentro de onAuthStateChange(SIGNED_OUT)
-- Si una limpieza "simple" no produce el efecto esperado en la UI, PARAR y documentar. Las sorpresas de persistencia son síntoma de arquitectura no entendida
-- **Antes de llamar "tercera capa" a algo, confirmar con DevTools qué hay en cada capa real** (SW / Cache / IndexedDB / localStorage / Session storage). La sorpresa puede ser una capa conocida comportándose raro, no una nueva capa.
+- Cuidado con listeners de Supabase: handler con `signOut()` nunca dentro de `onAuthStateChange(SIGNED_OUT)`
