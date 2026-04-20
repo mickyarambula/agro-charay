@@ -1,5 +1,35 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 20 Abril 2026 (noche)
+
+### ✅ Completado
+
+**Testing de los 4 handlers restantes de Bitácora en dev**
+
+Los 4 flujos no probados en la sesión anterior (saveInsumo, saveDiesel, saveFenol, saveFoto) verificados en agro-charay-dev.vercel.app:
+
+| Handler | POST | Fila en Supabase | data JSONB |
+|---------|------|------------------|------------|
+| saveInsumo | 201 ✅ | insumo / Ramón Lugo / lote 8 / maq 3 | `{"dosis":".300",...}` |
+| saveDiesel | 201 ✅ | diesel / Renato Urías / lote 16 / maq 1 | `{"litros":50,"ac...}` |
+| saveFenol | 201 ✅ | fenol / Manuel Quintero / lote 39 / maq 4 | `{"fenologia":"Ve...}` |
+| saveFoto | 201 ✅ | foto / NULLs (diseño) | `{"descripcion":"...}` |
+
+Método: registros con valores mínimos desde la UI, Preserve log activo en DevTools Network, verificación final con un SELECT único a bitacora_trabajos filtrado por timestamp de la sesión. Los 4 registros de prueba fueron limpiados con DELETE al cierre.
+
+Observación del handler saveFoto: deja lote_id, operador y maquinaria_id en NULL. Es consistente con el diseño actual (foto como comprobante suelto, no atado a lote). Queda anotado en pendientes como mejora futura por si se decide ligar.
+
+Sin cambios de código esta sesión. Sin commit de código, solo docs de cierre.
+
+### 🎓 Lección aprendida
+
+Cuando varios handlers comparten la misma estructura (en este caso postBitacora() con payloads distintos), el testing en lote con verificación SQL final es más eficiente que probar uno a uno con SQL entre cada uno. Requisito: Preserve log activo en DevTools, y un SELECT con rango de timestamp acotado para que aparezcan todas las filas del lote en una sola captura.
+
+Anti-patrón a evitar: correr el SELECT de verificación antes de terminar todos los POSTs del lote. Pasó una vez en esta sesión (solo salió 1 fila en vez de 4 esperadas) porque la query se lanzó prematuramente. No es error de código, es de secuencia de pasos.
+
+### 📋 Pendientes al cierre de sesión
+Ver `docs/HANDOFF.md`. Próximo: migrar LECTURA de Bitácora a supabaseLoader.js (#1 del HANDOFF).
+
 ## Sesión 20 Abril 2026 (tarde)
 
 ### ✅ Completado
