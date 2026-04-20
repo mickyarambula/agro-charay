@@ -1,5 +1,20 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 19 Abril 2026 (noche)
+
+### ✅ Completado
+- Kit de documentación copiado a `/docs` y commiteado en dev (commit 8c7d56b)
+- Fix crash React #31 en Dashboard: `{widgetCBOT}` se parseaba como object literal shorthand en la rama `!isMobile` del ternario. Resuelto envolviendo en fragment: `<>{widgetCBOT}</>`
+- Fix fallbacks faltantes en App.jsx: los casos `configuracion` (rol no admin) y `default` del switch de renderPage renderizaban `<Dashboard>` sin la prop `widgetCBOT`. Agregada la prop a ambos
+- Fix TDZ en Diesel.jsx: `maqConsumos` (línea 37) usaba `localConsumos` antes de su declaración (línea 46). Movido el bloque después de las declaraciones useState
+- Commit de los 3 fixes: c7004a3 (pusheado a dev)
+- Dashboard y módulo Diesel cargan correctamente con datos reales (18 productores, 107 lotes, 212 egresos, $23M costo total)
+
+### 📋 Pendientes al cierre de sesión
+Ver `docs/HANDOFF.md` para tabla actualizada.
+
+---
+
 ## Sesión 16-17 Abril 2026
 
 ### ✅ Completado

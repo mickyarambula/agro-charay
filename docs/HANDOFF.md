@@ -1,77 +1,40 @@
-# AgroSistema Charay — Handoff para nuevo chat
+# AgroSistema Charay — HANDOFF
 
-## INSTRUCCIONES PARA CLAUDE
-Eres el nuevo Claude en este proyecto. Lee este documento completo antes de hacer cualquier cosa.
-Luego lee ARCHITECTURE.md y DECISIONS.md adjuntos.
+**Última actualización:** 19 Abril 2026 (noche)
+**Branch activo:** dev
+**Último commit:** c7004a3 — fix crash React #31 + TDZ Diesel
+**Estado:** sistema estable, sin crashes activos
 
----
+## Estado al cierre
+- Dashboard carga sin crashes
+- Diesel carga sin crashes (500 L en cilindro, 32 registros en historial)
+- Login y realtime funcionando
+- 2 warnings menores en consola (no bloqueantes): key=null en Diesel.jsx:411, Realtime REST fallback
 
-## CONTEXTO DEL PROYECTO
-Sistema de gestión agrícola para empresa de riego en Sinaloa, México.
-Maneja crédito de avío, operación de campo, finanzas del ciclo OI 2025-2026.
+## Tabla de pendientes
 
-**Stack**: React 18 + Vite, Supabase (oryixvodfqojunnqbkln), Vercel
-**Repo**: github.com/mickyarambula/agro-charay  
-**Local**: ~/Desktop/agro-charay
-**Dev**: agro-charay-dev.vercel.app | **Prod**: agro-charay.vercel.app
-**Rama activa**: dev
+| # | Prioridad | Tarea | Tiempo | Categoría |
+|---|-----------|-------|--------|-----------|
+| 1 | Alta | Probar calculadora L/ha en modal Cargar tractor | 5 min | Verificación |
+| 2 | Media | Warning key=null en Diesel.jsx:411 | 15 min | Bug menor |
+| 3 | Media | Asignar productor auto desde lote al cargar tractor | 30 min | Feature Diesel |
+| 4 | Media | Edicion admin (litros, notas) en modal detalle Diesel | 30 min | Feature Diesel |
+| 5 | Alta | Migrar Capital Propio de localStorage a Supabase | 45 min | Migración |
+| 6 | Alta | Migrar Bitácora de Trabajos a Supabase | 45 min | Migración |
+| 7 | Baja | Balance General: capital propio vacío (depende de #5) | 10 min | Finanzas |
+| 8 | Baja | Alertas WhatsApp al socio (resumen semanal) | 2 hrs | Feature |
+| 9 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
+| 10 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
+| 11 | Futuro | Modo offline (IndexedDB + cola sync) | 4+ hrs | Infra |
+| 12 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
 
-## POR QUÉ ESTAMOS CAMBIANDO DE CHAT
-Esta es una mecánica deliberada — cambiamos de chat cuando el contexto se satura para mantener calidad. NO es porque algo esté roto o perdido. Los documentos ARCHITECTURE.md y DECISIONS.md se actualizan cada sesión para que el contexto se transfiera perfectamente.
+## Siguiente sesión — empezar por el #1
+Probar la calculadora L/ha en modal Cargar tractor. Si funciona, seguir con #5 o #6 (migraciones a Supabase, más valor).
 
-## ESTADO ACTUAL DEL SISTEMA (al momento del handoff)
-**Último commit**: f82c638 — "fix: eliminar TODOS los imports circulares de App.jsx"
-**Problema activo**: La app crashea con "Minified React error #31" al cargar.
-
-### Root cause identificado
-WidgetCBOTDashboard fue movido como prop de App.jsx a Dashboard.jsx para evitar imports circulares. Pero hay al menos un lugar en App.jsx donde se renderiza Dashboard SIN pasarle la prop `widgetCBOT`. Eso causa el error #31 (objeto renderizado como componente).
-
-### Fix concreto a aplicar PRIMERO
-En App.jsx, buscar TODAS las ocurrencias donde se renderiza `<Dashboard` y verificar que TODAS tengan `widgetCBOT={<WidgetCBOTDashboard />}`. Si alguna no lo tiene, agregarlo.
-
-También verificar que no queden imports circulares:
-```bash
-grep -rn "from.*App.jsx" src/modules/
-```
-Debe retornar vacío.
-
-## FLUJO DE TRABAJO (obligatorio)
-1. Tú analizas y escribes prompts en bloques de código
-2. Miguel los pega en **Claude Code** (terminal ~/Desktop/agro-charay, ya en el directorio correcto)
-3. Claude Code ejecuta + `npm run build` + `git push origin dev && git push origin main`
-4. Vercel despliega automáticamente
-5. Miguel reporta resultado
-
-## MCPs DISPONIBLES
-- **Supabase MCP**: execute_sql directo a BD
-- **Vercel MCP**: ver deployments  
-- **Chrome MCP**: ver browser
-- **Mac MCP**: leer archivos con osascript
-
-## REGLAS ABSOLUTAS
-1. **NUNCA** `import { algo } from "../App.jsx"` en módulos — causa crash inmediato
-2. **SIEMPRE** verificar schema antes de POST: `SELECT column_name FROM information_schema.columns WHERE table_name='x'`
-3. Explicar qué harás ANTES de mandar prompts
-4. Un problema a la vez — prompts pequeños y específicos
-5. Verificar build verde antes de dar por resuelto
-
-## USUARIOS
-admin/123123 | daniela/871005 | socio/agro2025 | encargado/charay25 | ingeniero/ing2025 | compras/compras25 | campo/campo2025
-
-## DATOS EN SUPABASE (intactos, NO recrear)
-17 productores, 107 lotes, 455.88 ha, ciclo OI 2025-2026
-148 dispersiones ($9.6M), 212 egresos, 105 insumos
-7 usuarios en auth.users, 5 tractores UUID, 5 operadores, 25 inventario_items
-7 consumos en maquinaria_consumos (T-1 configurado 10 L/ha)
-
-## PENDIENTES DESPUÉS DEL CRASH
-1. Bug calculadora diesel: fetch directo a Supabase al abrir modal de carga
-2. Diesel: productor automático desde lote
-3. Modo offline: IndexedDB + cola sync
-4. Bitácora y capital → migrar a Supabase
-5. Fase 2 cosecha: boletas → pago → cierre
-
-## MECÁNICA DE CAMBIO DE CHAT
-Cuando el contexto se sature, Claude avisará: "Es momento de cambiar de chat".
-Antes de cambiar: actualizar DECISIONS.md con pendientes del día y hacer commit.
-El nuevo chat arranca pegando este HANDOFF.md + adjuntando ARCHITECTURE.md y DECISIONS.md.
+## Reglas de trabajo (mantener)
+- Sesiones cortas (30-50 min), un objetivo claro
+- Commit y push al cierre, siempre
+- Actualizar PROGRESS.md y HANDOFF.md antes de cerrar
+- No agregar features nuevas hasta terminar migraciones pendientes
+- Verificar schema Supabase antes de POST (information_schema.columns)
+- Nunca importar desde App.jsx en módulos
