@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -56,6 +56,7 @@ export async function loadStateFromSupabase() {
       supaFetch('usuarios', 'select=usuario,password,rol,nombre,activo').catch(() => []),
       supaFetch('maquinaria_consumos', 'order=maquinaria_id').catch(() => []),
       supaFetch('capital_movimientos', 'order=fecha.desc').catch(e => { console.warn('[Supabase] capital_movimientos fetch falló:', e.message); return []; }),
+      supaFetch('bitacora_trabajos', 'order=fecha.desc').catch(e => { console.warn('[Supabase] bitacora_trabajos fetch falló:', e.message); return []; }),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -209,7 +210,7 @@ export async function loadStateFromSupabase() {
       cultivoActivo:      estadoExistente.cultivoActivo      || null,
       alertasLeidas:      estadoExistente.alertasLeidas      || [],
       // Datos operativos que NO están aún en Supabase — se preservan locales
-      bitacora:           estadoExistente.bitacora           || [],
+      // bitacora: ahora viene de Supabase (ver mapeo abajo) — ya NO se preserva de localStorage
       trabajos:           estadoExistente.trabajos           || [],
       asistencias:        estadoExistente.asistencias        || [],
       pagosSemana:        estadoExistente.pagosSemana        || [],
@@ -328,6 +329,33 @@ export async function loadStateFromSupabase() {
       })),
     };
 
+    const bitacora = (bitacoraRows || []).map(r => {
+      // lote_ids (jsonb array) tiene prioridad; si no, fallback a lote_id (text único) normalizado a array
+      let loteIdsNorm = [];
+      if (Array.isArray(r.lote_ids) && r.lote_ids.length > 0) {
+        loteIdsNorm = r.lote_ids;
+      } else if (r.lote_id) {
+        loteIdsNorm = [r.lote_id];
+      }
+      return {
+        id: r.legacy_id || r.id,
+        tipo: r.tipo || '',
+        loteId: r.lote_id || (loteIdsNorm[0] || null),   // compat: primer lote como loteId único
+        loteIds: loteIdsNorm,                            // array completo para labores multi-lote
+        fecha: r.fecha || '',
+        operador: r.operador || '',
+        operadorId: r.operador_id || null,
+        maquinariaId: r.maquinaria_id || null,
+        horas: parseFloat(r.horas) || 0,
+        notas: r.notas || '',
+        data: r.data || {},
+        fuente: r.fuente || '',
+        cicloId: r.ciclo_id || null,
+        _uuid: r.id,
+        _createdAt: r.created_at,
+      };
+    });
+
     const estadoNuevo = {
       ...configPreservada,
       // ── Datos operativos: SIEMPRE frescos de Supabase (reemplazo total) ──
@@ -338,6 +366,7 @@ export async function loadStateFromSupabase() {
       cajaChicaFondo,
       cajaChicaMovimientos,
       inventario,
+      bitacora,
       usuariosDB: (usuariosDBRows||[]).filter(u => u.usuario && u.password),
       maquinariaConsumos: (maqConsumosRows||[]).map(c => ({
         id: c.id, maquinariaId: c.maquinaria_id || c.maquinaria_legacy_id,
