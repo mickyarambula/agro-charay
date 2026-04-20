@@ -1,5 +1,26 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 20 Abril 2026 (mañana)
+
+### ✅ Completado
+
+**Migración de Capital Propio a Supabase**
+- Tabla `capital_movimientos` en Supabase (schema: id uuid, legacy_id bigint, signo +1/-1, monto numeric, fecha, concepto, socio, notas, timestamps)
+- supabaseLoader.js: agregado fetch de capital_movimientos al Promise.all paralelo, mapeo a formato {aportaciones, retiros}
+- Capital.jsx: saveA/saveR ahora hacen POST directo a Supabase antes del dispatch local
+- Fix bonus: guards savingA/savingR + botones con disabled + texto "Guardando..." para prevenir inserts duplicados por doble-click
+- Commit: 3b2d789
+
+**Bugs descubiertos durante la migración (documentados para próximas sesiones)**
+- Bug GENERAL-01: doble capa de persistencia (localStorage + Supabase) causa zombie data — el flujo actual carga primero de localStorage y luego "refresca" desde Supabase, pero el reducer ya quedó con datos viejos. Afecta a todos los módulos migrados.
+- Bug GENERAL-02: reducer sobreescribe id con Date.now() en ADD_APORTACION/ADD_RETIRO (DataContext.jsx:444/446), descorrelacionando el local vs el UUID de Supabase.
+- Bug DIESEL-01 (ya conocido): mismo patrón — doble fuente de datos causa cancelación fantasma.
+
+### 🎓 Lección aprendida
+Las migraciones parciales revelan el bug estructural más grande del proyecto: **el modelo híbrido localStorage+Supabase no es sostenible**. Cada módulo migrado lo manifiesta. Solución definitiva (próximas sesiones): eliminar localStorage como fuente de datos operativos, dejarlo solo como cache temporal de UI.
+
+---
+
 ## Sesión 19 Abril 2026 (noche)
 
 ### ✅ Completado
