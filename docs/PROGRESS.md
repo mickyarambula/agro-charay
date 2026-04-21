@@ -1,6 +1,6 @@
 # AgroSistema Charay — Progress Log
 
-## Sesión 20 Abril 2026 (noche tardía)
+## Sesión 20 Abril 2026 (noche tardía — fix DELETE)
 
 ### ✅ Completado
 Fix bug BITACORA-DELETE-01. El botón 🗑 de Bitácora ya envía DELETE a Supabase.
@@ -21,7 +21,7 @@ Fix bug BITACORA-DELETE-01. El botón 🗑 de Bitácora ya envía DELETE a Supab
 ### 📋 Pendientes al cierre
 Ver docs/HANDOFF.md. Siguiente objetivo propuesto: Bug GENERAL-01 (doble capa de persistencia) — bug estructural de raíz que afecta todos los módulos que aún dependen de localStorage.
 
-## Sesión 20 Abril 2026 (noche tardía)
+## Sesión 20 Abril 2026 (noche tardía — 5 sitios externos)
 
 ### ✅ Completado
 
