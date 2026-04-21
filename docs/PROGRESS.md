@@ -1,5 +1,28 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 20 Abril 2026 (noche)
+
+### ✅ Completado
+- Extracción del helper `postBitacora` a `src/core/supabaseWriters.js`. Firma: `postBitacora(payload, cicloActivoId, { silent = false } = {})`. Modo silent evita N alerts en bulk import.
+- Refactor `src/modules/Bitacora.jsx`:
+  - Import del helper desde `../core/supabaseWriters.js`
+  - Helper local eliminado (43 líneas)
+  - Imports huérfanos `SUPABASE_URL` y `SUPABASE_ANON_KEY` eliminados
+  - 6 handlers manuales (saveInsumo, saveDiesel, saveRiego, saveFenol, saveReporte, saveFoto) ahora llaman `postBitacora(payload, state.cicloActivoId)`
+  - Bulk import Excel (línea 223) migrado con `Promise.all` + `silent:true`. Contador `failedBulk` separado de `ok` para distinguir fallos de parseo vs de persistencia.
+- Commit: e6b3554 (neto −31 líneas en Bitacora.jsx).
+- Smoke test manual: 2 Reportes Diarios creados desde UI → persistidos en `bitacora_trabajos` → visibles tras F5 → deploy dev verificado.
+
+### 🎓 Lecciones aprendidas
+- **El HANDOFF anterior subcontaba el scope pendiente.** Decía "queda un flujo (bulk import)"; el `grep` reveló 6 puntos en 5 archivos. Lección: no confiar en diagnósticos rápidos para estimar scope. Un `grep -rn "ADD_BITACORA"` al inicio del diagnóstico habría calibrado expectativas desde el principio.
+- **"Success. No rows returned" en SQL no significa "filas borradas".** Significa "la query se ejecutó sin error". Si el WHERE no matcheó nada, sale el mismo mensaje. Siempre `SELECT COUNT(*)` después de un DELETE para confirmar.
+- **`NULL LIKE '%x%'` es NULL, no TRUE**. Las filas de prueba tenían `notas = NULL` porque el contenido del Reporte Diario se guarda en la columna `data` (jsonb), no en `notas`. Los LIKE nunca las tocaron. Si una columna puede ser NULL, usar `WHERE notas IS NOT NULL AND notas LIKE '%x%'` o identificar por PK/legacy_id.
+- **Descubrimiento nuevo durante smoke test: DELETE de bitácora desde UI no va a Supabase.** Preexistente, no introducido hoy. Documentado como BITACORA-DELETE-01 en HANDOFF.
+- **Scope B estricto funciona.** Las tentaciones de "ya que estamos, migremos los otros 5" aparecieron 3 veces en la sesión (al ver el diagnóstico, en la propuesta del plan de `supabaseWriters.js`, al cierre del smoke test). Mantener el scope dio un commit limpio, coherente, con smoke test representativo.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — tabla de pendientes. Siguiente sesión recomendada: #1 (migrar los 5 sitios externos) + opcional #2 (fix DELETE) si sobra tiempo.
+
 ## Sesión 20 Abril 2026 (tarde — tercera de la tarde)
 
 ### ✅ Completado
