@@ -13,6 +13,7 @@ import BottomSheet from '../components/mobile/BottomSheet.jsx';
 import SkeletonCard from '../components/mobile/SkeletonCard.jsx';
 import ToastContainer, { showToast } from '../components/mobile/Toast.jsx';
 import { enviarNotifLocal } from '../core/push.js';
+import { postBitacora } from '../core/supabaseWriters.js';
 
 const TIPOS_TRABAJO = [
   "Barbecho", "Rastreo", "Nivelación", "Surcado", "Siembra", "Fertilización",
@@ -412,7 +413,7 @@ export default function OrdenDia({ userRol, usuario }) {
     }
   };
 
-  const marcarCompletada = (orden) => {
+  const marcarCompletada = async (orden) => {
     if (!window.confirm(`¿Marcar como completada la orden "${orden.tipoTrabajo}" de ${getOperador(orden.operadorId)?.nombre || orden.operadorNombre || "—"}?`)) return;
     dispatch({ type: "UPD_ORDEN_TRABAJO", payload: {
       ...orden,
@@ -429,7 +430,7 @@ export default function OrdenDia({ userRol, usuario }) {
     );
     // Crear registro automático en bitácora, etiquetado con origen=orden_trabajo
     // y ordenId para correlación inversa (evita doble captura manual).
-    dispatch({ type: "ADD_BITACORA", payload: {
+    const bitacoraPayload = {
       tipo: "reporte",
       loteId: parseInt(orden.loteId, 10) || null,
       loteIds: orden.loteId ? [parseInt(orden.loteId, 10)] : [],
@@ -439,9 +440,14 @@ export default function OrdenDia({ userRol, usuario }) {
       maquinariaId: orden.maquinariaId || "",
       horas: parseFloat(orden.horasEstimadas) || 0,
       notas: `Orden de trabajo completada: ${orden.tipoTrabajo}`,
+      data: { titulo: orden.tipoTrabajo, descripcion: orden.notas || "" },
+    };
+    const saved = await postBitacora(bitacoraPayload, state.cicloActivoId, { silent: true });
+    dispatch({ type: "ADD_BITACORA", payload: {
+      ...bitacoraPayload,
+      id: saved?.id || Date.now(),
       origen: "orden_trabajo",
       ordenId: orden.id,
-      data: { titulo: orden.tipoTrabajo, descripcion: orden.notas || "" },
     }});
   };
 

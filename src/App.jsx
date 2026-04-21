@@ -1375,8 +1375,9 @@ export default function App() {
         }
       }).catch(() => {});
       supabaseClient.auth.onAuthStateChange((event) => {
+        // Solo reaccionar a SIGNED_OUT externo (ej: token expirado por Supabase).
+        // NO llamar handleLogout aquí: causaría loop porque handleLogout llama signOut.
         if (event === 'SIGNED_OUT') {
-          localStorage.removeItem('agro_session');
           setUsuario(null);
         }
       });
@@ -1650,6 +1651,38 @@ export default function App() {
     } catch (e) { console.warn("broadcast falló:", e); }
   }, [state.solicitudesGasto, state.solicitudesCompra, state.recomendaciones, state.ordenesCompra, state.notificaciones, state.delegaciones, state.ordenesTrabajo, state.bitacora, usuario]);
 
+  // Logout unificado — limpia storage + Supabase Auth + estado local
+  // Fix: al cambiar de usuario, el rol/estado del usuario anterior quedaba
+  // pegado en localStorage y la siguiente sesión cargaba con vista incorrecta.
+  const handleLogout = async () => {
+    try {
+      // 1. Supabase Auth: revocar JWT (no bloquear si falla)
+      if (supabaseClient) {
+        await supabaseClient.auth.signOut().catch(() => {});
+      }
+    } catch (e) { console.warn('signOut falló:', e); }
+
+    // 2. localStorage: borrar claves del dominio de la app + token Supabase
+    //    (selectivo para no tocar preferencias ajenas si las hubiera)
+    try {
+      const prefijos = ['agro_', 'agroSistema', 'sb-', 'supabase.auth'];
+      const keys = Object.keys(localStorage);
+      keys.forEach(k => {
+        if (prefijos.some(p => k.startsWith(p) || k.includes(p))) {
+          localStorage.removeItem(k);
+        }
+      });
+    } catch (e) { console.warn('localStorage cleanup falló:', e); }
+
+    // 3. sessionStorage: limpieza total (solo usamos agroLoginUser como bridge)
+    try {
+      sessionStorage.clear();
+    } catch (e) { console.warn('sessionStorage cleanup falló:', e); }
+
+    // 4. Estado local: soltar el usuario para forzar render del login
+    setUsuario(null);
+  };
+
   const handleLogin = async (u) => {
     try { await loadStateFromSupabase(); } catch(e) { console.warn('Supabase skip:', e); }
     sessionStorage.setItem('agroLoginUser', JSON.stringify(u));
@@ -1681,7 +1714,7 @@ export default function App() {
     return (
       <ErrorBoundary>
       <Ctx.Provider value={{ state, dispatch }}>
-        <VistaOperador usuario={usuario} onLogout={() => { localStorage.removeItem('agro_session'); supabaseClient?.auth.signOut().catch(()=>{}); setUsuario(null); }} />
+        <VistaOperador usuario={usuario} onLogout={handleLogout} />
       </Ctx.Provider>
       </ErrorBoundary>
     );
@@ -1828,7 +1861,7 @@ export default function App() {
               <button onClick={()=>exportarResumenCiclo(state)} title="Respaldo Excel"
                 style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:14,padding:2,flexShrink:0}}>📥</button>
             )}
-            <button onClick={()=>{ localStorage.removeItem('agro_session'); supabaseClient?.auth.signOut().catch(()=>{}); setUsuario(null); }} title="Cerrar sesión"
+            <button onClick={handleLogout} title="Cerrar sesión"
               style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:16,padding:2,flexShrink:0}} >⏏</button>
           </div>
 

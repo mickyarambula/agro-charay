@@ -26,6 +26,7 @@ import {
 const mxn = n => (parseFloat(n)||0).toLocaleString('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:2,maximumFractionDigits:2});
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
+import { postBitacora, deleteBitacora } from '../core/supabaseWriters.js';
 
 
 export default function BitacoraModule({ userRol, puedeEditar }) {
@@ -218,10 +219,21 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
         }
       });
 
-      // Dispatch all at once
-      nuevos.forEach((b,i)=>dispatch({type:"ADD_BITACORA",payload:{...b,id:Date.now()+i}}));
+      // Dispatch all at once — POST a Supabase primero, dispatch con saved.id
+      const results = await Promise.all(
+        nuevos.map(b => postBitacora(b, state.cicloActivoId, { silent: true }))
+      );
+      let failedBulk = 0;
+      results.forEach((saved, i) => {
+        if (saved) {
+          dispatch({ type:"ADD_BITACORA", payload:{ ...nuevos[i], id: saved.id }});
+        } else {
+          failedBulk++;
+        }
+      });
       invMovs.forEach((m,i)=>dispatch({type:"ADD_INV_MOV",payload:{...m,id:Date.now()+10000+i}}));
 
+      if(failedBulk>0) logs.push(`⚠️  ${failedBulk} filas no se guardaron en Supabase`);
       logs.push(`✅ ${ok} registros importados correctamente`);
       if(warn>0) logs.push(`⚠️ ${warn} registros con advertencias`);
       if(invMovs.length>0) logs.push(`📦 ${invMovs.length} movimientos de inventario generados`);
@@ -234,113 +246,177 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
   };
 
   // Reducer actions para bitácora extendida
-  const saveInsumo = () => {
+  // ── Supabase: guards + helper de POST ──
+  const [savingInsumo, setSavingInsumo]   = useState(false);
+  const [savingDiesel, setSavingDiesel]   = useState(false);
+  const [savingRiego, setSavingRiego]     = useState(false);
+  const [savingFenol, setSavingFenol]     = useState(false);
+  const [savingReporte, setSavingReporte] = useState(false);
+  const [savingFoto, setSavingFoto]       = useState(false);
+
+  // Helper postBitacora movido a src/core/supabaseWriters.js
+
+  const saveInsumo = async () => {
     const f = formInsumo;
     if(!f.loteId||!f.producto) return;
-    const dosis      = parseFloat(f.dosis)||0;
-    const haApl      = parseFloat(f.haAplicadas)||0;
-    const cantTotal  = dosis * haApl;
-    const unidadBase = f.unidad.replace("/ha","").trim();
-    dispatch({ type:"ADD_BITACORA", payload:{
-      tipo:"insumo",
-      loteId: parseInt(f.loteId)||null,
-      loteIds: Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]),
-      fecha:f.fecha, operador:f.operador, operadorId:f.operadorId||"",
-      maquinariaId:f.maquinariaId||"", horas:parseFloat(f.horas)||0,
-      notas:f.notas, foto:f.foto,
-      data:{ insumoId:f.insumoId, producto:f.producto,
-             dosis:f.dosis, unidad:f.unidad, haAplicadas:haApl,
-             cantidadTotal:cantTotal, unidadBase }
-    }});
-    if(f.insumoId && cantTotal>0) {
-      dispatch({ type:"ADD_INV_MOV", payload:{
-        itemId: parseInt(f.insumoId), tipo:"salida",
-        cantidad: cantTotal, unidad: unidadBase,
-        fecha: f.fecha,
-        concepto: `Aplicación en lote ${f.loteId} — ${dosis} ${f.unidad} × ${haApl} ha`,
-        ref: "bitacora",
-      }});
+    if(savingInsumo) return;
+    setSavingInsumo(true);
+    try {
+      const dosis      = parseFloat(f.dosis)||0;
+      const haApl      = parseFloat(f.haAplicadas)||0;
+      const cantTotal  = dosis * haApl;
+      const unidadBase = f.unidad.replace("/ha","").trim();
+      const payload = {
+        tipo:"insumo",
+        loteId: parseInt(f.loteId)||null,
+        loteIds: Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]),
+        fecha:f.fecha, operador:f.operador, operadorId:f.operadorId||"",
+        maquinariaId:f.maquinariaId||"", horas:parseFloat(f.horas)||0,
+        notas:f.notas, foto:f.foto,
+        data:{ insumoId:f.insumoId, producto:f.producto,
+               dosis:f.dosis, unidad:f.unidad, haAplicadas:haApl,
+               cantidadTotal:cantTotal, unidadBase }
+      };
+      const saved = await postBitacora(payload, state.cicloActivoId);
+      if(!saved) return;
+      dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
+      if(f.insumoId && cantTotal>0) {
+        dispatch({ type:"ADD_INV_MOV", payload:{
+          itemId: parseInt(f.insumoId), tipo:"salida",
+          cantidad: cantTotal, unidad: unidadBase,
+          fecha: f.fecha,
+          concepto: `Aplicación en lote ${f.loteId} — ${dosis} ${f.unidad} × ${haApl} ha`,
+          ref: "bitacora",
+        }});
+      }
+      if(f.maquinariaId && parseFloat(f.horas)>0) {
+        dispatch({type:"ADD_HORAS", payload:{
+          fecha:f.fecha, maqId:parseInt(f.maquinariaId),
+          operadorId:f.operadorId||"", loteId:parseInt(f.loteId)||"",
+          horas:parseFloat(f.horas),
+          concepto:`Aplicación: ${f.producto}`, fuente:"bitacora"
+        }});
+      }
+      setTipoModal(null); setFormInsumo({...emptyBase, insumoId:"", producto:"", dosis:"", unidad:"L/ha", haAplicadas:""});
+    } finally {
+      setSavingInsumo(false);
     }
-    // Auto-registrar horas de maquinaria si se especificaron
-    if(f.maquinariaId && parseFloat(f.horas)>0) {
-      dispatch({type:"ADD_HORAS", payload:{
-        fecha:f.fecha, maqId:parseInt(f.maquinariaId),
-        operadorId:f.operadorId||"", loteId:parseInt(f.loteId)||"",
-        horas:parseFloat(f.horas), concepto:`Aplicación: ${f.producto}`, fuente:"bitacora"
-      }});
-    }
-    setTipoModal(null); setFormInsumo({...emptyBase, insumoId:"", producto:"", dosis:"", unidad:"L/ha", haAplicadas:""});
   };
-  const saveDiesel = () => {
+  const saveDiesel = async () => {
     const f = formDiesel;
     if(!f.loteId||!f.litros) return;
-    const maqId = f.maquinariaId||f.tractorId||"";
-    dispatch({ type:"ADD_BITACORA", payload:{ tipo:"diesel",
-      loteId: parseInt(f.loteId)||null,
-      loteIds: Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]),
-      fecha:f.fecha, operador:f.operador, operadorId:f.operadorId||"",
-      maquinariaId:maqId, horas:parseFloat(f.horas)||0,
-      notas:f.notas, foto:f.foto,
-      data:{ tractorId:maqId, litros:parseFloat(f.litros)||0, precioLitro:parseFloat(f.precioLitro)||27, actividad:f.actividad }}});
-    if(f.litros) dispatch({ type:"ADD_DIESEL", payload:{ productorId:null, fecha:f.fecha, litros:parseFloat(f.litros)||0, precioLitro:parseFloat(f.precioLitro)||27, unidad:maqId||"Tractor", loteId:parseInt(f.loteId), concepto:f.actividad||"Registro campo", operador:f.operador, formaPago:"credito" }});
-    if(maqId && parseFloat(f.horas)>0) dispatch({type:"ADD_HORAS", payload:{
-      fecha:f.fecha, maqId:parseInt(maqId)||maqId, operadorId:f.operadorId||"",
-      loteId:parseInt(f.loteId)||"", horas:parseFloat(f.horas),
-      concepto:f.actividad||"Diesel", fuente:"bitacora"
-    }});
-    setTipoModal(null); setFormDiesel({...emptyBase, tractorId:"", litros:"", precioLitro:"27", actividad:""});
+    if(savingDiesel) return;
+    setSavingDiesel(true);
+    try {
+      const maqId = f.maquinariaId||f.tractorId||"";
+      const payload = { tipo:"diesel",
+        loteId: parseInt(f.loteId)||null,
+        loteIds: Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]),
+        fecha:f.fecha, operador:f.operador, operadorId:f.operadorId||"",
+        maquinariaId:maqId, horas:parseFloat(f.horas)||0,
+        notas:f.notas, foto:f.foto,
+        data:{ tractorId:maqId, litros:parseFloat(f.litros)||0, precioLitro:parseFloat(f.precioLitro)||27, actividad:f.actividad }};
+      const saved = await postBitacora(payload, state.cicloActivoId);
+      if(!saved) return;
+      dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
+      if(f.litros) dispatch({ type:"ADD_DIESEL", payload:{ productorId:null, fecha:f.fecha, litros:parseFloat(f.litros)||0, precioLitro:parseFloat(f.precioLitro)||27, unidad:maqId||"Tractor", loteId:parseInt(f.loteId), concepto:f.actividad||"Registro campo", operador:f.operador, formaPago:"credito" }});
+      if(maqId && parseFloat(f.horas)>0) dispatch({type:"ADD_HORAS", payload:{
+        fecha:f.fecha, maqId:parseInt(maqId)||maqId, operadorId:f.operadorId||"",
+        loteId:parseInt(f.loteId)||"", horas:parseFloat(f.horas),
+        concepto:f.actividad||"Diesel", fuente:"bitacora"
+      }});
+      setTipoModal(null); setFormDiesel({...emptyBase, tractorId:"", litros:"", precioLitro:"27", actividad:""});
+    } finally {
+      setSavingDiesel(false);
+    }
   };
-  const saveRiego = () => {
+  const saveRiego = async () => {
     const f = formRiego;
     if(!f.loteId) return;
-    dispatch({ type:"ADD_BITACORA", payload:{ tipo:"riego",
-      loteId: parseInt(f.loteId)||null,
-      loteIds: Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]),
-      fecha:f.fecha, operador:f.operador, operadorId:f.operadorId||"",
-      maquinariaId:f.maquinariaId||"", horas:parseFloat(f.horas)||parseFloat(f.horasRiego)||0,
-      notas:f.notas, foto:f.foto,
-      data:{ horasRiego:parseFloat(f.horasRiego)||0, volumenM3:parseFloat(f.volumenM3)||0, tipoRiego:f.tipoRiego }}});
-    if(f.maquinariaId && parseFloat(f.horas)>0) dispatch({type:"ADD_HORAS", payload:{
-      fecha:f.fecha, maqId:parseInt(f.maquinariaId), operadorId:f.operadorId||"",
-      loteId:parseInt(f.loteId)||"", horas:parseFloat(f.horas),
-      concepto:"Riego", fuente:"bitacora"
-    }});
-    setTipoModal(null); setFormRiego({...emptyBase, horasRiego:"", volumenM3:"", tipoRiego:"Gravedad"});
+    if(savingRiego) return;
+    setSavingRiego(true);
+    try {
+      const payload = { tipo:"riego",
+        loteId: parseInt(f.loteId)||null,
+        loteIds: Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]),
+        fecha:f.fecha, operador:f.operador, operadorId:f.operadorId||"",
+        maquinariaId:f.maquinariaId||"", horas:parseFloat(f.horas)||parseFloat(f.horasRiego)||0,
+        notas:f.notas, foto:f.foto,
+        data:{ horasRiego:parseFloat(f.horasRiego)||0, volumenM3:parseFloat(f.volumenM3)||0, tipoRiego:f.tipoRiego }};
+      const saved = await postBitacora(payload, state.cicloActivoId);
+      if(!saved) return;
+      dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
+      if(f.maquinariaId && parseFloat(f.horas)>0) dispatch({type:"ADD_HORAS", payload:{
+        fecha:f.fecha, maqId:parseInt(f.maquinariaId), operadorId:f.operadorId||"",
+        loteId:parseInt(f.loteId)||"", horas:parseFloat(f.horas),
+        concepto:"Riego", fuente:"bitacora"
+      }});
+      setTipoModal(null); setFormRiego({...emptyBase, horasRiego:"", volumenM3:"", tipoRiego:"Gravedad"});
+    } finally {
+      setSavingRiego(false);
+    }
   };
-  const saveFenol = () => {
+  const saveFenol = async () => {
     const f = formFenol;
     if(!f.loteId) return;
-    const loteIdsF = Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]);
-    dispatch({ type:"ADD_BITACORA", payload:{ tipo:"fenol",
-      loteId: parseInt(f.loteId)||null, loteIds: loteIdsF,
-      fecha:f.fecha, operador:f.operador, operadorId:f.operadorId||"",
-      maquinariaId:f.maquinariaId||"", horas:parseFloat(f.horas)||0,
-      notas:f.notas, foto:f.foto,
-      data:{ fenologia:f.fenologia, observacion:f.observacion }}});
-    loteIdsF.forEach(lid=>{ const lote=state.lotes.find(l=>l.id===lid); if(lote) dispatch({type:"UPD_LOTE",payload:{...lote,fenologia:f.fenologia}}); });
-    setTipoModal(null); setFormFenol({...emptyBase, fenologia:"Vegetativo", observacion:""});
+    if(savingFenol) return;
+    setSavingFenol(true);
+    try {
+      const loteIdsF = Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]);
+      const payload = { tipo:"fenol",
+        loteId: parseInt(f.loteId)||null, loteIds: loteIdsF,
+        fecha:f.fecha, operador:f.operador, operadorId:f.operadorId||"",
+        maquinariaId:f.maquinariaId||"", horas:parseFloat(f.horas)||0,
+        notas:f.notas, foto:f.foto,
+        data:{ fenologia:f.fenologia, observacion:f.observacion }};
+      const saved = await postBitacora(payload, state.cicloActivoId);
+      if(!saved) return;
+      dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
+      loteIdsF.forEach(lid=>{ const lote=state.lotes.find(l=>l.id===lid); if(lote) dispatch({type:"UPD_LOTE",payload:{...lote,fenologia:f.fenologia}}); });
+      setTipoModal(null); setFormFenol({...emptyBase, fenologia:"Vegetativo", observacion:""});
+    } finally {
+      setSavingFenol(false);
+    }
   };
-  const saveReporte = () => {
+  const saveReporte = async () => {
     const f = formReporte;
     if(!f.titulo) return;
-    dispatch({ type:"ADD_BITACORA", payload:{ tipo:"reporte",
-      loteId: f.loteId?parseInt(f.loteId):null,
-      loteIds: Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]),
-      fecha:f.fecha, operador:f.operador, operadorId:f.operadorId||"",
-      maquinariaId:f.maquinariaId||"", horas:parseFloat(f.horas)||0,
-      notas:f.notas, foto:f.foto,
-      data:{ titulo:f.titulo, descripcion:f.descripcion }}});
-    setTipoModal(null); setFormReporte({...emptyBase, titulo:"", descripcion:""});
+    if(savingReporte) return;
+    setSavingReporte(true);
+    try {
+      const payload = { tipo:"reporte",
+        loteId: f.loteId?parseInt(f.loteId):null,
+        loteIds: Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]),
+        fecha:f.fecha, operador:f.operador, operadorId:f.operadorId||"",
+        maquinariaId:f.maquinariaId||"", horas:parseFloat(f.horas)||0,
+        notas:f.notas, foto:f.foto,
+        data:{ titulo:f.titulo, descripcion:f.descripcion }};
+      const saved = await postBitacora(payload, state.cicloActivoId);
+      if(!saved) return;
+      dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
+      setTipoModal(null); setFormReporte({...emptyBase, titulo:"", descripcion:""});
+    } finally {
+      setSavingReporte(false);
+    }
   };
-  const saveFoto = () => {
+  const saveFoto = async () => {
     const f = formFoto;
     if(!f.fotoData) return;
-    dispatch({ type:"ADD_BITACORA", payload:{ tipo:"foto",
-      loteId: f.loteId?parseInt(f.loteId):null,
-      loteIds: Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]),
-      fecha:f.fecha, operador:f.operador, notas:f.notas, foto:f.fotoData,
-      data:{ descripcion:f.descripcion }}});
-    setTipoModal(null); setFormFoto({...emptyBase, descripcion:"", fotoData:null}); setFotoPreview(null);
+    if(savingFoto) return;
+    setSavingFoto(true);
+    try {
+      const payload = { tipo:"foto",
+        loteId: f.loteId?parseInt(f.loteId):null,
+        loteIds: Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]),
+        fecha:f.fecha, operador:f.operador, notas:f.notas, foto:f.fotoData,
+        data:{ descripcion:f.descripcion }};
+      const saved = await postBitacora(payload, state.cicloActivoId);
+      if(!saved) return;
+      dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
+      setTipoModal(null); setFormFoto({...emptyBase, descripcion:"", fotoData:null}); setFotoPreview(null);
+    } finally {
+      setSavingFoto(false);
+    }
   };
 
 
@@ -410,7 +486,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <span className="font-mono" style={{fontSize:11,color:T.fog}}>{b.fecha}</span>
                 {b.operador && <span style={{fontSize:11,color:T.fog}}>· 👤 {b.operador}</span>}
-                {userRol==="admin" && <button onClick={()=>confirmarEliminar("¿Eliminar este registro de bitácora?",()=>dispatch({type:"DEL_BITACORA",payload:b.id}))} style={{border:"none",background:"none",cursor:"pointer",color:T.fog,fontSize:14,padding:0}}>🗑</button>}
+                {userRol==="admin" && <button onClick={()=>confirmarEliminar("¿Eliminar este registro de bitácora?", async ()=>{ const ok = await deleteBitacora(b.id); if (ok) dispatch({type:"DEL_BITACORA",payload:b.id}); })} style={{border:"none",background:"none",cursor:"pointer",color:T.fog,fontSize:14,padding:0}}>🗑</button>}
               </div>
             </div>
 

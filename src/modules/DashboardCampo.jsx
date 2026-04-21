@@ -26,6 +26,7 @@ import {
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
 import { solicitarPermisoPush } from '../core/push.js';
+import { postBitacora } from '../core/supabaseWriters.js';
 
 
 export default function DashboardCampo({ userRol, usuario, onNavigate }) {
@@ -96,10 +97,10 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
 
   const nav = (page) => onNavigate && onNavigate(page);
 
-  const guardarTrabajo = () => {
+  const guardarTrabajo = async () => {
     if (!formT.loteId) return;
     const op = operadores.find(o => String(o.id) === String(formT.operadorId));
-    dispatch({ type:"ADD_BITACORA", payload:{
+    const bitacoraPayload = {
       tipo: formT.tipo,
       loteId: parseInt(formT.loteId),
       loteIds: [parseInt(formT.loteId)],
@@ -109,17 +110,22 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
       maquinariaId: "",
       horas: parseFloat(formT.horas) || 0,
       notas: formT.notas,
-      foto: null,
       data: {},
+    };
+    const saved = await postBitacora(bitacoraPayload, state.cicloActivoId, { silent: true });
+    dispatch({ type:"ADD_BITACORA", payload:{
+      ...bitacoraPayload,
+      id: saved?.id || Date.now(),
+      foto: null,
     }});
     cerrarModal();
   };
 
-  const guardarDiesel = () => {
+  const guardarDiesel = async () => {
     if (!formD.loteId || !formD.litros) return;
     const op = operadores.find(o => String(o.id) === String(formD.operadorId));
     const litros = parseFloat(formD.litros) || 0;
-    dispatch({ type:"ADD_BITACORA", payload:{
+    const bitacoraPayload = {
       tipo: "diesel",
       loteId: parseInt(formD.loteId),
       loteIds: [parseInt(formD.loteId)],
@@ -129,8 +135,13 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
       maquinariaId: "",
       horas: parseFloat(formD.horas) || 0,
       notas: formD.notas,
-      foto: null,
       data: { litros, precioLitro: 27, actividad: "Registro campo" },
+    };
+    const saved = await postBitacora(bitacoraPayload, state.cicloActivoId, { silent: true });
+    dispatch({ type:"ADD_BITACORA", payload:{
+      ...bitacoraPayload,
+      id: saved?.id || Date.now(),
+      foto: null,
     }});
     cerrarModal();
   };

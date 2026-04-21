@@ -9,6 +9,7 @@ import { Modal } from '../shared/Modal.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
+import { postBitacora } from '../core/supabaseWriters.js';
 
 const CILINDRO_CAPACIDAD = CAPACIDAD_TANQUE_DIESEL;
 
@@ -190,23 +191,27 @@ export default function DieselModule({ userRol, usuario }) {
     if (tipo === 'salida_interna') {
       const maq = (state.maquinaria||[]).find(m => String(m.id) === String(datos.maquinariaId));
       const op  = (state.operadores||[]).find(o => String(o.id) === String(datos.operadorId));
+      const bitacoraPayload = {
+        tipo: 'diesel',
+        fecha: datos.fecha,
+        loteId: datos.loteId ? (parseInt(datos.loteId)||datos.loteId) : null,
+        loteIds: datos.loteId ? [parseInt(datos.loteId)||datos.loteId] : [],
+        operadorId: datos.operadorId || '',
+        operador: op?.nombre || '',
+        maquinariaId: datos.maquinariaId || '',
+        horas: 0,
+        notas: `Carga de diesel: ${litros}L — ${maq?.nombre || 'Sin tractor'}`,
+        data: { litros, precioLitro: 0, actividad: 'Carga cilindro' },
+      };
+      const saved = await postBitacora(bitacoraPayload, state.cicloActivoId, { silent: true });
       dispatch({
         type: 'ADD_BITACORA',
         payload: {
-          id: id + 1,
-          tipo: 'diesel',
-          fecha: datos.fecha,
-          loteId: datos.loteId ? (parseInt(datos.loteId)||datos.loteId) : null,
-          loteIds: datos.loteId ? [parseInt(datos.loteId)||datos.loteId] : [],
-          operadorId: datos.operadorId || '',
-          operador: op?.nombre || '',
-          maquinariaId: datos.maquinariaId || '',
+          ...bitacoraPayload,
+          id: saved?.id || Date.now(),
           cantidad: litros,
           unidad: 'L',
-          horas: 0,
-          notas: `Carga de diesel: ${litros}L — ${maq?.nombre || 'Sin tractor'}`,
           origen: 'diesel_cilindro',
-          data: { litros, precioLitro: 0, actividad: 'Carga cilindro' },
         }
       });
     }
