@@ -26,7 +26,7 @@ import {
 const mxn = n => (parseFloat(n)||0).toLocaleString('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:2,maximumFractionDigits:2});
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
+import { postBitacora } from '../core/supabaseWriters.js';
 
 
 export default function BitacoraModule({ userRol, puedeEditar }) {
@@ -219,10 +219,21 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
         }
       });
 
-      // Dispatch all at once
-      nuevos.forEach((b,i)=>dispatch({type:"ADD_BITACORA",payload:{...b,id:Date.now()+i}}));
+      // Dispatch all at once — POST a Supabase primero, dispatch con saved.id
+      const results = await Promise.all(
+        nuevos.map(b => postBitacora(b, state.cicloActivoId, { silent: true }))
+      );
+      let failedBulk = 0;
+      results.forEach((saved, i) => {
+        if (saved) {
+          dispatch({ type:"ADD_BITACORA", payload:{ ...nuevos[i], id: saved.id }});
+        } else {
+          failedBulk++;
+        }
+      });
       invMovs.forEach((m,i)=>dispatch({type:"ADD_INV_MOV",payload:{...m,id:Date.now()+10000+i}}));
 
+      if(failedBulk>0) logs.push(`⚠️  ${failedBulk} filas no se guardaron en Supabase`);
       logs.push(`✅ ${ok} registros importados correctamente`);
       if(warn>0) logs.push(`⚠️ ${warn} registros con advertencias`);
       if(invMovs.length>0) logs.push(`📦 ${invMovs.length} movimientos de inventario generados`);
@@ -243,49 +254,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
   const [savingReporte, setSavingReporte] = useState(false);
   const [savingFoto, setSavingFoto]       = useState(false);
 
-  const postBitacora = async (payload) => {
-    const legacyId = Date.now();
-    const cicloId = state.cicloActivoId != null ? String(state.cicloActivoId) : null;
-    const body = {
-      legacy_id: legacyId,
-      tipo: payload.tipo,
-      lote_id: payload.loteId != null ? String(payload.loteId) : null,
-      lote_ids: payload.loteIds || [],
-      fecha: payload.fecha,
-      operador: payload.operador || null,
-      operador_id: payload.operadorId ? String(payload.operadorId) : null,
-      maquinaria_id: payload.maquinariaId ? String(payload.maquinariaId) : null,
-      horas: payload.horas || null,
-      notas: payload.notas || null,
-      data: payload.data || {},
-      fuente: 'bitacora',
-      ciclo_id: cicloId,
-    };
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/bitacora_trabajos`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=representation',
-        },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const err = await res.text();
-        console.error('[Bitacora] POST falló:', res.status, err);
-        alert('Error al guardar bitácora: ' + res.status);
-        return null;
-      }
-      const rows = await res.json();
-      return { ...rows[0], id: legacyId };
-    } catch (e) {
-      console.error('[Bitacora] POST excepción:', e);
-      alert('Error de red: ' + e.message);
-      return null;
-    }
-  };
+  // Helper postBitacora movido a src/core/supabaseWriters.js
 
   const saveInsumo = async () => {
     const f = formInsumo;
@@ -308,7 +277,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
                dosis:f.dosis, unidad:f.unidad, haAplicadas:haApl,
                cantidadTotal:cantTotal, unidadBase }
       };
-      const saved = await postBitacora(payload);
+      const saved = await postBitacora(payload, state.cicloActivoId);
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
       if(f.insumoId && cantTotal>0) {
@@ -347,7 +316,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
         maquinariaId:maqId, horas:parseFloat(f.horas)||0,
         notas:f.notas, foto:f.foto,
         data:{ tractorId:maqId, litros:parseFloat(f.litros)||0, precioLitro:parseFloat(f.precioLitro)||27, actividad:f.actividad }};
-      const saved = await postBitacora(payload);
+      const saved = await postBitacora(payload, state.cicloActivoId);
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
       if(f.litros) dispatch({ type:"ADD_DIESEL", payload:{ productorId:null, fecha:f.fecha, litros:parseFloat(f.litros)||0, precioLitro:parseFloat(f.precioLitro)||27, unidad:maqId||"Tractor", loteId:parseInt(f.loteId), concepto:f.actividad||"Registro campo", operador:f.operador, formaPago:"credito" }});
@@ -374,7 +343,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
         maquinariaId:f.maquinariaId||"", horas:parseFloat(f.horas)||parseFloat(f.horasRiego)||0,
         notas:f.notas, foto:f.foto,
         data:{ horasRiego:parseFloat(f.horasRiego)||0, volumenM3:parseFloat(f.volumenM3)||0, tipoRiego:f.tipoRiego }};
-      const saved = await postBitacora(payload);
+      const saved = await postBitacora(payload, state.cicloActivoId);
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
       if(f.maquinariaId && parseFloat(f.horas)>0) dispatch({type:"ADD_HORAS", payload:{
@@ -400,7 +369,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
         maquinariaId:f.maquinariaId||"", horas:parseFloat(f.horas)||0,
         notas:f.notas, foto:f.foto,
         data:{ fenologia:f.fenologia, observacion:f.observacion }};
-      const saved = await postBitacora(payload);
+      const saved = await postBitacora(payload, state.cicloActivoId);
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
       loteIdsF.forEach(lid=>{ const lote=state.lotes.find(l=>l.id===lid); if(lote) dispatch({type:"UPD_LOTE",payload:{...lote,fenologia:f.fenologia}}); });
@@ -422,7 +391,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
         maquinariaId:f.maquinariaId||"", horas:parseFloat(f.horas)||0,
         notas:f.notas, foto:f.foto,
         data:{ titulo:f.titulo, descripcion:f.descripcion }};
-      const saved = await postBitacora(payload);
+      const saved = await postBitacora(payload, state.cicloActivoId);
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
       setTipoModal(null); setFormReporte({...emptyBase, titulo:"", descripcion:""});
@@ -441,7 +410,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
         loteIds: Array.isArray(f.loteIds) ? f.loteIds.map(Number) : (f.loteId?[parseInt(f.loteId)]:[]),
         fecha:f.fecha, operador:f.operador, notas:f.notas, foto:f.fotoData,
         data:{ descripcion:f.descripcion }};
-      const saved = await postBitacora(payload);
+      const saved = await postBitacora(payload, state.cicloActivoId);
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
       setTipoModal(null); setFormFoto({...emptyBase, descripcion:"", fotoData:null}); setFotoPreview(null);
