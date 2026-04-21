@@ -3,6 +3,27 @@
 ## Sesión 20 Abril 2026 (noche tardía)
 
 ### ✅ Completado
+Fix bug BITACORA-DELETE-01. El botón 🗑 de Bitácora ya envía DELETE a Supabase.
+- Añadido `deleteBitacora(legacyId, { silent })` en `src/core/supabaseWriters.js` siguiendo el patrón de `postBitacora` (mismos headers, prefijo `[Bitacora]`, opción silent). Retorno booleano, guard early si legacyId null, distingue "no existe en BD" (warn) de error HTTP (error + alert).
+- Migrado handler del botón 🗑 en `Bitacora.jsx:489` (único call site en todo el proyecto) a patrón Supabase-first: `await deleteBitacora(b.id)` → si `true`, dispatch `DEL_BITACORA` local. Si falla, registro permanece en UI.
+- Smoke test verificado end-to-end (local + dev URL): crear 1 registro (legacy_id=1776747262747) → clic 🗑 → UI "Sin registros" → `SELECT COUNT(*)`=0. Consola sin errores.
+- Commit 3ee9b59 en dev, deploy Vercel Ready (CA3jWS6ZC), tabla `bitacora_trabajos` en 0 al cierre.
+- Módulo bitácora: 100% migrado a Supabase en INSERT y DELETE. Fin de la migración del módulo.
+
+### 🎓 Lecciones aprendidas
+- **Supabase-first vs offline-first según tipo de acción**: borrados destructivos manuales sobre datos reales merecen patrón bloqueante (`if (ok) dispatch`), no offline-first silencioso. El usuario necesita saber si el DELETE llegó. Offline-first sigue siendo correcto para flujos automáticos (espejo diesel, finalizar orden, modales rápidos).
+- **DELETE con guards obligatorios**: `DELETE ?columna=eq.null` sin guard borraría todas las filas con esa columna NULL. Early return si el id es null/undefined es no-negociable en helpers de DELETE.
+- **"Success no rows returned" ≠ borró**: usar `Prefer: return=representation` + `rows.length === 0` para distinguir "id inexistente" (warn) de error HTTP (error). El primero no es fallo de red y no debe disparar alert.
+- **Validar nombres del reducer con grep antes de migrar**: el HANDOFF previo decía `DELETE_BITACORA`, el código real usaba `DEL_BITACORA`. Un `grep -rn` al inicio evitó 5 minutos de búsqueda vacía.
+- **"Smoke test" en Claude Code ≠ smoke test real**: cuando el dev server arranca limpio Claude Code tiende a declarar victoria. El smoke test real requiere pasos manuales en el navegador con consola abierta. Explicitar cada clic en el prompt.
+- **Ruta del parser Babel**: la ruta real en este proyecto es `./node_modules/@babel/parser`, no `/tmp/babelparse/...` como decía la documentación. Pendiente corregir WORKFLOW.md.
+
+### 📋 Pendientes al cierre
+Ver docs/HANDOFF.md. Siguiente objetivo propuesto: Bug GENERAL-01 (doble capa de persistencia) — bug estructural de raíz que afecta todos los módulos que aún dependen de localStorage.
+
+## Sesión 20 Abril 2026 (noche tardía)
+
+### ✅ Completado
 
 Migración de los 5 sitios externos que escribían bitácora solo al reducer local sin persistir a Supabase, usando el helper `postBitacora` ya extraído en sesión anterior.
 
