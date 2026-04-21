@@ -26,7 +26,7 @@ import {
 const mxn = n => (parseFloat(n)||0).toLocaleString('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:2,maximumFractionDigits:2});
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
-import { postBitacora } from '../core/supabaseWriters.js';
+import { postBitacora, deleteBitacora } from '../core/supabaseWriters.js';
 
 
 export default function BitacoraModule({ userRol, puedeEditar }) {
@@ -486,7 +486,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <span className="font-mono" style={{fontSize:11,color:T.fog}}>{b.fecha}</span>
                 {b.operador && <span style={{fontSize:11,color:T.fog}}>· 👤 {b.operador}</span>}
-                {userRol==="admin" && <button onClick={()=>confirmarEliminar("¿Eliminar este registro de bitácora?",()=>dispatch({type:"DEL_BITACORA",payload:b.id}))} style={{border:"none",background:"none",cursor:"pointer",color:T.fog,fontSize:14,padding:0}}>🗑</button>}
+                {userRol==="admin" && <button onClick={()=>confirmarEliminar("¿Eliminar este registro de bitácora?", async ()=>{ const ok = await deleteBitacora(b.id); if (ok) dispatch({type:"DEL_BITACORA",payload:b.id}); })} style={{border:"none",background:"none",cursor:"pointer",color:T.fog,fontSize:14,padding:0}}>🗑</button>}
               </div>
             </div>
 
