@@ -1,5 +1,35 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 20 Abril 2026 (noche tardía)
+
+### ✅ Completado
+
+Migración de los 5 sitios externos que escribían bitácora solo al reducer local sin persistir a Supabase, usando el helper `postBitacora` ya extraído en sesión anterior.
+
+- **Diesel.jsx** (L194): espejo bitácora tras salida_interna ahora pasa por helper.
+- **VistaOperador.jsx** (L39): `finalizarTrabajo` convertida a async, ahora persiste a Supabase. Gap resuelto: añadido `loteIds: orden.loteId ? [orden.loteId] : []` al payload (antes faltaba y habría causado que los registros aparecieran "sin lote" al filtrar por array).
+- **OrdenDia.jsx** (L432): `marcarCompletada` convertida a async, ahora persiste a Supabase (ya tenía `loteIds` correcto).
+- **DashboardCampo.jsx** (L102, L122): `guardarTrabajo` y `guardarDiesel` convertidas a async y migradas.
+
+Patrón aplicado en los 5: `await postBitacora(bitacoraPayload, state.cicloActivoId, { silent: true })` + dispatch local con `id: saved?.id || Date.now()`. Offline-first: dispatch local ocurre siempre, aunque Supabase falle.
+
+Los extras que no van al helper (origen, ordenId, foto, cantidad, unidad) se mueven al dispatch local, NO al helper.
+
+Smoke test: carga real de diesel desde UI (Diesel y Combustible → Registrar carga de tractor → 50L en T-1) creó fila correcta en `bitacora_trabajos` (tipo='diesel', fuente='bitacora', ciclo_id='1'). Cleanup al cierre: tabla en 0 filas.
+
+Commit: **9b615c4** (`refactor(bitacora): migrar 5 sitios externos a postBitacora helper` — 4 files, +52/−23).
+
+### 🎓 Lecciones aprendidas
+
+- Migrar un dispatch local a helper async requiere convertir la función contenedora a async primero — olvidarlo rompe el Babel parse.
+- Cuando un payload de bitácora tenga `loteId` pero no `loteIds`, el helper enviará `lote_ids: []` por default. Si la UI filtra por array, el registro aparecerá "sin lote" tras migrar — añadir `loteIds` derivado preventivamente.
+- Flujos automáticos y modales rápidos se benefician de `silent: true` en el helper; reservar el alert default (`silent: false`) para captura manual explícita.
+- El paso previo de diagnóstico de payloads contra el contrato del helper (tabla cobertura 10/10) evita sorpresas en runtime — detectamos el gap de loteIds antes de editar, no después.
+
+### 📋 Pendientes al cierre
+
+Ver HANDOFF.md para tabla actualizada. Siguiente objetivo recomendado: Fix BITACORA-DELETE-01 (20 min).
+
 ## Sesión 20 Abril 2026 (noche — extracción postBitacora + bulk import)
 
 ### ✅ Completado
