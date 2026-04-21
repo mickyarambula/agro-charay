@@ -1,6 +1,6 @@
 # AgroSistema Charay — Progress Log
 
-## Sesión 20 Abril 2026 (noche)
+## Sesión 20 Abril 2026 (noche — extracción postBitacora + bulk import)
 
 ### ✅ Completado
 - Extracción del helper `postBitacora` a `src/core/supabaseWriters.js`. Firma: `postBitacora(payload, cicloActivoId, { silent = false } = {})`. Modo silent evita N alerts en bulk import.
@@ -57,7 +57,7 @@ Segunda lección: la disciplina de "solo diagnóstico" funcionó. A mitad de ses
 ### 📋 Pendientes al cierre
 Ver HANDOFF.md. Próxima sesión recomendada: #1 de la tabla (migrar LECTURA de bitácora a supabaseLoader.js).
 
-## Sesión 20 Abril 2026 (noche)
+## Sesión 20 Abril 2026 (noche — lectura bitácora)
 
 ### ✅ Completado
 
