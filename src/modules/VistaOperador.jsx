@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useData } from '../core/DataContext.jsx';
 import { T } from '../shared/utils.js';
 import { Modal } from '../shared/Modal.jsx';
+import { postBitacora } from '../core/supabaseWriters.js';
 
 export default function VistaOperador({ usuario, onLogout }) {
   const { state, dispatch } = useData();
@@ -27,7 +28,7 @@ export default function VistaOperador({ usuario, onLogout }) {
   const [modalNovedad, setModalNovedad] = useState(false);
   const [textoNovedad, setTextoNovedad] = useState("");
 
-  const finalizarTrabajo = (orden) => {
+  const finalizarTrabajo = async (orden) => {
     if (!orden) return;
     const payload = {
       ...orden,
@@ -36,18 +37,24 @@ export default function VistaOperador({ usuario, onLogout }) {
     };
     dispatch({ type: "UPD_ORDEN_TRABAJO", payload });
     // Registra en bitácora automáticamente, etiquetado con origen + ordenId
-    dispatch({ type: "ADD_BITACORA", payload: {
+    const bitacoraPayload = {
       tipo: orden.tipo || "reporte",
       loteId: orden.loteId,
+      loteIds: orden.loteId ? [orden.loteId] : [],
       fecha: hoy,
       operador: usuario?.nombre || usuario?.usuario,
       operadorId: usuario?.id,
       maquinariaId: orden.maquinariaId || "",
       horas: orden.horasEstimadas || 0,
       notas: `Completado desde orden #${orden.id}`,
+      data: { titulo: orden.descripcion || "Trabajo completado" },
+    };
+    const saved = await postBitacora(bitacoraPayload, state.cicloActivoId, { silent: true });
+    dispatch({ type: "ADD_BITACORA", payload: {
+      ...bitacoraPayload,
+      id: saved?.id || Date.now(),
       origen: "orden_trabajo",
       ordenId: orden.id,
-      data: { titulo: orden.descripcion || "Trabajo completado" },
     }});
   };
 
