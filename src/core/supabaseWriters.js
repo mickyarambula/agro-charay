@@ -94,3 +94,43 @@ export async function deleteBitacora(legacyId, { silent = false } = {}) {
     return false;
   }
 }
+
+/**
+ * POST capital_movimientos (aportación o retiro)
+ */
+export async function postCapital(signo, form) {
+  const legacyId = Date.now();
+  const row = {
+    legacy_id: legacyId,
+    signo,
+    monto: parseFloat(form.monto),
+    fecha: form.fecha,
+    concepto: form.concepto || '',
+    notas: form.referencia || form.notas || '',
+  };
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/capital_movimientos`,
+      { method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' }, body: JSON.stringify(row) }
+    );
+    if (!res.ok) { console.error('[postCapital] error:', res.status, await res.text()); return null; }
+    const rows = await res.json();
+    return { ...rows[0], id: legacyId };
+  } catch (e) { console.error('[postCapital] exception:', e); return null; }
+}
+
+/**
+ * DELETE capital_movimientos por legacy_id
+ */
+export async function deleteCapital(legacyId) {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/capital_movimientos?legacy_id=eq.${legacyId}`,
+      { method: 'DELETE', headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Prefer: 'return=representation' } }
+    );
+    if (!res.ok) { console.error('[deleteCapital] error:', res.status, await res.text()); return false; }
+    const deleted = await res.json();
+    if (deleted.length === 0) { console.warn('[deleteCapital] no rows matched legacy_id:', legacyId); }
+    return true;
+  } catch (e) { console.error('[deleteCapital] exception:', e); return false; }
+}
