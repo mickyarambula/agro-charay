@@ -1,5 +1,17 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 22 Abril 2026 (mañana — warm-up)
+
+### ✅ Completado
+- Verificación del pendiente #8 (ruta parser Babel en docs): los docs ya tenían la ruta correcta (`./node_modules/@babel/parser`). Sesión anterior ya lo había arreglado implícitamente. Pendiente cerrado sin cambios.
+- HANDOFF.md actualizado removiendo #8 de la tabla de pendientes.
+
+### 🎓 Lección aprendida
+- El HANDOFF puede contener pendientes fantasma — tareas ya resueltas por una sesión previa sin que se hayan removido de la lista. Verificar antes de ejecutar cualquier pendiente de housekeeping; puede que no haya nada que hacer.
+
+### 📋 Pendientes al cierre
+Ver `docs/HANDOFF.md`. Próximo objetivo: Fase 1 de GENERAL-01 (chat nuevo, 60-90 min).
+
 ## Sesión 21 Abril 2026 (mediodía — diagnóstico GENERAL-01)
 
 ### ✅ Completado

@@ -33,15 +33,14 @@ Consecuencia de GENERAL-01. Se resuelve automáticamente al completar Fase 1.
 | 5 | Media | Refactor App.jsx — extraer routes (archivo de 2156 líneas) | 45 min | Refactor |
 | 6 | Media | Asignar productor auto desde lote al cargar tractor | 30 min | Feature Diesel |
 | 7 | Media | Cleanup imports huérfanos en Diesel.jsx (SUPABASE_URL/SUPABASE_ANON_KEY) | 10 min | Housekeeping |
-| 8 | Baja | Corregir ruta del parser Babel en WORKFLOW.md: `./node_modules/@babel/parser` | 2 min | Docs |
-| 9 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 10 | Baja | Alertas WhatsApp al socio (resumen semanal) | 2 hrs | Feature |
-| 11 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
-| 12 | Futuro | GENERAL-01 Fase 3: solicitudesCompra, ordenesCompra, solicitudesGasto | 60 min c/u | Migración |
-| 13 | Futuro | GENERAL-01 Fase 3: activos, personal, creditosRef, rentas | 60 min c/u | Migración |
-| 14 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
-| 15 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
-| 16 | Futuro | saveFoto: opción de ligar foto a lote/operador | 20 min | Mejora Bitácora |
+| 8 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 9 | Baja | Alertas WhatsApp al socio (resumen semanal) | 2 hrs | Feature |
+| 10 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
+| 11 | Futuro | GENERAL-01 Fase 3: solicitudesCompra, ordenesCompra, solicitudesGasto | 60 min c/u | Migración |
+| 12 | Futuro | GENERAL-01 Fase 3: activos, personal, creditosRef, rentas | 60 min c/u | Migración |
+| 13 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
+| 14 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
+| 15 | Futuro | saveFoto: opción de ligar foto a lote/operador | 20 min | Mejora Bitácora |
 
 ## Siguiente sesión — recomendación
 
@@ -49,7 +48,7 @@ Consecuencia de GENERAL-01. Se resuelve automáticamente al completar Fase 1.
 
 Leer primero `docs/GENERAL-01-PLAN.md` Fase 1 completo. Preparación mental: este cambio toca App.jsx:1218 (useReducer init), App.jsx:1289 (useEffect persist), src/supabaseLoader.js (dispatches en lugar de localStorage.setItem), y DataContext.jsx (nueva action HYDRATE_FROM_SUPABASE). Presupuesto 60-90 min. Si al smoke-test aparece regresión en cualquier módulo Grupo A, PARAR y documentar. Arranque sugerido: diseñar la action HYDRATE_FROM_SUPABASE primero (payload shape), luego editar supabaseLoader, luego App.jsx. Smoke test por módulo al final, no entre edits (los edits son estructuralmente dependientes).
 
-Alternativa corta si el tiempo es limitado ese día: ejecutar #8 (corregir ruta Babel en WORKFLOW.md) como warm-up de 2 min antes de Fase 1.
+Alternativa corta si el tiempo es limitado ese día: arrancar solo con el diseño del payload de HYDRATE_FROM_SUPABASE en papel, sin editar código.
 
 ## Reglas de trabajo (confirmadas esta sesión)
 
