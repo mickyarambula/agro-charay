@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -57,6 +57,17 @@ export async function loadStateFromSupabase() {
       supaFetch('maquinaria_consumos', 'order=maquinaria_id').catch(() => []),
       supaFetch('capital_movimientos', 'order=fecha.desc').catch(e => { console.warn('[Supabase] capital_movimientos fetch falló:', e.message); return []; }),
       supaFetch('bitacora_trabajos', 'order=fecha.desc').catch(e => { console.warn('[Supabase] bitacora_trabajos fetch falló:', e.message); return []; }),
+      // Fase 3 — claves operativas pendientes (tablas actualmente vacías, schema sin confirmar)
+      supaFetch('recomendaciones').catch(() => []),
+      supaFetch('notificaciones').catch(() => []),
+      supaFetch('delegaciones').catch(() => []),
+      supaFetch('solicitudes_compra').catch(() => []),
+      supaFetch('ordenes_compra').catch(() => []),
+      supaFetch('solicitudes_gasto').catch(() => []),
+      supaFetch('activos').catch(() => []),
+      supaFetch('personal').catch(() => []),
+      supaFetch('creditos_refaccionarios').catch(() => []),
+      supaFetch('rentas_tierra').catch(() => []),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -393,6 +404,17 @@ export async function loadStateFromSupabase() {
           _uuid: r.id,
         })),
       },
+      // Fase 3 — passthrough crudo hasta que cada módulo defina su mapping
+      recomendaciones:    recomendacionesRows    || [],
+      notificaciones:     notificacionesRows     || [],
+      delegaciones:       delegacionesRows       || [],
+      solicitudesCompra:  solicitudesCompraRows  || [],
+      ordenesCompra:      ordenesCompraRows      || [],
+      solicitudesGasto:   solicitudesGastoRows   || [],
+      activos:            activosRows            || [],
+      personal:           personalRows           || [],
+      creditosRef:        creditosRefRows        || [],
+      rentas:             rentasRows             || [],
       _supabaseCargado: Date.now(),
     };
 
