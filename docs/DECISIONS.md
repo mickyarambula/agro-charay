@@ -111,3 +111,14 @@ ErrorBoundary global en App.jsx. Cualquier crash de React hace POST a tabla `err
 ## GENERAL-01 — Migración a Supabase como fuente única (21-abr-2026)
 
 Diagnóstico reveló 35 claves del reducer viven solo en localStorage y nunca se sincronizan con Supabase. Decidido migración por fases, NO big-bang. Clasificación en 3 grupos: A (Supabase, fuente única), B (config local legítima), C (requiere decisión de negocio). Plan operacional detallado en `docs/GENERAL-01-PLAN.md`. Fase 1 (fix del ciclo de vida de las 22 claves ya en Supabase) es el próximo objetivo activo.
+
+## GENERAL-01 Fase 2 — Decisiones Grupo C (22-abr-2026)
+
+### Permisos y usuarios (5 claves) → Supabase
+Claves: permisosUsuario, permisosGranulares, rolesPersonalizados, usuariosExtra, usuariosBaseEdit.
+Decisión: migrar a Supabase (tabla config_permisos o similar) en Fase 3.
+Razón: son datos de negocio (quién puede hacer qué), no preferencias de UI. localStorage es por dispositivo — si admin configura en su laptop, encargado no ve los cambios en su celular.
+Prioridad: baja. Hoy los roles están hardcoded en roles.js y estas claves tienen poco uso activo.
+
+### proyeccion → pendiente de revisión
+Decisión aplazada. Necesita inspección del módulo Proyeccion para determinar si es data capturada (→ Supabase) o cálculo derivado (→ computed, no persiste). Se decide al migrar en Fase 3.

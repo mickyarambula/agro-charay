@@ -23,7 +23,7 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
+import { postCapital, deleteCapital } from '../core/supabaseWriters.js';
 
 
 export default function CapitalModule({ userRol, puedeEditar }) {
@@ -43,44 +43,6 @@ export default function CapitalModule({ userRol, puedeEditar }) {
   const totalAport = (capital.aportaciones||[]).reduce((s,a)=>s+(a.monto||0),0);
   const totalRetir = (capital.retiros||[]).reduce((s,r)=>s+(r.monto||0),0);
   const neto       = totalAport - totalRetir;
-
-  const postCapital = async (signo, form) => {
-    const monto = parseFloat(form.monto) || 0;
-    if (monto <= 0) { alert('Monto debe ser mayor a 0'); return null; }
-    const legacyId = Date.now();
-    const body = {
-      legacy_id: legacyId,
-      signo,
-      monto,
-      fecha: form.fecha,
-      concepto: form.concepto || '',
-      notas: form.referencia || '',
-    };
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/capital_movimientos`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=representation',
-        },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const err = await res.text();
-        console.error('[Capital] POST falló:', res.status, err);
-        alert('Error al guardar: ' + res.status);
-        return null;
-      }
-      const rows = await res.json();
-      return { ...rows[0], id: legacyId };
-    } catch (e) {
-      console.error('[Capital] POST excepcion:', e);
-      alert('Error de red: ' + e.message);
-      return null;
-    }
-  };
 
   const saveA = async () => {
     if (!formA.monto) return;
@@ -141,7 +103,7 @@ export default function CapitalModule({ userRol, puedeEditar }) {
                   <td style={{background:bg,fontSize:12}}>{mv.concepto}</td>
                   <td style={{background:bg,fontSize:11,color:"#8a8070"}}>{mv.referencia}</td>
                   <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:mv.signo===1?"#2d5a1b":"#c0392b"}}>{mv.signo===1?"+":"-"}{mxnFmt(mv.monto)}</td>
-                  <td style={{background:bg}}>{userRol==="admin"&&<button className="btn btn-sm btn-danger" onClick={()=>confirmarEliminar("¿Eliminar este movimiento?",()=>dispatch({type:mv.signo===1?"DEL_APORTACION":"DEL_RETIRO",payload:mv.id}))}>🗑</button>}</td>
+                  <td style={{background:bg}}>{userRol==="admin"&&<button className="btn btn-sm btn-danger" onClick={()=>confirmarEliminar("¿Eliminar este movimiento?",async ()=>{ const ok = await deleteCapital(mv.id); if (ok) dispatch({type:mv.signo===1?"DEL_APORTACION":"DEL_RETIRO",payload:mv.id}); else alert("Error al eliminar en servidor"); })}>🗑</button>}</td>
                 </tr>);
               })}
             </tbody>
