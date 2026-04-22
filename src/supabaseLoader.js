@@ -396,9 +396,8 @@ export async function loadStateFromSupabase() {
       _supabaseCargado: Date.now(),
     };
 
-    localStorage.setItem('agroSistemaState', JSON.stringify(estadoNuevo));
     console.log('[Supabase] Cargado:', { productores: productores.length, lotes: lotes.length, insumos: insumos.length, egresos: egresosManual.length });
-    return { loaded: true };
+    return estadoNuevo;
   } catch (e) {
     console.error('[Supabase] Error:', e);
     return { error: e.message };

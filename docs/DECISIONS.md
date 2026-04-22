@@ -107,3 +107,7 @@ ErrorBoundary global en App.jsx. Cualquier crash de React hace POST a tabla `err
 5. Fase 2 cosecha: boletas reales → pago banco → cierre de ciclo.
 6. Alertas WhatsApp al socio (resumen semanal).
 7. Dashboard histórico entre ciclos.
+
+## GENERAL-01 — Migración a Supabase como fuente única (21-abr-2026)
+
+Diagnóstico reveló 35 claves del reducer viven solo en localStorage y nunca se sincronizan con Supabase. Decidido migración por fases, NO big-bang. Clasificación en 3 grupos: A (Supabase, fuente única), B (config local legítima), C (requiere decisión de negocio). Plan operacional detallado en `docs/GENERAL-01-PLAN.md`. Fase 1 (fix del ciclo de vida de las 22 claves ya en Supabase) es el próximo objetivo activo.

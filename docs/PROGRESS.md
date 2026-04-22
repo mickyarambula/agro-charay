@@ -1,5 +1,63 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 22 Abril 2026 (mediodía)
+
+### ✅ Completado
+**GENERAL-01 Fase 1 — fix del ciclo de vida del reducer**
+
+Problema: las 17 claves Grupo A (productores, lotes, bitácora, diesel, etc.) se inicializaban desde localStorage vía IIFE savedState. Supabase escribía a localStorage, el reducer leía de localStorage en el siguiente mount. No había dispatch directo. Consecuencia: datos stale entre sesiones/roles (DIESEL-01), blob localStorage creciente, window.location.reload() como muleta.
+
+Cambios (5 pasos, 4 archivos):
+1. DataContext.jsx: +5 claves extras en initState + case HYDRATE_FROM_SUPABASE (whitelist 17 claves)
+2. supabaseLoader.js: eliminar localStorage.setItem, retornar estadoNuevo
+3. App.jsx IIFE: reducir de 48 a 32 claves (sin Grupo A)
+4. App.jsx persist: PERSIST_KEYS selectivo (32 claves simétricas)
+5. App.jsx: useEffect HYDRATE reemplaza SYNC_STATE parcial, handleLogin sin loadStateFromSupabase redundante, loading gate "Cargando datos…"
+
+Commits: 1f1e85c (código).
+
+Resuelve: GENERAL-01 Fase 1, DIESEL-01 (efecto colateral).
+
+### 🎓 Lecciones aprendidas
+- SYNC_STATE existente era un no-op para 8 de 10 claves (filtradas por SYNC_KEYS). El trabajo real lo hacía window.location.reload() — diagnóstico reveló que NO había hidratación vía dispatch efectiva.
+- Las 5 claves extras (liquidaciones, cajaChica*, usuariosDB, maquinariaConsumos) ya eran Supabase-first por su cuenta (SET_* en módulos). Incluirlas en HYDRATE habría creado race conditions.
+- La IIFE savedState y el useEffect persist deben ser simétricas (mismas claves). Asimetría = data loss silencioso.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — próximo: Fase 2 (decisiones Grupo C) o merge a main.
+
+## Sesión 22 Abril 2026 (mañana — warm-up)
+
+### ✅ Completado
+- Verificación del pendiente #8 (ruta parser Babel en docs): los docs ya tenían la ruta correcta (`./node_modules/@babel/parser`). Sesión anterior ya lo había arreglado implícitamente. Pendiente cerrado sin cambios.
+- HANDOFF.md actualizado removiendo #8 de la tabla de pendientes.
+
+### 🎓 Lección aprendida
+- El HANDOFF puede contener pendientes fantasma — tareas ya resueltas por una sesión previa sin que se hayan removido de la lista. Verificar antes de ejecutar cualquier pendiente de housekeeping; puede que no haya nada que hacer.
+
+### 📋 Pendientes al cierre
+Ver `docs/HANDOFF.md`. Próximo objetivo: Fase 1 de GENERAL-01 (chat nuevo, 60-90 min).
+
+## Sesión 21 Abril 2026 (mediodía — diagnóstico GENERAL-01)
+
+### ✅ Completado
+- Merge dev → main ejecutado con tag de respaldo (`backup-pre-merge-20abr2026`). Fix BITACORA-DELETE-01 desplegado a producción (`agro-charay.vercel.app`, commit 92bfe7d). Smoke test en prod: crear + borrar registro bitácora end-to-end OK, consola limpia.
+- Diagnóstico completo de GENERAL-01 (sin tocar código): leídos App.jsx (2156 líneas), supabaseLoader.js (420 líneas), DataContext.jsx sección initState (L11–241). Resultado: 52 claves en initState, solo 17 hidratadas desde Supabase (indirectamente vía localStorage, no vía dispatch), 35 viven solo en localStorage, 6 extras en state sin estar en initState.
+- Decisión arquitectónica tomada y documentada: migración por fases, NO big-bang. Clasificación en Grupo A (Supabase fuente única, 22 ya + 21 por migrar), Grupo B (config local legítima, 7 claves), Grupo C (requiere decisión de negocio, 6 claves).
+- Creado `docs/GENERAL-01-PLAN.md` con plan operacional completo en 3 fases.
+- Actualizados `docs/DECISIONS.md` (bloque apuntando al plan) y `docs/HANDOFF.md` (reemplazo total con pendientes reclasificados).
+- Commit `514bf2f` en dev.
+
+### 🎓 Lecciones aprendidas
+- **El HANDOFF puede subestimar scope.** La estimación "60 min" para GENERAL-01 era optimista por un factor de 3-5x. El fix real requiere 3 fases y múltiples sesiones. Regla nueva: cuando un objetivo del HANDOFF toque estructura, diagnosticar ANTES de comprometerse al tiempo.
+- **"Módulos migrados" ≠ "Supabase es fuente única".** Las sesiones previas migraron los INSERT/DELETE de bitácora a helpers Supabase, lo cual es necesario pero NO suficiente: el reducer sigue inicializándose desde localStorage y reescribiéndolo en cada cambio de state. Distinguir nivel de mutación vs nivel de inicialización explícitamente.
+- **supabaseLoader NO dispatcha.** Escribe a localStorage y confía en que el próximo mount del `<App/>` lea de ahí. Esto explica por qué cambios en otra sesión no aparecen hasta recargar (bug DIESEL-01).
+- **Claude Code puede truncar lecturas a línea 1** por hooks de prior-observations. Fallback legítimo: pedirle explícitamente usar `cat` o `sed -n` como backup cuando el tool dedicado falla.
+- **Separar "shippar lo probado" de "arrancar lo grande".** Hacer merge dev → main del fix contenido ANTES de abrir un bug estructural de alto riesgo es un patrón a mantener.
+
+### 📋 Pendientes al cierre
+Ver `docs/HANDOFF.md` y `docs/GENERAL-01-PLAN.md`. Próximo objetivo: Fase 1 de GENERAL-01 (60-90 min).
+
 ## Sesión 20 Abril 2026 (noche tardía — fix DELETE)
 
 ### ✅ Completado

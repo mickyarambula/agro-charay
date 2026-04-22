@@ -1,88 +1,78 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 20 Abril 2026 (noche tardía — fix BITACORA-DELETE-01)
+**Última actualización:** 22 Abril 2026 (mediodía)
 **Branch activo:** dev
-**Último commit código:** 3ee9b59 (fix(bitacora): cerrar DELETE a Supabase — BITACORA-DELETE-01)
-**Estado:** módulo Bitácora 100% migrado a Supabase en **ambas** direcciones (INSERT + DELETE). El botón 🗑 ya borra en BD. Bug BITACORA-DELETE-01 cerrado. Tabla `bitacora_trabajos` en 0 filas al cierre. Pendiente crítico real: Bug GENERAL-01 estructural.
+**Último commit código:** 1f1e85c (fix(core): GENERAL-01 Fase 1 — reducer hydrate desde Supabase)
+**Último commit main:** 92bfe7d (merge: dev → main — fix BITACORA-DELETE-01)
+**Tag de respaldo:** backup-pre-merge-20abr2026
+**Estado:** GENERAL-01 Fase 1 completada. Reducer ya no inicia desde localStorage para claves Grupo A (17 claves). Hidratación directa desde Supabase vía dispatch HYDRATE_FROM_SUPABASE. Persist selectivo (32 claves Grupo B+C+pendientes). Loading state post-login. Smoke test local OK — dashboard, bitácora, diesel, capital, caja chica cargan datos reales. Deploy a dev pendiente de verificación post-push.
 
 ## Estado al cierre
 
-- Sesión ~30 min, scope B estricto. Un objetivo cumplido: fix BITACORA-DELETE-01.
-- `deleteBitacora(legacyId, { silent })` añadido en `src/core/supabaseWriters.js` siguiendo el mismo patrón que `postBitacora` (mismos headers, prefijo `[Bitacora]`, opción silent). Retorno booleano (true/false). Guard early return si `legacyId == null`. Distingue "no existe en BD" (warn, no alert) de error HTTP/red (error + alert).
-- Handler del botón 🗑 en `Bitacora.jsx:489` migrado a **Supabase-first**: `await deleteBitacora(b.id)` → si `true`, dispatch `DEL_BITACORA` local. Si falla, el registro permanece visible en UI para que el usuario reintente. Elegido sobre offline-first porque es borrado destructivo manual del admin sobre datos reales.
-- Smoke test verificado end-to-end en local y en dev URL: crear 1 registro desde UI (Aplicación Insumos UREA, legacy_id=1776747262747) → clic 🗑 + Aceptar → UI "Sin registros" → `SELECT COUNT(*) FROM bitacora_trabajos` = 0. Consola sin errores.
-- Build OK, parse Babel OK, deploy Vercel dev `Ready` (CA3jWS6ZC).
-- Descubrimiento: el nombre real de la acción en el reducer es `DEL_BITACORA` (no `DELETE_BITACORA` como decía el HANDOFF anterior). Un solo call site en todo el proyecto. Reducer en `DataContext.jsx:254` filtra por `b.id !== a.payload` — el `b.id` local coincide 1:1 con `legacy_id` en Supabase (porque `postBitacora` retorna `{ ...rows[0], id: legacyId }`).
-- Descubrimiento housekeeping: la ruta real del parser Babel es `./node_modules/@babel/parser` (local del proyecto), no `/tmp/babelparse/...` como decía HANDOFF/WORKFLOW. Actualizar el snippet en WORKFLOW.md la próxima sesión.
+- Sesión ~90 min. Objetivo: GENERAL-01 Fase 1 — fix del ciclo de vida del reducer.
+- 5 pasos ejecutados en 4 archivos: DataContext.jsx, supabaseLoader.js, App.jsx (×3 ediciones).
+- Todos los pasos con Babel parse OK.
+- Smoke test manual: login → "Cargando datos…" → dashboard con datos reales → localStorage limpio (solo 32 claves, sin Grupo A) → módulos Bitácora, Diesel, Capital, Caja Chica verificados.
+- DIESEL-01 resuelto como efecto colateral (datos vienen directo de Supabase, no requiere recargar).
 
-## Cómo quedó el módulo Bitácora tras esta sesión
+## Cambios técnicos de esta sesión
 
-| Capa | Estado |
-|------|--------|
-| Lectura al login | ✅ Supabase |
-| Escritura INSERT — 6 handlers en Bitacora.jsx | ✅ Supabase vía helper |
-| Escritura INSERT — bulk import Excel en Bitacora.jsx | ✅ Supabase vía helper |
-| Escritura INSERT — Diesel.jsx, VistaOperador.jsx, OrdenDia.jsx, DashboardCampo.jsx×2 | ✅ Supabase vía helper |
-| Escritura DELETE — botón 🗑 en Bitacora.jsx | ✅ Supabase vía helper (nuevo) |
-
-Módulo bitácora cerrado en escritura. No quedan dispatchs de `ADD_BITACORA` ni `DEL_BITACORA` sin pasar por Supabase.
+1. **DataContext.jsx**: +5 claves extras en initState (liquidaciones, cajaChicaFondo, cajaChicaMovimientos, usuariosDB, maquinariaConsumos). +case HYDRATE_FROM_SUPABASE con whitelist de 17 claves Grupo A.
+2. **supabaseLoader.js**: eliminado localStorage.setItem. Ahora retorna estadoNuevo. configPreservada conservada (se limpia en Fase 3).
+3. **App.jsx IIFE savedState**: reducida de 48 a 32 claves (eliminadas 17 Grupo A + trabajos).
+4. **App.jsx useEffect persist**: refactorizado a PERSIST_KEYS (32 claves simétricas con IIFE). Eliminados credito/gastos legacy.
+5. **App.jsx useEffect post-load**: reemplazado SYNC_STATE parcial (10 claves, solo 2 efectivas) por HYDRATE_FROM_SUPABASE completo (17 claves).
+6. **App.jsx handleLogin**: eliminado await loadStateFromSupabase() redundante. Conservado window.location.reload().
+7. **App.jsx loading gate**: hydrating state + pantalla "Cargando datos…" entre login y render principal.
 
 ## Bugs estructurales pendientes
 
-### Bug GENERAL-01: Doble capa de persistencia
-Severidad: Alta. `App.jsx` inicializa el reducer desde `localStorage.agroSistemaState`, y `supabaseLoader` escribe encima. Para bitácora ya no hay conflicto (única fuente = Supabase), pero para otros módulos el patrón sigue. Fix completo: dejar de inicializar reducer desde localStorage, usar solo Supabase. 60 min estimados. **Siguiente objetivo natural.**
+### Bug GENERAL-01: Doble capa de persistencia (Fase 1 COMPLETADA)
+- Fase 1 ✅ — 17 claves Grupo A ya son Supabase-first. localStorage no las lee ni escribe.
+- Fase 2 pendiente — decisiones Grupo C (permisos, proyeccion). 30 min.
+- Fase 3 pendiente — migrar módulos restantes uno por uno (11 claves en PERSIST_KEYS marcadas "pendientes migrar").
 
-### Bug DIESEL-01
-Manifestación de GENERAL-01 en Diesel. Pendiente hasta fix de GENERAL-01.
+### Bug DIESEL-01: RESUELTO
+Consecuencia de GENERAL-01. Resuelto al completar Fase 1 — datos diesel vienen directo de Supabase.
 
 ## Tabla de pendientes actualizada
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Alta | Fix GENERAL-01 (doble persistencia de raíz) | 60 min | Bug estructural crítico |
-| 2 | Media | Fix DIESEL-01 (consecuencia de #1) | 15 min tras #1 | Bug |
-| 3 | Media | Merge dev → main cuando #1 esté terminado (o antes, si se decide shippar solo el fix de DELETE) | 10 min | Deploy |
-| 4 | Media | Refactor App.jsx — extraer routes | 45 min | Refactor |
-| 5 | Media | Asignar productor auto desde lote al cargar tractor | 30 min | Feature Diesel |
-| 6 | Media | Cleanup imports huérfanos en Diesel.jsx (SUPABASE_URL/SUPABASE_ANON_KEY — verificar si siguen usándose tras los últimos refactors) | 10 min | Housekeeping |
-| 7 | Baja | Corregir ruta del parser Babel en WORKFLOW.md: `./node_modules/@babel/parser` no `/tmp/babelparse/...` | 2 min | Docs |
-| 8 | Baja | Actualizar supabase-js (warning httpSend — visible en consola en dev) | 15 min | Infra |
-| 9 | Baja | Alertas WhatsApp al socio (resumen semanal) | 2 hrs | Feature |
+| 1 | Media | GENERAL-01 Fase 2: decisiones Grupo C (permisos + proyeccion) | 30 min | Arquitectura |
+| 2 | Media | GENERAL-01 Fase 3: migrar cosecha a Supabase | 60 min | Migración |
+| 3 | Media | GENERAL-01 Fase 3: migrar solicitudesCompra/Gasto, ordenesCompra | 60 min c/u | Migración |
+| 4 | Media | GENERAL-01 Fase 3: migrar activos, personal, creditosRef, rentas | 60 min c/u | Migración |
+| 5 | Media | Refactor App.jsx — extraer routes (archivo grande) | 45 min | Refactor |
+| 6 | Media | Asignar productor auto desde lote al cargar tractor | 30 min | Feature Diesel |
+| 7 | Media | Cleanup imports huérfanos en Diesel.jsx | 10 min | Housekeeping |
+| 8 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 9 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
 | 10 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
 | 11 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
 | 12 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
-| 13 | Futuro | saveFoto: opción de ligar foto a lote/operador | 20 min | Mejora Bitácora |
 
 ## Siguiente sesión — recomendación
 
-**Objetivo propuesto: #1 — fix GENERAL-01 (doble capa de persistencia).**
+**Opción A: #1 — GENERAL-01 Fase 2 (30 min, sin código).** Decidir qué claves del Grupo C van a Supabase y cuáles quedan locales. Resultado: entrada en DECISIONS.md.
 
-Es el bug estructural de raíz que causa DIESEL-01 y que mitigamos parcialmente para bitácora. Scope: dejar de inicializar el reducer desde `localStorage.agroSistemaState` en `App.jsx`, usar solo Supabase como fuente única. Requiere: entender qué módulos todavía dependen de la hidratación desde localStorage, diseñar el arranque (loading state mientras Supabase carga), migrar capital propio si quedaba pendiente, y smoke test por módulo. 60 min estimados; si el scope crece, partirlo en dos sesiones.
+**Opción B: verificar deploy en dev URL** (`agro-charay-dev.vercel.app`) y luego hacer `clear site data` + login para confirmar que la app funciona sin localStorage previo (test definitivo de Fase 1).
 
-Alternativa más corta si se quiere shippar el fix de DELETE a main antes: ejecutar #3 (merge dev → main) en 10 min, luego arrancar GENERAL-01 en siguiente sesión. Decisión abierta.
+**Opción C: merge dev → main** si el smoke test en dev URL pasa. Crear tag backup-pre-merge-22abr2026 primero.
 
-Preparación: leer `App.jsx` donde se define el `initState` del reducer, y `supabaseLoader.js` completo para ver qué tablas ya sobreescribe.
+## Reglas de trabajo
 
-## Reglas de trabajo (reforzadas esta sesión)
-
-- Sesiones cortas (30-50 min), un objetivo claro
+- Sesiones cortas (30-50 min base, 60-90 min cuando dimensionado)
 - Diagnóstico antes que fix
-- Ver archivo completo y EXPANDIDO antes de editar
-- Un cambio a la vez, con prueba inmediata
-- Probar en local primero, luego dev, nunca directo a main
-- `clear site data` en local antes de diagnosticar falsos bugs causados por localStorage residual
-- Verificar schema Supabase antes de POST/DELETE (`information_schema.columns`)
-- Verificar sintaxis con Babel parse después de editar (parser local: `./node_modules/@babel/parser`)
-- Commit y push al cierre, siempre
-- Nunca importar desde App.jsx en módulos
-- Datos reales = tolerancia cero al cambio sin respaldo previo y sin prueba explícita
-- `SELECT COUNT(*)` después de un DELETE. "Success, no rows returned" no garantiza que borró filas
-- Cuidado con listeners de Supabase: handler con `signOut()` nunca dentro de `onAuthStateChange(SIGNED_OUT)`
-- Al migrar un dispatch de reducer a un helper async, verificar si la función contenedora es async. Si no lo es, convertirla antes del edit
-- En flujos automáticos o modales rápidos preferir `silent: true`. En captura manual por el usuario, dejar default (`silent: false`) para que vea feedback si falla
-- Los extras que no procesa el helper van solo en el dispatch local, no en el payload del helper
-- **Nueva (hoy):** para borrados destructivos manuales sobre datos reales, usar patrón **Supabase-first** (bloqueante): `const ok = await deleteX(id); if (ok) dispatch(...)`. Si falla, el registro permanece visible en UI para reintentar. El patrón offline-first (dispatch local + helper silent) es correcto para flujos automáticos, no para borrados manuales del usuario
-- **Nueva (hoy):** al añadir funciones DELETE al helper, incluir guard temprano si el id es null/undefined. `DELETE ?columna=eq.null` borraría todas las filas con esa columna NULL — catastrófico
-- **Nueva (hoy):** al añadir DELETE con `Prefer: return=representation`, validar `rows.length === 0` para distinguir "no existe en BD" de error HTTP. El primer caso no es fallo de red — usar `console.warn` no `console.error`, y no disparar alert
-- **Nueva (hoy):** cuando el HANDOFF mencione un nombre de acción del reducer, validarlo con `grep` antes de confiar. En esta sesión el HANDOFF decía `DELETE_BITACORA` pero el código real usa `DEL_BITACORA` — un grep al inicio evitó ir al sitio equivocado
-- **Nueva (hoy):** Claude Code a veces interpreta "haz smoke test" como "compila y ya" cuando el dev server arranca limpio. El smoke test real requiere click-through manual en el navegador con consola abierta. Explicitar los pasos manuales en el prompt
+- Ver archivo completo antes de editar
+- Un cambio a la vez, con prueba inmediata (excepto cambios estructuralmente dependientes)
+- Probar en local → dev → nunca directo a main
+- Verificar schema Supabase antes de POST/DELETE
+- Verificar con Babel parse: node -e "require('@babel/parser').parse(require('fs').readFileSync('ARCHIVO','utf8'),{sourceType:'module',plugins:['jsx']}); console.log('PARSE OK')"
+- Tag de respaldo antes de merge a main
+- Commit y push al cierre
+- docs/ NO raíz — git add docs/HANDOFF.md docs/PROGRESS.md
+- HYDRATE_FROM_SUPABASE whitelist protege contra claves no-Grupo-A
+- Las 5 claves extras (liquidaciones, cajaChica*, usuariosDB, maquinariaConsumos) se auto-gestionan con SET_* en sus módulos — no meterlas en HYDRATE
+- configPreservada en supabaseLoader es peso muerto temporal — limpiar en Fase 3
+- SYNC_STATE sigue existiendo para realtime (2 sites legítimos) — no tocar
