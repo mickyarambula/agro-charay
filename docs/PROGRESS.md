@@ -1,5 +1,28 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 22 Abril 2026 (tarde)
+
+### ✅ Completado
+
+**GENERAL-01 Fase 2 — Decisiones Grupo C**
+- permisosUsuario, permisosGranulares, rolesPersonalizados, usuariosExtra, usuariosBaseEdit → Supabase en Fase 3 (datos de negocio, no preferencias UI).
+- proyeccion → decisión aplazada, revisar módulo primero.
+- Documentado en docs/DECISIONS.md.
+
+**Capital DELETE fix + refactor**
+- Bug: botón 🗑 eliminaba de UI pero no de Supabase (patrón BITACORA-DELETE-01).
+- Fix: extraer postCapital + deleteCapital a supabaseWriters.js. Capital.jsx usa helpers importados.
+- Eliminado postCapital inline + imports huérfanos SUPABASE_URL/SUPABASE_ANON_KEY de Capital.jsx.
+- Smoke test: crear → recargar → borrar → recargar → confirmado que no reaparece.
+
+Commits: 00672bb (código), e6a784d (decisiones).
+
+### 🎓 Lección aprendida
+- form.referencia vs form.notas: Capital.jsx usa "referencia" como nombre del campo del form, pero la columna Supabase se llama "notas". Sin fallback form.referencia || form.notas, el dato se perdía silenciosamente. Siempre verificar mapping campo-UI ↔ columna-DB.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — próximo: Fase 3 módulo por módulo o merge a main.
+
 ## Sesión 22 Abril 2026 (mediodía)
 
 ### ✅ Completado
