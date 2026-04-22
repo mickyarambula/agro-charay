@@ -1,5 +1,31 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 22 Abril 2026 (mediodía)
+
+### ✅ Completado
+**GENERAL-01 Fase 1 — fix del ciclo de vida del reducer**
+
+Problema: las 17 claves Grupo A (productores, lotes, bitácora, diesel, etc.) se inicializaban desde localStorage vía IIFE savedState. Supabase escribía a localStorage, el reducer leía de localStorage en el siguiente mount. No había dispatch directo. Consecuencia: datos stale entre sesiones/roles (DIESEL-01), blob localStorage creciente, window.location.reload() como muleta.
+
+Cambios (5 pasos, 4 archivos):
+1. DataContext.jsx: +5 claves extras en initState + case HYDRATE_FROM_SUPABASE (whitelist 17 claves)
+2. supabaseLoader.js: eliminar localStorage.setItem, retornar estadoNuevo
+3. App.jsx IIFE: reducir de 48 a 32 claves (sin Grupo A)
+4. App.jsx persist: PERSIST_KEYS selectivo (32 claves simétricas)
+5. App.jsx: useEffect HYDRATE reemplaza SYNC_STATE parcial, handleLogin sin loadStateFromSupabase redundante, loading gate "Cargando datos…"
+
+Commits: 1f1e85c (código).
+
+Resuelve: GENERAL-01 Fase 1, DIESEL-01 (efecto colateral).
+
+### 🎓 Lecciones aprendidas
+- SYNC_STATE existente era un no-op para 8 de 10 claves (filtradas por SYNC_KEYS). El trabajo real lo hacía window.location.reload() — diagnóstico reveló que NO había hidratación vía dispatch efectiva.
+- Las 5 claves extras (liquidaciones, cajaChica*, usuariosDB, maquinariaConsumos) ya eran Supabase-first por su cuenta (SET_* en módulos). Incluirlas en HYDRATE habría creado race conditions.
+- La IIFE savedState y el useEffect persist deben ser simétricas (mismas claves). Asimetría = data loss silencioso.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — próximo: Fase 2 (decisiones Grupo C) o merge a main.
+
 ## Sesión 22 Abril 2026 (mañana — warm-up)
 
 ### ✅ Completado
