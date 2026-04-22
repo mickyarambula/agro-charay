@@ -1,5 +1,25 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 22 Abril 2026 (tarde-2)
+
+### ✅ Completado
+
+**GENERAL-01 Fase 3 — migración lote de 10 claves vacías + cicloActual**
+- 10 tablas ya existían en Supabase (todas vacías, 0 filas): recomendaciones, notificaciones, delegaciones, solicitudes_compra, ordenes_compra, solicitudes_gasto, activos, personal, creditos_refaccionarios, rentas_tierra.
+- Añadidos 10 fetches en supabaseLoader.js con passthrough crudo (|| []).
+- HYDRATE_FROM_SUPABASE ampliado de 17 a 28 claves.
+- IIFE savedState + PERSIST_KEYS reducidos de 32 a 21 claves (simétricos).
+- cicloActual: ya se derivaba del loader, ahora incluido en HYDRATE whitelist.
+- Caveat: mapeo snake_case → camelCase pendiente para cuando cada módulo capture datos reales.
+
+Commits: e0f1061 (código), 3bb4a85 (merge main).
+
+### 🎓 Lección aprendida
+- Tablas vacías en Supabase se pueden migrar en lote sin riesgo de data loss. El patrón es mecánico: fetch + whitelist + quitar de IIFE/PERSIST.
+
+### 📋 Pendientes al cierre
+5 claves aún en localStorage: asistencias, pagosSemana, tarifaStd, horasMaq, proyeccion. Ver HANDOFF.md.
+
 ## Sesión 22 Abril 2026 (tarde)
 
 ### ✅ Completado

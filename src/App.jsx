@@ -1184,6 +1184,8 @@ export default function App() {
         tarifaStd:       parsed.tarifaStd       || initState.tarifaStd,
         horasMaq:        parsed.horasMaq        || [],
         proyeccion:      parsed.proyeccion      || [],
+        // cosecha: sin tabla Supabase aún — persiste en localStorage hasta migración
+        cosecha:         parsed.cosecha         || initState.cosecha,
       };
     } catch(e) {
       console.warn('Error restaurando localStorage:', e);
@@ -1209,6 +1211,8 @@ export default function App() {
         'alertaParams', 'creditoLimites', 'creditoParams', 'paramsCultivo',
         'cultivosCatalogo', 'tarifaStd', 'proyeccion',
         'asistencias', 'pagosSemana', 'horasMaq',
+        // cosecha: sin tabla Supabase aún — persiste en localStorage hasta migración
+        'cosecha',
       ];
       const toSave = {};
       for (const k of PERSIST_KEYS) {
