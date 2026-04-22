@@ -1,5 +1,25 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 21 Abril 2026 (mediodía — diagnóstico GENERAL-01)
+
+### ✅ Completado
+- Merge dev → main ejecutado con tag de respaldo (`backup-pre-merge-20abr2026`). Fix BITACORA-DELETE-01 desplegado a producción (`agro-charay.vercel.app`, commit 92bfe7d). Smoke test en prod: crear + borrar registro bitácora end-to-end OK, consola limpia.
+- Diagnóstico completo de GENERAL-01 (sin tocar código): leídos App.jsx (2156 líneas), supabaseLoader.js (420 líneas), DataContext.jsx sección initState (L11–241). Resultado: 52 claves en initState, solo 17 hidratadas desde Supabase (indirectamente vía localStorage, no vía dispatch), 35 viven solo en localStorage, 6 extras en state sin estar en initState.
+- Decisión arquitectónica tomada y documentada: migración por fases, NO big-bang. Clasificación en Grupo A (Supabase fuente única, 22 ya + 21 por migrar), Grupo B (config local legítima, 7 claves), Grupo C (requiere decisión de negocio, 6 claves).
+- Creado `docs/GENERAL-01-PLAN.md` con plan operacional completo en 3 fases.
+- Actualizados `docs/DECISIONS.md` (bloque apuntando al plan) y `docs/HANDOFF.md` (reemplazo total con pendientes reclasificados).
+- Commit `514bf2f` en dev.
+
+### 🎓 Lecciones aprendidas
+- **El HANDOFF puede subestimar scope.** La estimación "60 min" para GENERAL-01 era optimista por un factor de 3-5x. El fix real requiere 3 fases y múltiples sesiones. Regla nueva: cuando un objetivo del HANDOFF toque estructura, diagnosticar ANTES de comprometerse al tiempo.
+- **"Módulos migrados" ≠ "Supabase es fuente única".** Las sesiones previas migraron los INSERT/DELETE de bitácora a helpers Supabase, lo cual es necesario pero NO suficiente: el reducer sigue inicializándose desde localStorage y reescribiéndolo en cada cambio de state. Distinguir nivel de mutación vs nivel de inicialización explícitamente.
+- **supabaseLoader NO dispatcha.** Escribe a localStorage y confía en que el próximo mount del `<App/>` lea de ahí. Esto explica por qué cambios en otra sesión no aparecen hasta recargar (bug DIESEL-01).
+- **Claude Code puede truncar lecturas a línea 1** por hooks de prior-observations. Fallback legítimo: pedirle explícitamente usar `cat` o `sed -n` como backup cuando el tool dedicado falla.
+- **Separar "shippar lo probado" de "arrancar lo grande".** Hacer merge dev → main del fix contenido ANTES de abrir un bug estructural de alto riesgo es un patrón a mantener.
+
+### 📋 Pendientes al cierre
+Ver `docs/HANDOFF.md` y `docs/GENERAL-01-PLAN.md`. Próximo objetivo: Fase 1 de GENERAL-01 (60-90 min).
+
 ## Sesión 20 Abril 2026 (noche tardía — fix DELETE)
 
 ### ✅ Completado
