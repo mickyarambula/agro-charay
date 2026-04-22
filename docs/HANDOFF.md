@@ -2,10 +2,10 @@
 
 **Última actualización:** 22 Abril 2026 (mediodía)
 **Branch activo:** dev
-**Último commit código:** 1f1e85c (fix(core): GENERAL-01 Fase 1 — reducer hydrate desde Supabase)
-**Último commit main:** bfc9b93 (merge: dev → main — GENERAL-01 Fase 1)
-**Tag de respaldo:** backup-pre-merge-22abr2026
-**Estado:** GENERAL-01 Fase 1 y Fase 2 completadas. Capital DELETE fix en dev (patrón BITACORA-DELETE-01). postCapital extraído a supabaseWriters.js.
+**Último commit código:** e0f1061 (fix(core): GENERAL-01 Fase 3 — migrar 10 claves vacías + cicloActual)
+**Último commit main:** 3bb4a85 (merge: dev → main — GENERAL-01 Fase 3)
+**Tag de respaldo:** backup-pre-merge-22abr2026-fase3
+**Estado:** GENERAL-01 Fases 1, 2 y 3 completadas. 28 claves Grupo A hidratadas desde Supabase. localStorage reducido a 21 claves (Grupo B + C + 5 pendientes: asistencias, pagosSemana, tarifaStd, horasMaq, proyeccion). Capital DELETE fix en producción.
 
 ## Estado al cierre
 
@@ -39,17 +39,15 @@ Consecuencia de GENERAL-01. Resuelto al completar Fase 1 — datos diesel vienen
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Media | GENERAL-01 Fase 3: migrar cosecha a Supabase | 60 min | Migración |
-| 2 | Media | GENERAL-01 Fase 3: migrar solicitudesCompra/Gasto, ordenesCompra | 60 min c/u | Migración |
-| 3 | Media | GENERAL-01 Fase 3: migrar activos, personal, creditosRef, rentas | 60 min c/u | Migración |
-| 4 | Media | Refactor App.jsx — extraer routes (archivo grande) | 45 min | Refactor |
-| 5 | Media | Asignar productor auto desde lote al cargar tractor | 30 min | Feature Diesel |
-| 6 | Media | Cleanup imports huérfanos en Diesel.jsx | 10 min | Housekeeping |
-| 7 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 8 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
-| 9 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
-| 10 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
-| 11 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
+| 1 | Media | GENERAL-01: migrar 5 claves residuales (asistencias, pagosSemana, tarifaStd, horasMaq, proyeccion) | 60 min c/u | Migración |
+| 2 | Media | Refactor App.jsx — extraer routes (archivo grande) | 45 min | Refactor |
+| 3 | Media | Asignar productor auto desde lote al cargar tractor | 30 min | Feature Diesel |
+| 4 | Media | Cleanup imports huérfanos en Diesel.jsx | 10 min | Housekeeping |
+| 5 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 6 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
+| 7 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
+| 8 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
+| 9 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
 
 ## Siguiente sesión — recomendación
 
