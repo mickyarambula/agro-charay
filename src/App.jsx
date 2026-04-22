@@ -1153,8 +1153,12 @@ export default function App() {
         return v;
       };
 
+      // NOTA: Grupo A viene por HYDRATE_FROM_SUPABASE — ya no se lee de localStorage:
+      // productores, lotes, bitacora, insumos, diesel, dispersiones, egresosManual,
+      // expedientes, ciclos, maquinaria, operadores, ordenesTrabajo, capital, cosecha,
+      // inventario, cicloActivoId. `trabajos` también se quita (valor no confiable).
       return {
-        // Configuración (estos sí pueden estar vacíos)
+        // Configuración (Grupo C + config temporal)
         alertaParams:    parsed.alertaParams    || {},
         creditoLimites:  parsed.creditoLimites  || {},
         alertasLeidas:   parsed.alertasLeidas   || [],
@@ -1165,42 +1169,24 @@ export default function App() {
         rolesPersonalizados: parsed.rolesPersonalizados || {},
         creditoParams:   parsed.creditoParams   || {},
         paramsCultivo:   parsed.paramsCultivo   || {},
-        // Catálogos — si localStorage tiene datos úsalos, si no usa initState
-        productores:     restore('productores',  initState.productores),
-        lotes:           restore('lotes',        initState.lotes),
-        operadores:      restore('operadores',   initState.operadores),
-        maquinaria:      restore('maquinaria',   initState.maquinaria),
         cultivosCatalogo:restore('cultivosCatalogo', initState.cultivosCatalogo || []),
-        // Ciclos
-        ciclos:          restore('ciclos',       initState.ciclos),
-        cicloActivoId:   parsed.cicloActivoId   ?? initState.cicloActivoId,
+        // Ciclo activo (Grupo B UI)
         cicloActual:     parsed.cicloActual      || initState.cicloActual,
         cultivoActivo:   parsed.cultivoActivo    || null,
-        // Datos operativos — si hay datos guardados úsalos, si no usa initState
-        insumos:         restore('insumos',      initState.insumos),
-        diesel:          restore('diesel',       initState.diesel),
-        egresosManual:   restore('egresosManual',initState.egresosManual),
-        dispersiones:    restore('dispersiones', initState.dispersiones),
-        expedientes:     restore('expedientes',  initState.expedientes || []),
-        bitacora:        restore('bitacora',     []).map(b=>({...b, foto: b.foto?.startsWith('data:') ? null : b.foto})),
-        trabajos:        parsed.trabajos        || [],
-        // Nómina
+        // Nómina (pendiente de migrar a Supabase)
         asistencias:     parsed.asistencias     || [],
         pagosSemana:     parsed.pagosSemana     || [],
         tarifaStd:       parsed.tarifaStd       || initState.tarifaStd,
         horasMaq:        parsed.horasMaq        || [],
-        // Finanzas
-        capital:         parsed.capital         || initState.capital,
+        // Finanzas (pendientes de migrar)
         creditosRef:     parsed.creditosRef     || [],
         activos:         parsed.activos         || [],
         rentas:          parsed.rentas          || [],
         personal:        parsed.personal        || [],
-        cosecha:         parsed.cosecha         || initState.cosecha,
         proyeccion:      parsed.proyeccion      || [],
-        inventario:      parsed.inventario      || { items: [], movimientos: [] },
         precioVentaMXN:     parsed.precioVentaMXN     || initState.precioVentaMXN,
         rendimientoEsperado:parsed.rendimientoEsperado || initState.rendimientoEsperado,
-        // Flujos de trabajo
+        // Flujos de trabajo (pendientes de migrar)
         solicitudesCompra:  parsed.solicitudesCompra  || [],
         ordenesCompra:      parsed.ordenesCompra      || [],
         solicitudesGasto:   parsed.solicitudesGasto   || [],
@@ -1216,79 +1202,40 @@ export default function App() {
     }
   })();
   const [state, dispatch] = useReducer(reducer, { ...initState, ...savedState });
+  const [hydrating, setHydrating] = React.useState(true);
   const stateRef = React.useRef(state);
   React.useEffect(() => { stateRef.current = state; }, [state]);
-  // Persistir estado completo en localStorage en cada cambio
+  // Persist selectivo a localStorage. Solo escribe las claves que la IIFE savedState lee
+  // (simetría estricta). Grupo A ya no se persiste — viene por HYDRATE_FROM_SUPABASE.
   React.useEffect(() => {
     try {
-      // Excluir fotos base64 de bitácora para no saturar los 5MB de localStorage
-      const bitacoraLimpia = (state.bitacora||[]).map(b=>({
-        ...b, foto: b.foto?.startsWith('data:') ? null : b.foto
-      }));
-      const payload = {
-        // Configuración
-        alertaParams:     state.alertaParams,
-        creditoLimites:   state.creditoLimites   || {},
-        alertasLeidas:    state.alertasLeidas    || [],
-        usuariosExtra:    state.usuariosExtra    || [],
-        usuariosBaseEdit: state.usuariosBaseEdit || {},
-        permisosUsuario:  state.permisosUsuario  || {},
-        permisosGranulares: state.permisosGranulares || {},
-        rolesPersonalizados: state.rolesPersonalizados || {},
-        creditoParams:    state.creditoParams    || {},
-        paramsCultivo:    state.paramsCultivo    || {},
-        // Catálogos
-        productores:      state.productores,
-        lotes:            state.lotes,
-        operadores:       state.operadores,
-        maquinaria:       state.maquinaria,
-        cultivosCatalogo: state.cultivosCatalogo || [],
-        // Ciclos
-        ciclos:           state.ciclos,
-        cicloActivoId:    state.cicloActivoId,
-        cicloActual:      state.cicloActual,
-        cultivoActivo:    state.cultivoActivo,
-        // Datos del ciclo
-        insumos:          state.insumos,
-        diesel:           state.diesel,
-        egresosManual:    state.egresosManual,
-        dispersiones:     state.dispersiones,
-        expedientes:      state.expedientes      || [],
-        bitacora:         bitacoraLimpia,
-        trabajos:         state.trabajos,
-        // Nómina
-        asistencias:      state.asistencias      || [],
-        pagosSemana:      state.pagosSemana      || [],
-        tarifaStd:        state.tarifaStd,
-        horasMaq:         state.horasMaq,
-        // Finanzas
-        capital:          state.capital,
-        creditosRef:      state.creditosRef      || [],
-        activos:          state.activos          || [],
-        rentas:           state.rentas           || [],
-        personal:         state.personal         || [],
-        cosecha:          state.cosecha,
-        proyeccion:       state.proyeccion       || [],
-        inventario:       state.inventario       || { items:[], movimientos:[] },
-        // Precios
-        precioVentaMXN:      state.precioVentaMXN,
-        rendimientoEsperado: state.rendimientoEsperado,
-        // Flujos de trabajo
-        solicitudesCompra:   state.solicitudesCompra   || [],
-        ordenesCompra:       state.ordenesCompra       || [],
-        solicitudesGasto:    state.solicitudesGasto    || [],
-        recomendaciones:     state.recomendaciones     || [],
-        invCampo:            state.invCampo            || [],
-        notificaciones:      state.notificaciones      || [],
-        colaOffline:         (state.colaOffline||[]).filter(x=>!x.sincronizado),
-        delegaciones:        state.delegaciones        || [],
-      };
-      const json = JSON.stringify(payload);
-      // Advertir si se acerca al límite de 5MB
-      if(json.length > 4 * 1024 * 1024) console.warn('localStorage: >4MB, considera limpiar bitácora o fotos');
+      const PERSIST_KEYS = [
+        // Grupo B (UI local / preferencias)
+        'alertasLeidas', 'cultivoActivo', 'invCampo', 'colaOffline',
+        'precioVentaMXN', 'rendimientoEsperado',
+        // Grupo C (permisos / roles)
+        'permisosUsuario', 'permisosGranulares', 'rolesPersonalizados',
+        'usuariosExtra', 'usuariosBaseEdit',
+        // Config temporal (pendiente de decisión Fase 2)
+        'alertaParams', 'creditoLimites', 'creditoParams', 'paramsCultivo',
+        'cultivosCatalogo', 'tarifaStd', 'proyeccion',
+        'asistencias', 'pagosSemana', 'horasMaq',
+        // Pendientes de migrar a Supabase en Fase 3
+        'cicloActual', 'creditosRef', 'activos', 'rentas', 'personal',
+        'solicitudesCompra', 'ordenesCompra', 'solicitudesGasto',
+        'recomendaciones', 'notificaciones', 'delegaciones',
+      ];
+      const toSave = {};
+      for (const k of PERSIST_KEYS) {
+        if (state[k] !== undefined) toSave[k] = state[k];
+      }
+      // Filtrar items ya sincronizados de la cola offline antes de persistir
+      if (toSave.colaOffline) toSave.colaOffline = toSave.colaOffline.filter(x => !x.sincronizado);
+      const json = JSON.stringify(toSave);
+      if (json.length > 4 * 1024 * 1024) console.warn('localStorage: >4MB, considera limpiar datos');
       localStorage.setItem("agroSistemaState", json);
     } catch(e) {
-      if(e.name === 'QuotaExceededError') console.error('localStorage lleno — las fotos en bitácora están ocupando demasiado espacio');
+      if (e.name === 'QuotaExceededError') console.error('localStorage lleno — considera limpiar datos o fotos');
       else console.error('Error guardando estado:', e);
     }
   }, [state]);
@@ -1409,26 +1356,23 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
-    loadStateFromSupabase().then(() => {
-      try {
-        const s = localStorage.getItem('agroSistemaState');
-        if (s) {
-          const fresh = JSON.parse(s);
-          dispatch({ type: 'SYNC_STATE', payload: {
-            productores:   fresh.productores   || [],
-            lotes:         fresh.lotes         || [],
-            insumos:       fresh.insumos       || [],
-            diesel:        fresh.diesel        || [],
-            egresosManual: fresh.egresosManual || [],
-            dispersiones:  fresh.dispersiones  || [],
-            operadores:    fresh.operadores    || [],
-            maquinaria:    fresh.maquinaria    || [],
-            ciclos:        fresh.ciclos        || [],
-            ordenesTrabajo:fresh.ordenesTrabajo|| [],
-          }});
+    let cancelled = false;
+    loadStateFromSupabase()
+      .then((result) => {
+        if (cancelled) return;
+        if (result && !result.error) {
+          dispatch({ type: 'HYDRATE_FROM_SUPABASE', payload: result });
+        } else {
+          console.warn('[Hydrate] Supabase load failed:', result?.error);
         }
-      } catch(e) {}
-    });
+      })
+      .catch((err) => {
+        console.warn('[Hydrate] Unexpected error:', err);
+      })
+      .finally(() => {
+        if (!cancelled) setHydrating(false);
+      });
+    return () => { cancelled = true; };
   }, []);
 
   // ─── Supabase realtime: suscripción al canal al iniciar sesión ──────────────
@@ -1684,7 +1628,6 @@ export default function App() {
   };
 
   const handleLogin = async (u) => {
-    try { await loadStateFromSupabase(); } catch(e) { console.warn('Supabase skip:', e); }
     sessionStorage.setItem('agroLoginUser', JSON.stringify(u));
     // Persistir sesión 8 horas — sobrevive al cierre/reapertura de la app (PWA)
     localStorage.setItem('agro_session', JSON.stringify({
@@ -1708,6 +1651,16 @@ export default function App() {
   };
 
   if (!usuario) return <LoginScreen onLogin={handleLogin} />;
+
+  if (hydrating) return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      height: '100vh', background: '#1a3a0f', color: '#e8f5e9',
+      fontFamily: 'system-ui, sans-serif', fontSize: '1.2rem'
+    }}>
+      Cargando datos…
+    </div>
+  );
 
   // ─── Vista minimalista para operadores de campo (bypass total del layout) ─
   if (usuario.rol === "campo") {

@@ -238,6 +238,13 @@ export const initState = {
   // ── PROYECCIÓN DEL CICLO (presupuesto por etapa fenológica) ──
   // Basado en hoja PROYECCION del Excel · 468 ha · datos reales del sistema
   proyeccion: [],
+
+  // ── EXTRAS que hoy usan módulos vía SET_* actions (auto-gestionados) ──
+  liquidaciones: [],
+  cajaChicaFondo: null,
+  cajaChicaMovimientos: [],
+  usuariosDB: [],
+  maquinariaConsumos: [],
 };
 
 export function reducer(s, a) {
@@ -513,6 +520,20 @@ export function reducer(s, a) {
     case "SET_PERMISOS_USUARIO": return { ...s, permisosGranulares: { ...s.permisosGranulares, [a.payload.userId]: a.payload.permisos } };
     case "CLEAR_PERMISOS_USUARIO": { const n={...(s.permisosGranulares||{})}; delete n[a.payload]; return {...s, permisosGranulares:n}; }
     case "SET_ROL": return { ...s, rolesPersonalizados: { ...(s.rolesPersonalizados||{}), [a.payload.id]: a.payload } };
+    case "HYDRATE_FROM_SUPABASE": {
+      const GRUPO_A = [
+        'productores','lotes','bitacora','insumos','diesel',
+        'dispersiones','egresosManual','expedientes','ciclos',
+        'maquinaria','operadores','ordenesTrabajo',
+        'capital','cosecha','inventario',
+        'cicloActivoId','_supabaseCargado'
+      ];
+      const next = { ...s };
+      for (const k of GRUPO_A) {
+        if (k in a.payload) next[k] = a.payload[k];
+      }
+      return next;
+    }
     case "SYNC_STATE": {
       // Actualiza solo las claves sincronizadas desde un peer remoto sin tocar el resto del state.
       const p = a.payload || {};
