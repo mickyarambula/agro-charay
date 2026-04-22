@@ -522,11 +522,11 @@ export function reducer(s, a) {
     case "SET_ROL": return { ...s, rolesPersonalizados: { ...(s.rolesPersonalizados||{}), [a.payload.id]: a.payload } };
     case "HYDRATE_FROM_SUPABASE": {
       const GRUPO_A = [
-        // Fase 1 — 17 claves originales
+        // Fase 1 — 16 claves originales (cosecha removida: sin tabla Supabase, persiste en localStorage)
         'productores','lotes','bitacora','insumos','diesel',
         'dispersiones','egresosManual','expedientes','ciclos',
         'maquinaria','operadores','ordenesTrabajo',
-        'capital','cosecha','inventario',
+        'capital','inventario',
         'cicloActivoId','_supabaseCargado',
         // Fase 3 — 11 claves migradas
         'recomendaciones','notificaciones','delegaciones',
