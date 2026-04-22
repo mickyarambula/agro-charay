@@ -1153,12 +1153,14 @@ export default function App() {
         return v;
       };
 
-      // NOTA: Grupo A viene por HYDRATE_FROM_SUPABASE — ya no se lee de localStorage:
-      // productores, lotes, bitacora, insumos, diesel, dispersiones, egresosManual,
-      // expedientes, ciclos, maquinaria, operadores, ordenesTrabajo, capital, cosecha,
-      // inventario, cicloActivoId. `trabajos` también se quita (valor no confiable).
+      // NOTA: Grupo A (Fase 1 + Fase 3) viene por HYDRATE_FROM_SUPABASE — ya no se lee de localStorage:
+      // Fase 1: productores, lotes, bitacora, insumos, diesel, dispersiones, egresosManual,
+      //   expedientes, ciclos, maquinaria, operadores, ordenesTrabajo, capital, cosecha,
+      //   inventario, cicloActivoId. `trabajos` también se quita (valor no confiable).
+      // Fase 3: cicloActual, creditosRef, activos, rentas, personal, solicitudesCompra,
+      //   ordenesCompra, solicitudesGasto, recomendaciones, notificaciones, delegaciones.
       return {
-        // Configuración (Grupo C + config temporal)
+        // Grupo C (permisos / roles) + config temporal
         alertaParams:    parsed.alertaParams    || {},
         creditoLimites:  parsed.creditoLimites  || {},
         alertasLeidas:   parsed.alertasLeidas   || [],
@@ -1170,31 +1172,18 @@ export default function App() {
         creditoParams:   parsed.creditoParams   || {},
         paramsCultivo:   parsed.paramsCultivo   || {},
         cultivosCatalogo:restore('cultivosCatalogo', initState.cultivosCatalogo || []),
-        // Ciclo activo (Grupo B UI)
-        cicloActual:     parsed.cicloActual      || initState.cicloActual,
-        cultivoActivo:   parsed.cultivoActivo    || null,
-        // Nómina (pendiente de migrar a Supabase)
+        // Grupo B (UI local / preferencias)
+        cultivoActivo:      parsed.cultivoActivo       || null,
+        precioVentaMXN:     parsed.precioVentaMXN      || initState.precioVentaMXN,
+        rendimientoEsperado:parsed.rendimientoEsperado || initState.rendimientoEsperado,
+        invCampo:           parsed.invCampo            || [],
+        colaOffline:        (parsed.colaOffline||[]).filter(x=>!x.sincronizado),
+        // Pendientes de migrar a Supabase en futuras fases
         asistencias:     parsed.asistencias     || [],
         pagosSemana:     parsed.pagosSemana     || [],
         tarifaStd:       parsed.tarifaStd       || initState.tarifaStd,
         horasMaq:        parsed.horasMaq        || [],
-        // Finanzas (pendientes de migrar)
-        creditosRef:     parsed.creditosRef     || [],
-        activos:         parsed.activos         || [],
-        rentas:          parsed.rentas          || [],
-        personal:        parsed.personal        || [],
         proyeccion:      parsed.proyeccion      || [],
-        precioVentaMXN:     parsed.precioVentaMXN     || initState.precioVentaMXN,
-        rendimientoEsperado:parsed.rendimientoEsperado || initState.rendimientoEsperado,
-        // Flujos de trabajo (pendientes de migrar)
-        solicitudesCompra:  parsed.solicitudesCompra  || [],
-        ordenesCompra:      parsed.ordenesCompra      || [],
-        solicitudesGasto:   parsed.solicitudesGasto   || [],
-        recomendaciones:    parsed.recomendaciones    || [],
-        invCampo:           parsed.invCampo           || [],
-        notificaciones:     parsed.notificaciones     || [],
-        colaOffline:        (parsed.colaOffline||[]).filter(x=>!x.sincronizado),
-        delegaciones:       parsed.delegaciones       || [],
       };
     } catch(e) {
       console.warn('Error restaurando localStorage:', e);
@@ -1216,14 +1205,10 @@ export default function App() {
         // Grupo C (permisos / roles)
         'permisosUsuario', 'permisosGranulares', 'rolesPersonalizados',
         'usuariosExtra', 'usuariosBaseEdit',
-        // Config temporal (pendiente de decisión Fase 2)
+        // Config temporal (pendiente de decisión Fase 2) + pendientes de migrar
         'alertaParams', 'creditoLimites', 'creditoParams', 'paramsCultivo',
         'cultivosCatalogo', 'tarifaStd', 'proyeccion',
         'asistencias', 'pagosSemana', 'horasMaq',
-        // Pendientes de migrar a Supabase en Fase 3
-        'cicloActual', 'creditosRef', 'activos', 'rentas', 'personal',
-        'solicitudesCompra', 'ordenesCompra', 'solicitudesGasto',
-        'recomendaciones', 'notificaciones', 'delegaciones',
       ];
       const toSave = {};
       for (const k of PERSIST_KEYS) {

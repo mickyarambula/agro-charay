@@ -522,11 +522,17 @@ export function reducer(s, a) {
     case "SET_ROL": return { ...s, rolesPersonalizados: { ...(s.rolesPersonalizados||{}), [a.payload.id]: a.payload } };
     case "HYDRATE_FROM_SUPABASE": {
       const GRUPO_A = [
+        // Fase 1 — 17 claves originales
         'productores','lotes','bitacora','insumos','diesel',
         'dispersiones','egresosManual','expedientes','ciclos',
         'maquinaria','operadores','ordenesTrabajo',
         'capital','cosecha','inventario',
-        'cicloActivoId','_supabaseCargado'
+        'cicloActivoId','_supabaseCargado',
+        // Fase 3 — 11 claves migradas
+        'recomendaciones','notificaciones','delegaciones',
+        'solicitudesCompra','ordenesCompra','solicitudesGasto',
+        'activos','personal','creditosRef','rentas',
+        'cicloActual',
       ];
       const next = { ...s };
       for (const k of GRUPO_A) {
