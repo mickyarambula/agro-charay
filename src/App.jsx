@@ -1486,6 +1486,7 @@ export default function App() {
             tipoMovimiento: r.tipo_movimiento || null,
             cancelado: r.cancelado || false,
             notas: r.notas || '',
+            bitacoraLegacyId: r.bitacora_legacy_id || null,
             _uuid: r.id,
             origen: 'supabase',
           }));

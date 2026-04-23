@@ -153,6 +153,7 @@ export async function loadStateFromSupabase() {
       estatus: r.estatus || 'pendiente',
       cancelado: r.cancelado || false,
       tipoMovimiento: r.tipo_movimiento || null,
+      bitacoraLegacyId: r.bitacora_legacy_id || null,
       notas: r.notas || '',
       _uuid: r.id,
     }));

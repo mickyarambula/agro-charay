@@ -9,7 +9,7 @@ import { Modal } from '../shared/Modal.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
-import { postBitacora } from '../core/supabaseWriters.js';
+import { postBitacora, deleteBitacora } from '../core/supabaseWriters.js';
 
 const CILINDRO_CAPACIDAD = CAPACIDAD_TANQUE_DIESEL;
 
@@ -139,6 +139,38 @@ export default function DieselModule({ userRol, usuario }) {
 
     const id = Date.now();
     const productorId = tipo === 'salida_interna' ? productorIdFromLote(datos.loteId) : null;
+
+    // ── DIESEL-ESPEJO-01: crear espejo bitácora PRIMERO para capturar su legacy_id ──
+    let bitacoraLegacyId = null;
+    if (tipo === 'salida_interna') {
+      const maq = (state.maquinaria||[]).find(m => String(m.id) === String(datos.maquinariaId));
+      const op  = (state.operadores||[]).find(o => String(o.id) === String(datos.operadorId));
+      const bitacoraPayload = {
+        tipo: 'diesel',
+        fecha: datos.fecha,
+        loteId: datos.loteId ? (parseInt(datos.loteId)||datos.loteId) : null,
+        loteIds: datos.loteId ? [parseInt(datos.loteId)||datos.loteId] : [],
+        operadorId: datos.operadorId || '',
+        operador: op?.nombre || '',
+        maquinariaId: datos.maquinariaId || '',
+        horas: 0,
+        notas: `Carga de diesel: ${litros}L — ${maq?.nombre || 'Sin tractor'}`,
+        data: { litros, precioLitro: 0, actividad: 'Carga cilindro' },
+      };
+      const saved = await postBitacora(bitacoraPayload, state.cicloActivoId, { silent: true });
+      bitacoraLegacyId = saved?.id || null;
+      dispatch({
+        type: 'ADD_BITACORA',
+        payload: {
+          ...bitacoraPayload,
+          id: bitacoraLegacyId || Date.now(),
+          cantidad: litros,
+          unidad: 'L',
+          origen: 'diesel_cilindro',
+        }
+      });
+    }
+
     const nuevoReg = {
       id,
       fecha: datos.fecha,
@@ -151,6 +183,7 @@ export default function DieselModule({ userRol, usuario }) {
       maquinariaId: datos.maquinariaId || null,
       loteId: datos.loteId || null,
       productorId,
+      bitacoraLegacyId,
       operadorId: datos.operadorId || '',
       tipoMovimiento: tipo,
       esAjuste: false,
@@ -187,6 +220,7 @@ export default function DieselModule({ userRol, usuario }) {
           operador: tipo==='salida_interna' ? ((state.operadores||[]).find(o=>String(o.id)===String(datos.operadorId))?.nombre || '') : null,
           concepto: tipo==='salida_interna' ? `${(state.maquinaria||[]).find(m=>String(m.id)===String(datos.maquinariaId))?.nombre||''} — ${datos.tipoLabor||''}`.trim() : '',
           productor_legacy_id: productorId || null,
+          bitacora_legacy_id: bitacoraLegacyId,
           registrado_por: usuario?.usuario || userRol || 'desconocido',
           notas: datos.notas || '',
         }),
@@ -197,34 +231,6 @@ export default function DieselModule({ userRol, usuario }) {
 
     dispatch({ type: 'ADD_DIESEL', payload: nuevoReg });
 
-    // Espejo en Bitácora solo para salidas internas
-    if (tipo === 'salida_interna') {
-      const maq = (state.maquinaria||[]).find(m => String(m.id) === String(datos.maquinariaId));
-      const op  = (state.operadores||[]).find(o => String(o.id) === String(datos.operadorId));
-      const bitacoraPayload = {
-        tipo: 'diesel',
-        fecha: datos.fecha,
-        loteId: datos.loteId ? (parseInt(datos.loteId)||datos.loteId) : null,
-        loteIds: datos.loteId ? [parseInt(datos.loteId)||datos.loteId] : [],
-        operadorId: datos.operadorId || '',
-        operador: op?.nombre || '',
-        maquinariaId: datos.maquinariaId || '',
-        horas: 0,
-        notas: `Carga de diesel: ${litros}L — ${maq?.nombre || 'Sin tractor'}`,
-        data: { litros, precioLitro: 0, actividad: 'Carga cilindro' },
-      };
-      const saved = await postBitacora(bitacoraPayload, state.cicloActivoId, { silent: true });
-      dispatch({
-        type: 'ADD_BITACORA',
-        payload: {
-          ...bitacoraPayload,
-          id: saved?.id || Date.now(),
-          cantidad: litros,
-          unidad: 'L',
-          origen: 'diesel_cilindro',
-        }
-      });
-    }
     return true;
   };
 
@@ -776,6 +782,11 @@ export default function DieselModule({ userRol, usuario }) {
                     onChange={e=>setMotivoCancel(e.target.value)} placeholder="Motivo de cancelación"/>
                   <button onClick={async ()=>{
                     if (!motivoCancel.trim()) { alert('Ingresa un motivo.'); return; }
+                    // ── DIESEL-ESPEJO-01: borrar espejo en bitácora ──
+                    if (d.bitacoraLegacyId) {
+                      const okBita = await deleteBitacora(d.bitacoraLegacyId, { silent: true });
+                      if (okBita) dispatch({ type: 'DEL_BITACORA', payload: d.bitacoraLegacyId });
+                    }
                     try {
                       await fetch(`${SUPABASE_URL}/rest/v1/diesel?id=eq.${encodeURIComponent(String(d._uuid||d.id))}`,{
                         method:'PATCH',
