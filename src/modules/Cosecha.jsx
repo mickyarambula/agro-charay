@@ -25,6 +25,11 @@ import {
 } from '../shared/helpers.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
+import {
+  postCosechaBoleta, postCosechaCuadrilla, postCosechaFlete,
+  postCosechaMaquila, postCosechaSecado, deleteCosechaRecord,
+  patchCosechaBoleta,
+} from '../core/supabaseWriters.js';
 
 
 export default function CosechaModule({ userRol, puedeEditar }) {
@@ -137,7 +142,7 @@ export default function CosechaModule({ userRol, puedeEditar }) {
       }).filter(r=>r["BOLETA"]&&r["BOLETA"]!=="");
 
       const logs = [`📋 Columnas: ${headers.filter(h=>h).join(" | ")}`];
-      const nuevas = [];
+      const candidatas = [];
       let sinProd = 0;
 
       dataRows.forEach((row,i)=>{
@@ -167,22 +172,35 @@ export default function CosechaModule({ userRol, puedeEditar }) {
         });
         if(!prodMatch) sinProd++;
 
-        nuevas.push({
-          id: Date.now()+i,
-          boleta, fecha, codigo,
-          productorId:   prodMatch?.id||null,
-          productorNombre: prodNom,
-          cultivo:       row["CULTIVO"]||"MAIZ",
-          bruto, tara, pnsa, pna,
-          chofer, camion, placas, hum,
-          cancelado: false,
+        candidatas.push({
+          record: {
+            id: Date.now()+i,
+            boleta, fecha, codigo,
+            productorId:   prodMatch?.id||null,
+            productorNombre: prodNom,
+            cultivo:       row["CULTIVO"]||"MAIZ",
+            bruto, tara, pnsa, pna,
+            chofer, camion, placas, hum,
+            cancelado: false,
+          },
+          productorUuid: prodMatch?._uuid || null,
         });
       });
 
-      dispatch({type:"IMPORT_BOLETAS", payload: nuevas});
+      const cicloUuid = cicloPred?._uuid || null;
+      const resultados = await Promise.all(
+        candidatas.map(c => postCosechaBoleta(c.record, cicloUuid, c.productorUuid))
+      );
+      const nuevas = candidatas
+        .map((c, i) => (resultados[i] ? c.record : null))
+        .filter(Boolean);
+      const fallidas = candidatas.length - nuevas.length;
+
+      if (nuevas.length > 0) dispatch({type:"IMPORT_BOLETAS", payload: nuevas});
       logs.push(`✅ ${nuevas.length} boletas importadas`);
       logs.push(`🌽 ${(nuevas.reduce((s,b)=>s+(b.pna||0),0)/1000).toFixed(2)} toneladas (PNA)`);
       if(sinProd>0) logs.push(`⚠️ ${sinProd} boletas sin productor identificado`);
+      if(fallidas>0) logs.push(`❌ ${fallidas} boletas fallaron al guardar en Supabase`);
       setImportLog(logs);
     } catch(err) {
       setImportLog([`❌ Error: ${err.message}`]);
@@ -337,9 +355,13 @@ export default function CosechaModule({ userRol, puedeEditar }) {
       {/* Modales costos cosecha */}
       {modalCuad&&<Modal title="🚜 Agregar Cuadrilla" onClose={()=>setModalCuad(false)}
         footer={<><button className="btn btn-secondary" onClick={()=>setModalCuad(false)}>Cancelar</button>
-          <button className="btn btn-primary" onClick={()=>{
+          <button className="btn btn-primary" onClick={async ()=>{
             if(!formCuad.ha||!formCuad.precioHa) return;
-            dispatch({type:"ADD_CUADRILLA",payload:{...formCuad,ha:parseFloat(formCuad.ha),precioHa:parseFloat(formCuad.precioHa)}});
+            const legacyId = Date.now();
+            const record = {...formCuad, id: legacyId, ha:parseFloat(formCuad.ha), precioHa:parseFloat(formCuad.precioHa)};
+            const ok = await postCosechaCuadrilla(record, cicloPred?._uuid || null);
+            if (!ok) { alert('Error al guardar cuadrilla en Supabase'); return; }
+            dispatch({type:"ADD_CUADRILLA", payload: record});
             setModalCuad(false); setFormCuad(emptyCuad);
           }}>💾 Guardar</button></>}>
         <div className="form-row">
@@ -361,9 +383,13 @@ export default function CosechaModule({ userRol, puedeEditar }) {
 
       {modalFlete&&<Modal title="🚛 Agregar Flete" onClose={()=>setModalFlete(false)}
         footer={<><button className="btn btn-secondary" onClick={()=>setModalFlete(false)}>Cancelar</button>
-          <button className="btn btn-primary" onClick={()=>{
+          <button className="btn btn-primary" onClick={async ()=>{
             if(!formFlete.toneladas||!formFlete.precioTon) return;
-            dispatch({type:"ADD_FLETE",payload:{...formFlete,toneladas:parseFloat(formFlete.toneladas),precioTon:parseFloat(formFlete.precioTon)}});
+            const legacyId = Date.now();
+            const record = {...formFlete, id: legacyId, toneladas:parseFloat(formFlete.toneladas), precioTon:parseFloat(formFlete.precioTon)};
+            const ok = await postCosechaFlete(record, cicloPred?._uuid || null);
+            if (!ok) { alert('Error al guardar flete en Supabase'); return; }
+            dispatch({type:"ADD_FLETE", payload: record});
             setModalFlete(false); setFormFlete(emptyFlete);
           }}>💾 Guardar</button></>}>
         <div className="form-row">
@@ -385,9 +411,13 @@ export default function CosechaModule({ userRol, puedeEditar }) {
 
       {modalMaquila&&<Modal title="⚙️ Agregar Maquila" onClose={()=>setModalMaquila(false)}
         footer={<><button className="btn btn-secondary" onClick={()=>setModalMaquila(false)}>Cancelar</button>
-          <button className="btn btn-primary" onClick={()=>{
+          <button className="btn btn-primary" onClick={async ()=>{
             if(!formMaquila.ha||!formMaquila.precioHa) return;
-            dispatch({type:"ADD_MAQUILA",payload:{...formMaquila,ha:parseFloat(formMaquila.ha),precioHa:parseFloat(formMaquila.precioHa)}});
+            const legacyId = Date.now();
+            const record = {...formMaquila, id: legacyId, ha:parseFloat(formMaquila.ha), precioHa:parseFloat(formMaquila.precioHa)};
+            const ok = await postCosechaMaquila(record, cicloPred?._uuid || null);
+            if (!ok) { alert('Error al guardar maquila en Supabase'); return; }
+            dispatch({type:"ADD_MAQUILA", payload: record});
             setModalMaquila(false); setFormMaquila(emptyMaquila);
           }}>💾 Guardar</button></>}>
         <div className="form-row">
@@ -409,9 +439,13 @@ export default function CosechaModule({ userRol, puedeEditar }) {
 
       {modalSecado&&<Modal title="🌡 Agregar Secado/Almacén" onClose={()=>setModalSecado(false)}
         footer={<><button className="btn btn-secondary" onClick={()=>setModalSecado(false)}>Cancelar</button>
-          <button className="btn btn-primary" onClick={()=>{
+          <button className="btn btn-primary" onClick={async ()=>{
             if(!formSecado.toneladas||!formSecado.costoTon) return;
-            dispatch({type:"ADD_SECADO",payload:{...formSecado,toneladas:parseFloat(formSecado.toneladas),costoTon:parseFloat(formSecado.costoTon)}});
+            const legacyId = Date.now();
+            const record = {...formSecado, id: legacyId, toneladas:parseFloat(formSecado.toneladas), costoTon:parseFloat(formSecado.costoTon)};
+            const ok = await postCosechaSecado(record, cicloPred?._uuid || null);
+            if (!ok) { alert('Error al guardar secado en Supabase'); return; }
+            dispatch({type:"ADD_SECADO", payload: record});
             setModalSecado(false); setFormSecado(emptySecado);
           }}>💾 Guardar</button></>}>
         <div className="form-row">
@@ -516,8 +550,16 @@ export default function CosechaModule({ userRol, puedeEditar }) {
                     <td style={{background:bg,fontSize:11,...st}}>{b.placas}</td>
                     <td style={{background:bg}}>
                       {b.cancelado
-                        ? (puedeEditar&&<button className="btn btn-sm btn-secondary" style={{fontSize:10}} onClick={()=>dispatch({type:"REACTIVAR_BOLETA",payload:b.id})}>↺</button>)
-                        : (puedeEditar&&<button className="btn btn-sm" style={{fontSize:10,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>confirmarEliminar("¿Cancelar esta boleta?",()=>dispatch({type:"CANCELAR_BOLETA",payload:b.id}))}>🚫</button>)
+                        ? (puedeEditar&&<button className="btn btn-sm btn-secondary" style={{fontSize:10}} onClick={async ()=>{
+                            const ok = await patchCosechaBoleta(b.id, { cancelado: false, motivo_cancelacion: null, fecha_cancelacion: null });
+                            if (!ok) { alert('Error al reactivar boleta en Supabase'); return; }
+                            dispatch({type:"REACTIVAR_BOLETA",payload:b.id});
+                          }}>↺</button>)
+                        : (puedeEditar&&<button className="btn btn-sm" style={{fontSize:10,background:"#fff3cd",color:"#856404",border:"1px solid #ffc107"}} onClick={()=>confirmarEliminar("¿Cancelar esta boleta?", async ()=>{
+                            const ok = await patchCosechaBoleta(b.id, { cancelado: true, motivo_cancelacion: null, fecha_cancelacion: new Date().toISOString() });
+                            if (!ok) { alert('Error al cancelar boleta en Supabase'); return; }
+                            dispatch({type:"CANCELAR_BOLETA",payload:b.id});
+                          })}>🚫</button>)
                       }
                     </td>
                   </tr>
