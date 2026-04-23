@@ -1,5 +1,30 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 22 Abril 2026 (noche)
+
+### ✅ Completado
+**DIESEL-ESPEJO-01** — Cancelar diesel ahora borra espejo en bitácora.
+
+Problema: al cancelar una carga de diesel (salida_interna), la fila en diesel se marcaba cancelado=true pero el espejo en bitacora_trabajos quedaba huérfano. No había FK ni columna que las vinculara.
+
+Fix aplicado:
+- ALTER TABLE diesel ADD COLUMN bitacora_legacy_id bigint
+- Reordenado guardarMovimiento: postBitacora se ejecuta PRIMERO, su legacy_id se captura y se incluye en el POST a diesel
+- Cancel handler: deleteBitacora(d.bitacoraLegacyId) + DEL_BITACORA antes del PATCH diesel
+- Loader map + realtime channel: mapean bitacora_legacy_id → bitacoraLegacyId
+
+Causa raíz del primer fallo en smoke test: el realtime channel de diesel en App.jsx re-mapeaba las filas con schema incompleto (sin bitacoraLegacyId), pisando el state del loader.
+
+Commit: 637f1e0
+
+### 🎓 Lecciones aprendidas
+1. **Verificar TODOS los paths de hidratación**: al añadir un campo nuevo a una tabla, no basta con actualizar el loader — hay que actualizar también los realtime channels y cualquier otro mapper que reconstruya los objetos.
+2. **Para debugging, usar Claude Code directo**: el workflow "Claude web genera prompt → Miguel pega en Claude Code → reporta resultado" es eficiente para cambios planificados, pero para debugging es muy lento. Claude Code tiene acceso completo al código y puede diagnosticar + fixear en un solo paso.
+3. **`deleteBitacora` nunca lanza**: retorna boolean. Usar patrón `const ok = await deleteBitacora(...); if (ok) dispatch(...)` en vez de try/catch.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — #1 prioridad: verificar en dev URL y merge a main.
+
 ## Sesión 22 Abril 2026 (tarde-3)
 
 ### ✅ Completado

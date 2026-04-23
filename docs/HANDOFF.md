@@ -1,82 +1,75 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 22 Abril 2026 (mediodía)
+**Última actualización:** 22 Abril 2026 (noche)
 **Branch activo:** dev
-**Último commit código:** f827ad8 (feat(diesel): productor auto desde lote via ciclo_asignaciones + indicador UI)
-**Último commit main:** 3bb4a85 (merge: dev → main — GENERAL-01 Fase 3)
+**Último commit código:** 637f1e0 (fix(diesel): DIESEL-ESPEJO-01 — cancelar diesel borra espejo en bitácora)
+**Último commit main:** 0c2ac5f (merge: feat productor auto diesel + docs Fase 3)
 **Tag de respaldo:** backup-pre-merge-22abr2026-fase3
-**Estado:** GENERAL-01 Fases 1-3 completadas + Capital DELETE + productor auto diesel. Dos bugs preexistentes documentados (DIESEL-ESPEJO-01, MAQUINARIA-CONSUMOS-01).
+**Estado:** DIESEL-ESPEJO-01 resuelto. Pendiente: verificar en dev URL → merge a main.
 
 ## Estado al cierre
 
-- Sesión ~90 min. Objetivo: GENERAL-01 Fase 1 — fix del ciclo de vida del reducer.
-- 5 pasos ejecutados en 4 archivos: DataContext.jsx, supabaseLoader.js, App.jsx (×3 ediciones).
-- Todos los pasos con Babel parse OK.
-- Smoke test manual: login → "Cargando datos…" → dashboard con datos reales → localStorage limpio (solo 32 claves, sin Grupo A) → módulos Bitácora, Diesel, Capital, Caja Chica verificados.
-- DIESEL-01 resuelto como efecto colateral (datos vienen directo de Supabase, no requiere recargar).
+- Sesión ~90 min. Objetivo: fix DIESEL-ESPEJO-01 — cancelar diesel no borra espejo en bitácora.
+- ALTER TABLE diesel ADD COLUMN bitacora_legacy_id bigint aplicado via Supabase MCP.
+- 5 edits en 3 archivos: Diesel.jsx (import, guardarMovimiento reorder, cancel handler), supabaseLoader.js (diesel map), App.jsx (realtime channel mapper).
+- Causa raíz descubierta: el realtime channel de diesel en App.jsx re-mapeaba las filas con schema incompleto (sin bitacoraLegacyId), pisando el state que el loader había hidratado correctamente.
+- Smoke test exitoso: crear carga → cancelar → espejo en bitacora_trabajos desaparece (hard delete). Verificado con SQL: COUNT=0.
+- Babel parse OK en los 3 archivos.
 
 ## Cambios técnicos de esta sesión
 
-1. **DataContext.jsx**: +5 claves extras en initState (liquidaciones, cajaChicaFondo, cajaChicaMovimientos, usuariosDB, maquinariaConsumos). +case HYDRATE_FROM_SUPABASE con whitelist de 17 claves Grupo A.
-2. **supabaseLoader.js**: eliminado localStorage.setItem. Ahora retorna estadoNuevo. configPreservada conservada (se limpia en Fase 3).
-3. **App.jsx IIFE savedState**: reducida de 48 a 32 claves (eliminadas 17 Grupo A + trabajos).
-4. **App.jsx useEffect persist**: refactorizado a PERSIST_KEYS (32 claves simétricas con IIFE). Eliminados credito/gastos legacy.
-5. **App.jsx useEffect post-load**: reemplazado SYNC_STATE parcial (10 claves, solo 2 efectivas) por HYDRATE_FROM_SUPABASE completo (17 claves).
-6. **App.jsx handleLogin**: eliminado await loadStateFromSupabase() redundante. Conservado window.location.reload().
-7. **App.jsx loading gate**: hydrating state + pantalla "Cargando datos…" entre login y render principal.
+1. **Supabase**: ALTER TABLE diesel ADD COLUMN bitacora_legacy_id bigint.
+2. **Diesel.jsx L12**: import extendido con deleteBitacora.
+3. **Diesel.jsx guardarMovimiento**: bloque bitácora movido ANTES del POST diesel. postBitacora primero → captura saved.id → bitacoraLegacyId incluido en nuevoReg y POST body.
+4. **Diesel.jsx cancel handler**: if (d.bitacoraLegacyId) → deleteBitacora + DEL_BITACORA (patrón Supabase-first, sin try/catch muerto).
+5. **supabaseLoader.js L156**: bitacoraLegacyId: r.bitacora_legacy_id || null en diesel map.
+6. **App.jsx realtime diesel channel**: bitacoraLegacyId: r.bitacora_legacy_id || null en mapper (causa raíz del bug de smoke test).
 
 ## Bugs estructurales pendientes
 
-### Bug GENERAL-01: Doble capa de persistencia (Fase 1 COMPLETADA)
-- Fase 1 ✅ — 17 claves Grupo A ya son Supabase-first. localStorage no las lee ni escribe.
-- Fase 2 pendiente — decisiones Grupo C (permisos, proyeccion). 30 min.
-- Fase 3 pendiente — migrar módulos restantes uno por uno (11 claves en PERSIST_KEYS marcadas "pendientes migrar").
+### Bug DIESEL-ESPEJO-01: RESUELTO ✅
+Cancelar diesel ahora borra el espejo en bitacora_trabajos via hard delete. Registros pre-fix (bitacora_legacy_id=NULL) son backward-compatible: cancel no intenta delete del espejo.
 
-### Bug DIESEL-01: RESUELTO
-Consecuencia de GENERAL-01. Resuelto al completar Fase 1 — datos diesel vienen directo de Supabase.
+### Bug REALTIME-MAPPER-GAP (nuevo, severidad baja)
+El realtime diesel channel mapper (App.jsx) tiene schema incompleto respecto al loader: faltan productorNombre, litros, precioLitro, estatus. Estos campos se pierden post-realtime trigger. Impacto bajo porque los módulos hacen fallback a otros campos. Flag para sesión futura ~30 min.
 
-### Bug DIESEL-ESPEJO-01: Cancelar diesel no cancela espejo en bitácora (nuevo)
-Severidad: Media. Al cancelar una carga de diesel (salida_interna), la fila en diesel se marca cancelado=true pero el espejo en bitacora_trabajos queda huérfano. No hay FK entre ambas tablas. Fix aprobado: Opción 3 — añadir columna bitacora_legacy_id a tabla diesel, guardarla al crear, usarla para hard-delete al cancelar. Requiere ALTER TABLE + cambios en guardarMovimiento + handler cancel. Sesión dedicada ~45 min.
-
-### Bug MAQUINARIA-CONSUMOS-01: 409 Conflict al guardar consumos L/ha (nuevo)
-Severidad: Baja. POST a maquinaria_consumos da 409 duplicate key. Preexistente. Probable causa: no verifica si ya existe antes de insertar (necesita UPSERT en vez de INSERT). Investigar en sesión futura ~20 min.
+### Bug MAQUINARIA-CONSUMOS-01: 409 Conflict al guardar consumos L/ha
+Severidad: Baja. POST a maquinaria_consumos da 409 duplicate key. Necesita UPSERT en vez de INSERT. ~20 min.
 
 ## Tabla de pendientes actualizada
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Media | GENERAL-01: migrar 5 claves residuales (asistencias, pagosSemana, tarifaStd, horasMaq, proyeccion) | 60 min c/u | Migración |
-| 2 | Media | Refactor App.jsx — extraer routes (archivo grande) | 45 min | Refactor |
-| 3 | Media | Cleanup imports huérfanos en Diesel.jsx | 10 min | Housekeeping |
-| 4 | Media | DIESEL-ESPEJO-01: cancelar diesel no borra espejo bitácora | 45 min | Bug |
+| 1 | Media | Verificar DIESEL-ESPEJO-01 en dev URL → merge a main | 15 min | Deploy |
+| 2 | Media | GENERAL-01: migrar 5 claves residuales | 60 min c/u | Migración |
+| 3 | Media | Refactor App.jsx — extraer routes | 45 min | Refactor |
+| 4 | Media | REALTIME-MAPPER-GAP: completar schema diesel channel | 30 min | Bug |
 | 5 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 6 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
-| 7 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
-| 8 | Baja | MAQUINARIA-CONSUMOS-01: 409 Conflict al guardar consumos L/ha | 20 min | Bug |
+| 6 | Baja | MAQUINARIA-CONSUMOS-01: 409 Conflict | 20 min | Bug |
+| 7 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
+| 8 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
 | 9 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
 | 10 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
 
 ## Siguiente sesión — recomendación
 
-**Opción A: #1 — GENERAL-01 Fase 2 (30 min, sin código).** Decidir qué claves del Grupo C van a Supabase y cuáles quedan locales. Resultado: entrada en DECISIONS.md.
+**Opción A: #1 — Verificar dev URL + merge a main (15 min).** Clear site data en agro-charay-dev.vercel.app, smoke test rápido, tag backup, merge.
 
-**Opción B: verificar deploy en dev URL** (`agro-charay-dev.vercel.app`) y luego hacer `clear site data` + login para confirmar que la app funciona sin localStorage previo (test definitivo de Fase 1).
-
-**Opción C: merge dev → main** si el smoke test en dev URL pasa. Crear tag backup-pre-merge-22abr2026 primero.
+**Opción B: #4 — REALTIME-MAPPER-GAP (30 min).** Completar el schema del realtime diesel channel para que sea simétrico con el loader. Previene bugs futuros similares al que encontramos hoy.
 
 ## Reglas de trabajo
 
 - Sesiones cortas (30-50 min base, 60-90 min cuando dimensionado)
 - Diagnóstico antes que fix
 - Ver archivo completo antes de editar
-- Un cambio a la vez, con prueba inmediata (excepto cambios estructuralmente dependientes)
+- Un cambio a la vez, con prueba inmediata
 - Probar en local → dev → nunca directo a main
 - Verificar schema Supabase antes de POST/DELETE
-- Verificar con Babel parse: node -e "require('@babel/parser').parse(require('fs').readFileSync('ARCHIVO','utf8'),{sourceType:'module',plugins:['jsx']}); console.log('PARSE OK')"
+- Verificar con Babel parse después de edits
 - Tag de respaldo antes de merge a main
 - Commit y push al cierre
 - docs/ NO raíz — git add docs/HANDOFF.md docs/PROGRESS.md
 - HYDRATE_FROM_SUPABASE whitelist protege contra claves no-Grupo-A
-- Las 5 claves extras (liquidaciones, cajaChica*, usuariosDB, maquinariaConsumos) se auto-gestionan con SET_* en sus módulos — no meterlas en HYDRATE
-- configPreservada en supabaseLoader es peso muerto temporal — limpiar en Fase 3
-- SYNC_STATE sigue existiendo para realtime (2 sites legítimos) — no tocar
+- **NUEVO: Para debugging, usar Claude Code directo (no Claude web paso a paso)**
+- **NUEVO: Cualquier mapper de Supabase (loader, realtime, etc.) debe tener schema simétrico — verificar con diff cuando se añade columna nueva**
+- **NUEVO: Verificar TODOS los paths de hidratación al añadir campo nuevo (loader + realtime channels + cualquier otro mapper)**
