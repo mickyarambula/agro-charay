@@ -30,8 +30,8 @@
 ### Bug DIESEL-ESPEJO-01: RESUELTO ✅
 Cancelar diesel ahora borra el espejo en bitacora_trabajos via hard delete. Registros pre-fix (bitacora_legacy_id=NULL) son backward-compatible: cancel no intenta delete del espejo.
 
-### Bug REALTIME-MAPPER-GAP (nuevo, severidad baja)
-El realtime diesel channel mapper (App.jsx) tiene schema incompleto respecto al loader: faltan productorNombre, litros, precioLitro, estatus. Estos campos se pierden post-realtime trigger. Impacto bajo porque los módulos hacen fallback a otros campos. Flag para sesión futura ~30 min.
+### Bug REALTIME-MAPPER-GAP: RESUELTO ✅
+Schema realtime diesel channel alineado con loader. 4 propiedades añadidas + precioUnitario corregido. Commit a68ca4c.
 
 ### Bug MAQUINARIA-CONSUMOS-01: 409 Conflict al guardar consumos L/ha
 Severidad: Baja. POST a maquinaria_consumos da 409 duplicate key. Necesita UPSERT en vez de INSERT. ~20 min.
@@ -43,13 +43,12 @@ Severidad: Baja. POST a maquinaria_consumos da 409 duplicate key. Necesita UPSER
 | 1 | Media | Verificar DIESEL-ESPEJO-01 en dev URL → merge a main | 15 min | Deploy |
 | 2 | Media | GENERAL-01: migrar 5 claves residuales | 60 min c/u | Migración |
 | 3 | Media | Refactor App.jsx — extraer routes | 45 min | Refactor |
-| 4 | Media | REALTIME-MAPPER-GAP: completar schema diesel channel | 30 min | Bug |
-| 5 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 6 | Baja | MAQUINARIA-CONSUMOS-01: 409 Conflict | 20 min | Bug |
-| 7 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
-| 8 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
-| 9 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
-| 10 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
+| 4 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 5 | Baja | MAQUINARIA-CONSUMOS-01: 409 Conflict | 20 min | Bug |
+| 6 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
+| 7 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
+| 8 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
+| 9 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
 
 ## Siguiente sesión — recomendación
 
