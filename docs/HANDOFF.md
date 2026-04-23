@@ -1,50 +1,69 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 23 Abril 2026 (mediodía)
+**Última actualización:** 23 Abril 2026 (tarde)
 **Branch activo:** dev
-**Último commit dev:** 92accec (refactor(app): extraer renderPage → AppRouter.jsx + navegación → useAppNavigation.js (−90 líneas))
-**Último commit main:** 7f9c4fb (merge: horasMaq + proyeccion migración Supabase — GENERAL-01 residuales completas)
+**Último commit dev:** f70cdf4 (feat(dashcampo): Phase 1 — fix diesel saldo + tractor selector + precio dinámico + btn asistencia + postDieselCarga helper)
+**Último commit main:** 5135a8c (merge: refactor App.jsx + docs)
 **Tag de respaldo:** backup-pre-merge-23abr2026-session2
-**Estado:** GENERAL-01 claves residuales completas. Refactor App.jsx en dev pendiente merge.
+**Estado:** DashboardCampo Phase 1 completado. GENERAL-01 completo. Refactor App.jsx en main. Pendiente merge de horasMaq + proyeccion + DashboardCampo Phase 1.
 
 ## Estado al cierre
 
-- Merge a main: tarifaStd + asistencias + pagosSemana + horasMaq + proyeccion (7f9c4fb).
-- GENERAL-01 claves residuales completadas: las 5 (tarifaStd, asistencias, pagosSemana, horasMaq, proyeccion) migradas a Supabase.
-- horasMaq: 3 espejos muertos en Bitacora.jsx eliminados (dispatches ADD_HORAS fuente:"bitacora" que se ignoraban en el render).
-- proyeccion: fix reducer ADD_PROY id override (patrón GENERAL-02).
-- Refactor App.jsx: renderPage extraído a AppRouter.jsx, navegación extraída a useAppNavigation.js. App.jsx −90 líneas.
-- PERSIST_KEYS reducida a solo: Grupo B (UI/prefs) + Grupo C (permisos/config) + cosecha.
+- DashboardCampo Phase 1 completado: diesel actualiza saldo cilindro, selector tractor, precio dinámico, validación saldo, botón asistencia.
+- postDieselCarga helper creado en supabaseWriters.js — Diesel.jsx refactoreado para usarlo también (fix latente: legacy_id ahora se envía).
+- GENERAL-01 claves residuales completas (5/5): tarifaStd, asistencias, pagosSemana, horasMaq, proyeccion.
+- Refactor App.jsx: AppRouter.jsx + useAppNavigation.js extraídos (−90 líneas).
+- MAQUINARIA-CONSUMOS-01 resuelto (UPSERT + display + feedback).
+- Merge a main pendiente de: horasMaq, proyeccion, DashboardCampo Phase 1.
 
 ## Cambios técnicos de esta sesión
 
-1. **Merge a main**: tarifaStd + asistencias + pagosSemana → 7f9c4fb (session1).
-2. **horasMaq migrada**: tabla horas_maq, helpers postHorasMaq/deleteHorasMaq, 3 espejos muertos eliminados de Bitacora.jsx.
-3. **proyeccion migrada**: tabla proyeccion (legacy_id text, real_monto por palabra reservada), helpers postProyeccion (UPSERT)/deleteProyeccion, fix reducer ADD_PROY.
-4. **Merge a main**: horasMaq + proyeccion → main (session2).
-5. **Refactor App.jsx**: 2 archivos nuevos (useAppNavigation.js 42 líneas, AppRouter.jsx 64 líneas), −90 líneas netas de App.jsx (2097→2007). WidgetCBOTDashboard pasado como prop para evitar import circular.
+1. **Merge a main**: tarifaStd + asistencias + pagosSemana (session1).
+2. **horasMaq migrada**: tabla horas_maq + 3 espejos muertos eliminados de Bitacora.jsx.
+3. **proyeccion migrada**: tabla proyeccion + fix reducer ADD_PROY id override.
+4. **Merge a main**: horasMaq + proyeccion (session2).
+5. **Refactor App.jsx**: AppRouter.jsx + useAppNavigation.js (−90 líneas).
+6. **Merge a main**: refactor (session3 pendiente — verificar).
+7. **Auditoría completa**: documento Word generado con análisis de 32 módulos, UX, seguridad, plan de acción.
+8. **DashboardCampo Phase 1**:
+   - postDieselCarga helper en supabaseWriters.js (58 líneas).
+   - guardarDiesel reescrito: espejo bitácora → POST diesel → dispatch ADD_DIESEL → saldo actualizado.
+   - Selector de tractor (maquinariaId) en modal diesel.
+   - precioLitro derivado del último registro (fallback 27).
+   - Validación saldo cilindro (alert + warning inline).
+   - Header contextual: saldo + precio visibles.
+   - productorId derivado del lote vía ciclo_asignaciones.
+   - Grid 5 botones: +✅ Asistencia (full-width).
+9. **Diesel.jsx refactoreado**: POST inline → postDieselCarga helper (−20 líneas netas). Fix latente: legacy_id ahora se envía en body.
 
 ## Bugs estructurales pendientes
 
-Ninguno conocido activo.
+### BITACORA-DELETE-01: Pendiente
+El 🗑 en Bitácora UI borra del state local pero no envía DELETE a Supabase. Fix trivial (~30 min).
 
 ## Tabla de pendientes actualizada
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Media | Verificar refactor App.jsx en dev URL → merge a main | 15 min | Deploy |
-| 2 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 3 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
-| 4 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
-| 5 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
-| 6 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
-| 7 | Futuro | Migrar cosecha a Supabase (última clave en localStorage) | 45 min | Migración |
+| 1 | Alta | Verificar dev URL (todo) → merge a main | 20 min | Deploy |
+| 2 | Alta | BITACORA-DELETE-01 | 30 min | Bug |
+| 3 | Media | Responsive módulos críticos (Diesel, Bitácora, Órdenes) | 3-4 hrs | UX |
+| 4 | Media | Feedback guardado global (Toast) | 1 hr | UX |
+| 5 | Baja | Fix bug egresos/gastos rol socio | 15 min | Bug |
+| 6 | Baja | Centralizar POST inline restantes (OrdenDia, CajaChica) | 2 hrs | Refactor |
+| 7 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 8 | Baja | Migrar cosecha a Supabase | 45 min | Migración |
+| 9 | Futuro | DashboardCampo Phase 2: crear órdenes + WhatsApp desde dashboard | 2 hrs | Feature |
+| 10 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
+| 11 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
 
 ## Siguiente sesión — recomendación
 
-**Opción A: #1 — Verificar dev URL + merge a main (15 min).** Smoke test navegación en agro-charay-dev.vercel.app, tag backup, merge.
+**Opción A: #1 — Verificar dev URL + merge a main (20 min).** Smoke test completo de DashboardCampo + migraciones.
 
-**Opción B: Feature work.** Con GENERAL-01 y el refactor cerrados, el sistema está estable. Buen momento para DashboardCampo Phase 1 o alertas WhatsApp.
+**Opción B: #2 — BITACORA-DELETE-01 (30 min).** Bug documentado, fix trivial, alto impacto operativo.
+
+**Opción C: #3 — Responsive módulos campo (3-4 hrs).** Diesel, Bitácora, Órdenes del Día — tablas a cards en móvil.
 
 ## Reglas de trabajo
 
@@ -64,5 +83,6 @@ Ninguno conocido activo.
 - Verificar TODOS los paths de hidratación al añadir campo nuevo
 - Al añadir una clave al loader, verificar que también esté en GRUPO_A whitelist
 - Tablas nuevas en Supabase necesitan RLS policy para rol `anon`
-- Generar id en el caller ANTES del dispatch cuando se necesita legacy_id para Supabase
-- **NUEVO: Al refactorear, pasar componentes declarados en App.jsx como props (no importar desde App.jsx — causa circular)**
+- Generar id en el caller ANTES del dispatch cuando se necesita legacy_id
+- Al refactorear, pasar componentes declarados en App.jsx como props (no importar — causa circular)
+- **NUEVO: Para prompts a Claude Code, dar el objetivo completo y dejar que lea el código y diseñe la solución — no pedir diagnósticos parciales**

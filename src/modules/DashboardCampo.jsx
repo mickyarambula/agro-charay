@@ -26,7 +26,7 @@ import {
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
 import { solicitarPermisoPush } from '../core/push.js';
-import { postBitacora } from '../core/supabaseWriters.js';
+import { postBitacora, postDieselCarga } from '../core/supabaseWriters.js';
 
 
 export default function DashboardCampo({ userRol, usuario, onNavigate }) {
@@ -86,7 +86,31 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
   // ── Estado de los modales rápidos ──
   const [modal, setModal] = useState(null); // null | "trabajo" | "diesel"
   const emptyT = { tipo:"insumo", loteId:"", loteName:"", operadorId:"", horas:"", notas:"" };
-  const emptyD = { loteId:"", loteName:"", operadorId:"", litros:"", horas:"", notas:"" };
+  const emptyD = { loteId:"", loteName:"", operadorId:"", maquinariaId:"", litros:"", horas:"", notas:"" };
+
+  // ── Derivados de state.diesel para validaciones + defaults del modal diesel ──
+  const dieselActivo = (state.diesel || []).filter(d => !d.cancelado);
+  const dieselTipoMov = d => d.tipoMovimiento || d.tipo_movimiento || (d.esAjuste ? 'entrada' : 'salida_interna');
+  const dieselLitros  = d => parseFloat(d.cantidad || d.litros || 0) || 0;
+  const entradasCil   = dieselActivo.filter(d => dieselTipoMov(d) === 'entrada').reduce((s,d) => s + dieselLitros(d), 0);
+  const salidasIntCil = dieselActivo.filter(d => dieselTipoMov(d) === 'salida_interna').reduce((s,d) => s + dieselLitros(d), 0);
+  const saldoCilindro = Math.max(0, entradasCil - salidasIntCil);
+
+  // Último precio registrado (más reciente con precio > 0 y no cancelado). Fallback 27.
+  const ultimoPrecioLitro = (() => {
+    const conPrecio = dieselActivo
+      .filter(d => (parseFloat(d.precioLitro) || 0) > 0)
+      .sort((a,b) => String(b.fecha||'').localeCompare(String(a.fecha||'')));
+    return conPrecio[0] ? (parseFloat(conPrecio[0].precioLitro) || 27) : 27;
+  })();
+
+  // Deriva productor desde el lote vía asignaciones del ciclo activo.
+  const productorIdFromLote = (loteId) => {
+    if (!loteId) return null;
+    const ciclo = (state.ciclos || []).find(c => String(c.id) === String(state.cicloActivoId));
+    const asig = ciclo?.asignaciones?.find(a => String(a.loteId) === String(loteId));
+    return asig?.productorId || null;
+  };
   const [formT, setFormT] = useState(emptyT);
   const [formD, setFormD] = useState(emptyD);
   const [busqLote, setBusqLote] = useState("");
@@ -123,26 +147,81 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
 
   const guardarDiesel = async () => {
     if (!formD.loteId || !formD.litros) return;
-    const op = operadores.find(o => String(o.id) === String(formD.operadorId));
     const litros = parseFloat(formD.litros) || 0;
+    if (litros <= 0) { alert('Los litros deben ser mayor a 0'); return; }
+    // Validación de saldo del cilindro
+    if (saldoCilindro <= 0) { alert('El cilindro está vacío. Contacta a compras para reabastecer.'); return; }
+    if (litros > saldoCilindro) { alert(`No hay suficiente diesel. Saldo actual: ${saldoCilindro.toLocaleString('es-MX')} L`); return; }
+
+    const op  = operadores.find(o => String(o.id) === String(formD.operadorId));
+    const maq = (state.maquinaria || []).find(m => String(m.id) === String(formD.maquinariaId));
+    const productorId = productorIdFromLote(formD.loteId);
+    const precioLitro = ultimoPrecioLitro;
+
+    // 1) Espejo bitácora PRIMERO — capturamos legacy_id para vincularlo al registro de diesel.
     const bitacoraPayload = {
       tipo: "diesel",
-      loteId: parseInt(formD.loteId),
-      loteIds: [parseInt(formD.loteId)],
+      loteId: parseInt(formD.loteId) || formD.loteId,
+      loteIds: [parseInt(formD.loteId) || formD.loteId],
       fecha: hoy,
       operador: op?.nombre || usuario?.nombre || "",
       operadorId: formD.operadorId || "",
-      maquinariaId: "",
+      maquinariaId: formD.maquinariaId || "",
       horas: parseFloat(formD.horas) || 0,
-      notas: formD.notas,
-      data: { litros, precioLitro: 27, actividad: "Registro campo" },
+      notas: formD.notas || "",
+      data: { litros, precioLitro, actividad: "Registro campo" },
     };
-    const saved = await postBitacora(bitacoraPayload, state.cicloActivoId, { silent: true });
+    const savedBitacora = await postBitacora(bitacoraPayload, state.cicloActivoId, { silent: true });
+    const bitacoraLegacyId = savedBitacora?.id || null;
     dispatch({ type:"ADD_BITACORA", payload:{
       ...bitacoraPayload,
-      id: saved?.id || Date.now(),
+      id: bitacoraLegacyId || Date.now(),
+      cantidad: litros,
+      unidad: "L",
+      origen: "diesel_cilindro",
       foto: null,
     }});
+
+    // 2) POST a tabla diesel via helper centralizado.
+    const concepto = maq?.nombre ? `${maq.nombre} — Registro campo` : 'Registro campo';
+    const dieselId = Date.now();
+    const dieselRecord = {
+      id: dieselId,
+      tipo: 'salida_interna',
+      fecha: hoy,
+      litros,
+      precioLitro,
+      proveedor: '',
+      operador: op?.nombre || '',
+      concepto,
+      productorId,
+      bitacoraLegacyId,
+      notas: formD.notas || '',
+    };
+    await postDieselCarga(dieselRecord, { registradoPor: usuario?.usuario || userRol || 'encargado' });
+
+    // 3) Dispatch ADD_DIESEL local — saldo del cilindro se actualiza automáticamente.
+    dispatch({ type: 'ADD_DIESEL', payload: {
+      id: dieselId,
+      fecha: hoy,
+      fechaSolicitud: hoy,
+      fechaOrden: hoy,
+      cantidad: litros,
+      precioLitro,
+      importe: litros * precioLitro,
+      proveedor: '',
+      maquinariaId: formD.maquinariaId || null,
+      loteId: formD.loteId || null,
+      productorId,
+      bitacoraLegacyId,
+      operadorId: formD.operadorId || '',
+      tipoMovimiento: 'salida_interna',
+      esAjuste: false,
+      cancelado: false,
+      unidad: 'LT',
+      notas: formD.notas || '',
+    }});
+
     cerrarModal();
   };
 
@@ -430,6 +509,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
           { icon:"⛽", label:"Registrar diesel",   color:"#e67e22", bg:"#fef5ed", onClick:abrirDiesel },
           { icon:"🛒", label:"Solicitar compra",   color:"#8e44ad", bg:"#f5f0fa", onClick:()=>nav("flujos") },
           { icon:"📍", label:"Ver mis lotes",       color:"#1a6ea8", bg:"#edf4fb", onClick:()=>nav("lotes") },
+          { icon:"✅", label:"Asistencia",          color:"#16a085", bg:"#e8f6f3", onClick:()=>nav("operadores"), fullWidth:true },
         ].map(b => (
           <button key={b.label} onClick={b.onClick}
             style={{
@@ -450,7 +530,8 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
               borderTop: isMobile ? "1px solid #ede5d8" : `4px solid ${b.color}`,
               position:"relative",
               overflow:"hidden",
-              touchAction: "manipulation"
+              touchAction: "manipulation",
+              gridColumn: b.fullWidth ? "1 / -1" : undefined,
             }}
             onTouchStart={e=>{e.currentTarget.style.transform="scale(0.96)";}}
             onTouchEnd={e=>{e.currentTarget.style.transform="scale(1)";}}
@@ -678,7 +759,29 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
             </>
           }>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
+            {/* Saldo actual + precio visible para contexto */}
+            <div style={{
+              display:"flex", justifyContent:"space-between", alignItems:"center",
+              padding:"8px 12px", background:"#fef5ed", borderRadius:8,
+              fontSize:12, color:"#8a5a1b", fontWeight:600,
+            }}>
+              <span>🛢 Saldo cilindro: <strong>{saldoCilindro.toLocaleString('es-MX')} L</strong></span>
+              <span>💰 Precio: <strong>${ultimoPrecioLitro.toFixed(2)}/L</strong></span>
+            </div>
+
             <LoteSelector form={formD} setForm={setFormD} colorSel="#e67e22"/>
+
+            <div className="form-group">
+              <label className="form-label">🚜 Tractor / Equipo</label>
+              <select className="form-select" value={formD.maquinariaId}
+                onChange={e=>setFormD(f=>({...f,maquinariaId:e.target.value}))}
+                style={{fontSize:15,padding:"12px"}}>
+                <option value="">— Sin especificar —</option>
+                {(state.maquinaria||[]).filter(m=>m.estado!=='baja').map(m => (
+                  <option key={m.id} value={m.id}>{m.nombre}{m.tipo?` (${m.tipo})`:''}</option>
+                ))}
+              </select>
+            </div>
 
             <div className="form-group">
               <label className="form-label">Litros cargados *</label>
@@ -687,6 +790,11 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
                 onChange={e=>setFormD(f=>({...f,litros:e.target.value}))}
                 placeholder="0"
                 style={{fontSize:22,fontWeight:700,textAlign:"center",color:"#e67e22"}}/>
+              {formD.litros && parseFloat(formD.litros) > saldoCilindro && (
+                <div style={{fontSize:11,color:"#c0392b",marginTop:4}}>
+                  ⚠ Excede el saldo del cilindro
+                </div>
+              )}
             </div>
 
             <div className="form-group">
