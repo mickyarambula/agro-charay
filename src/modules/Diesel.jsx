@@ -107,6 +107,13 @@ export default function DieselModule({ userRol, usuario }) {
     if (!l) return '';
     return l.apodo && l.apodo !== 'NO DEFINIDO' ? l.apodo : (l.folioCorto || `Lote #${id}`);
   };
+  // Deriva productor desde el lote vía asignaciones del ciclo activo. Null si el lote no está asignado.
+  const productorIdFromLote = (loteId) => {
+    if (!loteId) return null;
+    const ciclo = (state.ciclos||[]).find(c => String(c.id) === String(state.cicloActivoId));
+    const asig = ciclo?.asignaciones?.find(a => String(a.loteId) === String(loteId));
+    return asig?.productorId || null;
+  };
 
   // ─── Guardar unificado ────────────────────────────────────────
   const guardarMovimiento = async (datos, tipo) => {
@@ -131,6 +138,7 @@ export default function DieselModule({ userRol, usuario }) {
     }
 
     const id = Date.now();
+    const productorId = tipo === 'salida_interna' ? productorIdFromLote(datos.loteId) : null;
     const nuevoReg = {
       id,
       fecha: datos.fecha,
@@ -142,6 +150,7 @@ export default function DieselModule({ userRol, usuario }) {
       proveedor: datos.proveedor || datos.estacion || '',
       maquinariaId: datos.maquinariaId || null,
       loteId: datos.loteId || null,
+      productorId,
       operadorId: datos.operadorId || '',
       tipoMovimiento: tipo,
       esAjuste: false,
@@ -177,6 +186,7 @@ export default function DieselModule({ userRol, usuario }) {
           tipo_movimiento: tipo,
           operador: tipo==='salida_interna' ? ((state.operadores||[]).find(o=>String(o.id)===String(datos.operadorId))?.nombre || '') : null,
           concepto: tipo==='salida_interna' ? `${(state.maquinaria||[]).find(m=>String(m.id)===String(datos.maquinariaId))?.nombre||''} — ${datos.tipoLabor||''}`.trim() : '',
+          productor_legacy_id: productorId || null,
           registrado_por: usuario?.usuario || userRol || 'desconocido',
           notas: datos.notas || '',
         }),
@@ -618,6 +628,13 @@ export default function DieselModule({ userRol, usuario }) {
                   return <option key={l.id} value={l.id}>{apodo}{prodTxt} ({ha} ha)</option>;
                 })}
               </select>
+              {formCarga.loteId && (() => {
+                const pid = productorIdFromLote(formCarga.loteId);
+                const p = (state.productores||[]).find(x => String(x.id) === String(pid));
+                return p
+                  ? <div style={{fontSize:11,color:'#166534',marginTop:4}}>👤 Productor: {p.alias || p.apPat || p.nombres}</div>
+                  : <div style={{fontSize:11,color:'#92400e',marginTop:4}}>⚠ Lote sin asignación en el ciclo activo</div>;
+              })()}
             </div>
             <div>
               <label style={labelStyle}>Litros cargados *</label>
