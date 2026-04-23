@@ -9,7 +9,7 @@ import { Modal } from '../shared/Modal.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
-import { postBitacora, deleteBitacora } from '../core/supabaseWriters.js';
+import { postBitacora, deleteBitacora, postDieselCarga } from '../core/supabaseWriters.js';
 
 const CILINDRO_CAPACIDAD = CAPACIDAD_TANQUE_DIESEL;
 
@@ -192,42 +192,25 @@ export default function DieselModule({ userRol, usuario }) {
       notas: datos.notas || '',
     };
 
-    // POST a Supabase (dispara realtime para otros usuarios)
-    try {
-      await fetch(`${SUPABASE_URL}/rest/v1/diesel`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=representation',
-        },
-        body: JSON.stringify({
-          fecha: datos.fecha,
-          fecha_solicitud: datos.fecha,
-          fecha_orden: datos.fecha,
-          cantidad: litros,
-          litros_recibidos: tipo === 'salida_interna' ? litros : 0,
-          precio_litro: precio,
-          importe,
-          proveedor: datos.proveedor || datos.estacion || '',
-          unidad: 'LT',
-          ieps: 'SIN IEPS',
-          es_ajuste: false,
-          estatus: 'pendiente',
-          cancelado: false,
-          tipo_movimiento: tipo,
-          operador: tipo==='salida_interna' ? ((state.operadores||[]).find(o=>String(o.id)===String(datos.operadorId))?.nombre || '') : null,
-          concepto: tipo==='salida_interna' ? `${(state.maquinaria||[]).find(m=>String(m.id)===String(datos.maquinariaId))?.nombre||''} — ${datos.tipoLabor||''}`.trim() : '',
-          productor_legacy_id: productorId || null,
-          bitacora_legacy_id: bitacoraLegacyId,
-          registrado_por: usuario?.usuario || userRol || 'desconocido',
-          notas: datos.notas || '',
-        }),
-      });
-    } catch (e) {
-      console.warn('Error guardando diesel en Supabase:', e);
-    }
+    // POST a Supabase vía helper centralizado (dispara realtime para otros usuarios).
+    // Nota: helper incluye legacy_id en el body → rows quedan con legacy_id poblado
+    // (fix latente — antes se insertaba NULL y el loader mapeaba id=null al recargar).
+    const opNombre  = tipo === 'salida_interna' ? ((state.operadores||[]).find(o=>String(o.id)===String(datos.operadorId))?.nombre || '') : null;
+    const maqNombre = (state.maquinaria||[]).find(m=>String(m.id)===String(datos.maquinariaId))?.nombre || '';
+    const concepto  = tipo === 'salida_interna' ? `${maqNombre} — ${datos.tipoLabor||''}`.trim() : '';
+    await postDieselCarga({
+      id,
+      tipo,
+      fecha: datos.fecha,
+      litros,
+      precioLitro: precio,
+      proveedor: datos.proveedor || datos.estacion || '',
+      operador: opNombre,
+      concepto,
+      productorId,
+      bitacoraLegacyId,
+      notas: datos.notas || '',
+    }, { registradoPor: usuario?.usuario || userRol || 'desconocido' });
 
     dispatch({ type: 'ADD_DIESEL', payload: nuevoReg });
 

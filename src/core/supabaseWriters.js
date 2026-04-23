@@ -287,3 +287,61 @@ export async function deleteProyeccion(legacyId) {
   if (!res.ok) { const t = await res.text(); console.error('deleteProyeccion error:', t); return false; }
   return true;
 }
+
+/**
+ * POST a tabla diesel — registra un movimiento (entrada/salida_interna/salida_externa).
+ * Encapsula el payload completo para que DashboardCampo y Diesel.jsx compartan el mismo schema.
+ *
+ * @param {object} record  Shape del state:
+ *   { tipo, fecha, litros, precioLitro, proveedor, maquinariaId,
+ *     operador, concepto, productorId, bitacoraLegacyId, notas,
+ *     id? (opcional — si no se pasa, se genera con Date.now()) }
+ * @param {object} opts    { registradoPor }
+ * @returns {object|null}  La fila insertada (o null si falló).
+ */
+export async function postDieselCarga(record, { registradoPor } = {}) {
+  const legacyId = record.id || Date.now();
+  const litros = parseFloat(record.litros) || 0;
+  const precio = parseFloat(record.precioLitro) || 0;
+  const body = {
+    legacy_id: legacyId,
+    fecha: record.fecha,
+    fecha_solicitud: record.fecha,
+    fecha_orden: record.fecha,
+    cantidad: litros,
+    litros_recibidos: record.tipo === 'salida_interna' ? litros : 0,
+    precio_litro: precio,
+    importe: litros * precio,
+    proveedor: record.proveedor || '',
+    unidad: 'LT',
+    ieps: record.ieps || 'SIN IEPS',
+    es_ajuste: false,
+    estatus: 'pendiente',
+    cancelado: false,
+    tipo_movimiento: record.tipo,
+    operador: record.operador || null,
+    concepto: record.concepto || '',
+    productor_legacy_id: record.productorId || null,
+    bitacora_legacy_id: record.bitacoraLegacyId || null,
+    registrado_por: registradoPor || 'desconocido',
+    notas: record.notas || '',
+  };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/diesel`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const t = await res.text(); console.error('postDieselCarga error:', t); return null; }
+    const rows = await res.json();
+    return rows[0] ? { ...rows[0], legacy_id: legacyId } : null;
+  } catch (e) {
+    console.error('postDieselCarga exception:', e);
+    return null;
+  }
+}
