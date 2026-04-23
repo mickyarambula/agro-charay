@@ -1,5 +1,29 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 23 Abril 2026 (tarde)
+
+### ✅ Completado
+
+**DashboardCampo Phase 1** — 4 mejoras operativas para uso en campo:
+1. Fix diesel: guardarDiesel ahora crea registro en tabla diesel + actualiza saldo cilindro + dispatch ADD_DIESEL. Antes solo creaba espejo en bitácora (saldo no se actualizaba). Helper postDieselCarga creado en supabaseWriters.js.
+2. Selector de tractor añadido al modal diesel (maquinariaId).
+3. precioLitro derivado del último registro en state.diesel (antes hardcoded 27).
+4. Validación saldo cilindro: alert si excede + warning inline en input.
+5. Botón "✅ Asistencia" añadido al grid (5 botones, el 5to full-width).
+6. Header contextual en modal: saldo cilindro + precio visibles.
+7. productorId derivado del lote vía ciclo_asignaciones.
+
+**Diesel.jsx refactoreado** — POST inline (36 líneas) reemplazado por postDieselCarga helper (16 líneas). Fix latente: legacy_id ahora se envía en body (antes rows en DB quedaban con legacy_id=NULL).
+
+**Auditoría integral** — Documento Word con análisis de 32 módulos, calificaciones por área, problemas de seguridad, y plan de acción priorizado.
+
+### 🎓 Lecciones aprendidas
+1. **Para prompts a Claude Code, dar autonomía.** En vez de pedir diagnósticos parciales y armar la solución en Claude web, dar el objetivo completo con contexto y dejar que Claude Code lea el código, diseñe e implemente. Más eficiente.
+2. **DashboardCampo creaba diesel "fantasma".** Solo espejo bitácora sin actualizar tabla diesel = el cilindro no sabe que se usaron litros. Bug silencioso que invalida la operación real.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — tabla actualizada. Próximo: verificar dev URL + merge a main, luego BITACORA-DELETE-01.
+
 ## Sesión 23 Abril 2026 (mediodía)
 
 ### ✅ Completado
