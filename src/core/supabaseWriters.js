@@ -134,3 +134,27 @@ export async function deleteCapital(legacyId) {
     return true;
   } catch (e) { console.error('[deleteCapital] exception:', e); return false; }
 }
+
+/**
+ * PATCH singleton tarifa_std (tabla con 1 fila). Devuelve la fila actualizada o null.
+ */
+export async function updateTarifaStd(tarifaObj) {
+  // PATCH al singleton — no necesita id, solo hay 1 fila
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/tarifa_std?id=not.is.null`, {
+    method: 'PATCH',
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+    },
+    body: JSON.stringify({
+      normal: tarifaObj.normal,
+      especial: tarifaObj.especial,
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  if (!res.ok) { const t = await res.text(); console.error('updateTarifaStd error:', t); return null; }
+  const rows = await res.json();
+  return rows[0] || null;
+}

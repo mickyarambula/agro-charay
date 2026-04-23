@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
+import { updateTarifaStd } from '../core/supabaseWriters.js';
 
 
 export default function OperadoresModule({ userRol, puedeEditar }) {
@@ -871,7 +872,11 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
           <button className="btn btn-primary" onClick={()=>{
             const n=parseFloat(formTarifa.normal)||0;
             const e=parseFloat(formTarifa.especial)||0;
-            if(n>0&&e>0){dispatch({type:"UPD_TARIFA_STD",payload:{normal:n,especial:e}});setModalTarifa(false);}
+            if(n>0&&e>0){
+              dispatch({type:"UPD_TARIFA_STD",payload:{normal:n,especial:e}});
+              setModalTarifa(false);
+              updateTarifaStd({normal:n,especial:e}).catch(err=>console.warn('tarifaStd sync:',err));
+            }
           }}>💾 Guardar</button></>}>
         <div style={{fontSize:12,color:T.fog,marginBottom:12}}>
           Estos valores se usan como default al crear nuevos operadores. No afecta a operadores existentes.

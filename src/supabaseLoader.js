@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -68,6 +68,7 @@ export async function loadStateFromSupabase() {
       supaFetch('personal').catch(() => []),
       supaFetch('creditos_refaccionarios').catch(() => []),
       supaFetch('rentas_tierra').catch(() => []),
+      supaFetch('tarifa_std').catch(() => []),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -210,7 +211,7 @@ export async function loadStateFromSupabase() {
       creditoParams:      estadoExistente.creditoParams      || undefined,
       creditoLimites:     estadoExistente.creditoLimites     || {},
       paramsCultivo:      estadoExistente.paramsCultivo      || {},
-      tarifaStd:          estadoExistente.tarifaStd          || undefined,
+      // tarifaStd: viene directo de Supabase (tabla tarifa_std) — ver abajo
       // Permisos y roles
       permisosUsuario:    estadoExistente.permisosUsuario    || {},
       permisosGranulares: estadoExistente.permisosGranulares || {},
@@ -416,6 +417,9 @@ export async function loadStateFromSupabase() {
       personal:           personalRows           || [],
       creditosRef:        creditosRefRows        || [],
       rentas:             rentasRows             || [],
+      tarifaStd: (Array.isArray(tarifaStdRows) && tarifaStdRows[0])
+        ? { normal: parseFloat(tarifaStdRows[0].normal) || 600, especial: parseFloat(tarifaStdRows[0].especial) || 750 }
+        : { normal: 600, especial: 750 },
       _supabaseCargado: Date.now(),
     };
 

@@ -535,6 +535,8 @@ export function reducer(s, a) {
         'cicloActual',
         // Extra hidratada (maquinariaConsumos no se auto-gestiona — Maquinaria.jsx solo dispatcha al guardar)
         'maquinariaConsumos',
+        // tarifaStd: singleton en tabla tarifa_std (objeto {normal, especial})
+        'tarifaStd',
       ];
       const next = { ...s };
       for (const k of GRUPO_A) {
