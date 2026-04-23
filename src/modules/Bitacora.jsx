@@ -44,6 +44,8 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
   const [tipoModal, setTipoModal] = useState(null); // null | tipo de registro
   const [filtroLote, setFiltroLote] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("");
+  const [filtroDesde, setFiltroDesde] = useState("");
+  const [filtroHasta, setFiltroHasta] = useState("");
   const [fotoPreview, setFotoPreview] = useState(null);
   const fileRef = useRef(null);
 
@@ -416,8 +418,16 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
   };
 
   // Feed filtrado
+  const enRangoFecha = (fecha) => {
+    if (!filtroDesde && !filtroHasta) return true;
+    if (filtroDesde && String(fecha) < filtroDesde) return false;
+    if (filtroHasta && String(fecha) > filtroHasta) return false;
+    return true;
+  };
+
   const bitacora = (state.bitacora||[])
     .filter(b => {
+      if (!enRangoFecha(b.fecha)) return false;
       if (!filtroLote) return !filtroTipo || b.tipo===filtroTipo;
       // filtroLote can be "zona:CHEVETO" (all lotes with that apodo)
       if (filtroLote.startsWith("zona:")) {
@@ -688,7 +698,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
         ultimosTipos: bitacora?.slice(0,5)?.map(b => b.tipo) || [],
       }} />
 
-      {/* Botones de acción rápida — grid explícito 2 cols en móvil */}
+      {/* Botones de acción rápida — grid explícito 2 cols en móvil, sticky top */}
       <div className="bitacora-tipos" style={{
         display: isMobile ? "grid" : "flex",
         gridTemplateColumns: isMobile ? "1fr 1fr" : undefined,
@@ -696,6 +706,12 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
         flexWrap: isMobile ? undefined : "wrap",
         marginBottom:20,
         width: isMobile ? "100%" : undefined,
+        position: isMobile ? "sticky" : undefined,
+        top: isMobile ? 0 : undefined,
+        background: isMobile ? T.paper : undefined,
+        zIndex: isMobile ? 10 : undefined,
+        padding: isMobile ? "8px 0" : undefined,
+        boxShadow: isMobile ? "0 2px 4px rgba(0,0,0,0.04)" : undefined,
       }}>
         {TIPOS.map(t=>(
           <button key={t.id} onClick={()=>{setFotoPreview(null);setTipoModal(t.id);}}
@@ -790,6 +806,22 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
           <option value="">Todos los tipos</option>
           {TIPOS.map(t=><option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
         </select>
+        <input type="date" className="form-input" value={filtroDesde}
+          onChange={e=>setFiltroDesde(e.target.value)}
+          placeholder="Desde"
+          title="Fecha desde"
+          style={{width: isMobile ? "100%" : 160, minHeight: isMobile ? 48 : undefined, fontSize: isMobile ? 16 : undefined}}/>
+        <input type="date" className="form-input" value={filtroHasta}
+          onChange={e=>setFiltroHasta(e.target.value)}
+          placeholder="Hasta"
+          title="Fecha hasta"
+          style={{width: isMobile ? "100%" : 160, minHeight: isMobile ? 48 : undefined, fontSize: isMobile ? 16 : undefined}}/>
+        {(filtroDesde || filtroHasta || filtroLote || filtroTipo) && (
+          <button onClick={()=>{setFiltroDesde("");setFiltroHasta("");setFiltroLote("");setFiltroTipo("");}}
+            style={{padding: isMobile ? "10px 14px" : "6px 12px", minHeight: isMobile ? 44 : undefined, border:`1px solid ${T.line}`, borderRadius:8, background:"#fff", color:T.fog, fontSize:12, cursor:"pointer"}}>
+            Limpiar filtros
+          </button>
+        )}
         <span style={{fontSize:12,color:T.fog,marginLeft: isMobile ? 0 : 4}}>{bitacora.length} registro{bitacora.length!==1?"s":""}</span>
       </div>
 
