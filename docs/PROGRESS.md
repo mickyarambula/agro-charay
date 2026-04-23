@@ -1,5 +1,20 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 24 Abril 2026 (mediodía)
+
+### ✅ Completado
+- **Migración cosecha a Supabase**: 5 subtablas (boletas, cuadrillas, fletes, maquila, secado) con lectura en supabaseLoader.js, 5 post helpers + 1 delete genérico + 1 patch helper en supabaseWriters.js.
+- **Cancelar/reactivar boleta**: migrado a Supabase-first con PATCH a campo `cancelado`.
+- **Import Excel boletas**: migrado a Supabase-first con Promise.all.
+- **Schema mismatch**: resuelto con JSON round-trip en columna `notas` para campos sin columna dedicada.
+- Whitelist GRUPO_A actualizada con `cosecha`.
+
+### 🎓 Lección aprendida
+- Cuando el shape del state no coincide 1:1 con las columnas de Supabase, codificar los extras como JSON en una columna `notas` permite round-trip sin pérdida y sin alterar el schema de la tabla.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — próximo: merge cosecha a main o centralizar POST inline.
+
 ## Sesión 24 Abril 2026 (mañana)
 
 ### ✅ Completado

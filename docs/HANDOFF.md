@@ -1,28 +1,30 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 24 Abril 2026 (mañana)
+**Última actualización:** 24 Abril 2026 (mediodía)
 **Branch activo:** dev
-**Último commit dev:** e753dabd100bbbaf3cce72a5fbbb0e769b93e532
-**Último commit main:** 87a38fad900be7da7c13db8ff601b30379f9391b
+**Último commit dev:** 3c8ab69aadc365ffcffd062a9c04bab9b3772bb2
+**Último commit main:** 87a38fa (merge: responsive Bitácora + fix acceso socio + Toast global + docs)
 **Tag de respaldo:** backup-pre-merge-24abr2026
-**Estado:** Main al día. Todos los cambios de dev mergeados.
+**Estado:** Cosecha migrada a Supabase. Main pendiente de merge.
 
 ## Estado al cierre
 
-- Main actualizado con: responsive Bitácora, fix acceso socio (egresos→gastos), Toast global en 7 módulos.
-- DashboardCampo Phase 1, postDieselCarga, GENERAL-01 ya estaban en main desde sesión anterior.
-- Dev y main están sincronizados.
+- Cosecha migrada: 5 subtablas (boletas, cuadrillas, fletes, maquila, secado) leen y escriben desde Supabase.
+- cancelar/reactivar boleta sincroniza campo `cancelado` vía PATCH a Supabase.
+- Schema mismatch resuelto con JSON round-trip en columna `notas` (extras del state que no tienen columna dedicada).
+- Whitelist GRUPO_A incluye `cosecha`.
+- Main al día con merge anterior (87a38fa). Dev tiene cosecha pendiente de merge.
 
 ## Bugs estructurales pendientes
 
-Ninguno activo. BITACORA-DELETE-01 resuelto (commit 3ee9b59).
+Ninguno activo.
 
 ## Tabla de pendientes actualizada
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Media | Centralizar POST inline restantes (OrdenDia, CajaChica) | 2 hrs | Refactor |
-| 2 | Media | Migrar cosecha a Supabase | 45 min | Migración |
+| 1 | Alta | Verificar dev + merge cosecha a main | 20 min | Deploy |
+| 2 | Media | Centralizar POST inline restantes (OrdenDia, CajaChica) | 2 hrs | Refactor |
 | 3 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
 | 4 | Futuro | DashboardCampo Phase 2: crear órdenes + WhatsApp desde dashboard | 2 hrs | Feature |
 | 5 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
@@ -30,9 +32,9 @@ Ninguno activo. BITACORA-DELETE-01 resuelto (commit 3ee9b59).
 
 ## Siguiente sesión — recomendación
 
-Opción A: #1 — Centralizar POST inline (OrdenDia, CajaChica). Limpieza técnica, reduce deuda.
-Opción B: #2 — Migrar cosecha a Supabase. Preparación para cosecha real del ciclo.
-Opción C: #4 — DashboardCampo Phase 2. Feature de alto impacto operativo.
+**Opción A: #1 — Verificar dev + merge cosecha a main (20 min).** Smoke test en dev, tag, merge.
+**Opción B: #2 — Centralizar POST inline (OrdenDia, CajaChica).** Limpieza técnica.
+**Opción C: #4 — DashboardCampo Phase 2.** Feature de alto impacto operativo.
 
 ## Reglas de trabajo
 
@@ -55,3 +57,4 @@ Opción C: #4 — DashboardCampo Phase 2. Feature de alto impacto operativo.
 - Generar id en el caller ANTES del dispatch cuando se necesita legacy_id
 - Al refactorear, pasar componentes declarados en App.jsx como props (no importar — causa circular)
 - Para prompts a Claude Code, dar el objetivo completo y dejar que lea el código y diseñe la solución — no pedir diagnósticos parciales
+- Schema mismatch state↔Supabase se resuelve con JSON en columna `notas` para round-trip sin pérdida
