@@ -158,3 +158,65 @@ export async function updateTarifaStd(tarifaObj) {
   const rows = await res.json();
   return rows[0] || null;
 }
+
+// --- ASISTENCIAS ---
+export async function postAsistencia(record) {
+  const body = {
+    legacy_id: record.id,  // Date.now() del reducer
+    fecha: record.fecha,
+    operador_id: record.operadorId,
+    tarifa_dia: record.tarifaDia,
+    nota: record.nota || '',
+    lote_id: record.loteId || '',
+    trabajo: record.trabajo || '',
+  };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/asistencias`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) { const t = await res.text(); console.error('postAsistencia error:', t); return null; }
+  const rows = await res.json();
+  return rows[0] || null;
+}
+
+export async function deleteAsistencia(legacyId) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/asistencias?legacy_id=eq.${legacyId}`, {
+    method: 'DELETE',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+  });
+  if (!res.ok) { const t = await res.text(); console.error('deleteAsistencia error:', t); return false; }
+  return true;
+}
+
+// --- PAGOS SEMANA ---
+export async function postPagoSemana(record) {
+  const body = {
+    legacy_id: record.id,
+    semana: record.semana,
+    label: record.label || '',
+    fecha_pago: record.fechaPago,
+    total: record.total,
+    pagado: record.pagado ?? true,
+    detalle: record.detalle || [],
+    updated_at: new Date().toISOString(),
+  };
+  // UPSERT por semana (solo 1 pago por semana)
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/pagos_semana?on_conflict=semana`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) { const t = await res.text(); console.error('postPagoSemana error:', t); return null; }
+  const rows = await res.json();
+  return rows[0] || null;
+}
+
+export async function deletePagoSemana(legacyId) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/pagos_semana?legacy_id=eq.${legacyId}`, {
+    method: 'DELETE',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+  });
+  if (!res.ok) { const t = await res.text(); console.error('deletePagoSemana error:', t); return false; }
+  return true;
+}

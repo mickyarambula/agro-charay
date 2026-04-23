@@ -537,6 +537,8 @@ export function reducer(s, a) {
         'maquinariaConsumos',
         // tarifaStd: singleton en tabla tarifa_std (objeto {normal, especial})
         'tarifaStd',
+        // asistencias + pagosSemana: migrados (Operadores.jsx)
+        'asistencias','pagosSemana',
       ];
       const next = { ...s };
       for (const k of GRUPO_A) {
