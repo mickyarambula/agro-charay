@@ -1,5 +1,27 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 23 Abril 2026 (mediodía)
+
+### ✅ Completado
+
+**Merge a main** — horasMaq + proyeccion + docs mergeados (7f9c4fb). Tag backup-pre-merge-23abr2026-session2.
+
+**horasMaq migrada a Supabase** — Tabla horas_maq creada. Helpers postHorasMaq/deleteHorasMaq. 3 dispatches ADD_HORAS fuente:"bitacora" eliminados de Bitacora.jsx (eran peso muerto — Maquinaria.jsx los filtraba con fuente!=="bitacora"). Solo queda el path manual.
+
+**proyeccion migrada a Supabase** — Tabla proyeccion (legacy_id text porque ids son strings "P123"/"U123", real_monto en vez de real por palabra reservada PostgreSQL). UPSERT por on_conflict=legacy_id sirve para ADD y UPD. Fix reducer ADD_PROY: id override corregido con patrón GENERAL-02 (a.payload.id ?? fallback).
+
+**GENERAL-01 claves residuales completas** — Las 5 claves (tarifaStd, asistencias, pagosSemana, horasMaq, proyeccion) migradas. PERSIST_KEYS solo contiene Grupo B (UI/prefs), Grupo C (permisos/config) y cosecha.
+
+**Refactor App.jsx** — renderPage (switch 29 cases + 31 imports de módulos) extraído a src/core/AppRouter.jsx. Navegación (page, pageStack, navTo, goBack, getNavFiltro) extraída a src/core/useAppNavigation.js. App.jsx −90 líneas (2097→2007). WidgetCBOTDashboard pasado como prop para evitar import circular.
+
+### 🎓 Lecciones aprendidas
+1. **Espejos muertos acumulan deuda técnica silenciosa.** Los 3 dispatches ADD_HORAS fuente:"bitacora" en Bitacora.jsx existían desde antes de la migración de bitácora a Supabase. Nadie los notó porque Maquinaria.jsx los filtraba. La migración los reveló.
+2. **legacy_id no siempre es bigint.** proyeccion usa strings como id ("P1234", "U1234"). Usar text para legacy_id en la tabla Supabase mantiene compatibilidad sin refactorear el reducer.
+3. **Componentes de App.jsx → props, no imports.** WidgetCBOTDashboard vive en App.jsx. Importarlo desde AppRouter.jsx causaría circular. Pasarlo como prop es el patrón limpio.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — tabla actualizada. Próximo: verificar dev URL refactor + merge a main.
+
 ## Sesión 23 Abril 2026 (mañana)
 
 ### ✅ Completado
