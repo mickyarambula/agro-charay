@@ -1,5 +1,18 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 23 Abril 2026 (tarde, sesión 2)
+
+### ✅ Completado
+
+**Merge a main** — DashboardCampo Phase 1 + postDieselCarga helper + docs. Tag backup-pre-merge-23abr2026-session4.
+
+**BITACORA-DELETE-01 confirmado resuelto** — El bug estaba listado como pendiente pero ya había sido fixeado en commit 3ee9b59 (sesión 20-abr). El handler usa patrón Supabase-first: await deleteBitacora → if ok → dispatch DEL_BITACORA. HANDOFF limpiado.
+
+**Responsive Bitácora** — Añadidos filtros por rango de fecha (desde/hasta) con botón "Limpiar filtros". Grid de tipos de registro sticky en móvil (position:sticky + z-index + shadow). Diesel.jsx y OrdenDia.jsx ya eran responsive — sin cambios.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — tabla actualizada.
+
 ## Sesión 23 Abril 2026 (tarde)
 
 ### ✅ Completado

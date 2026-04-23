@@ -1,10 +1,10 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 23 Abril 2026 (tarde)
+**Última actualización:** 23 Abril 2026 (tarde, sesión 2)
 **Branch activo:** dev
-**Último commit dev:** f70cdf4 (feat(dashcampo): Phase 1 — fix diesel saldo + tractor selector + precio dinámico + btn asistencia + postDieselCarga helper)
-**Último commit main:** 5135a8c (merge: refactor App.jsx + docs)
-**Tag de respaldo:** backup-pre-merge-23abr2026-session2
+**Último commit dev:** 7e93081 (feat(bitacora): filtros por rango de fecha + sticky grid tipos en móvil + botón limpiar filtros)
+**Último commit main:** d2111af (merge: DashboardCampo Phase 1 + postDieselCarga helper + docs)
+**Tag de respaldo:** backup-pre-merge-23abr2026-session4
 **Estado:** DashboardCampo Phase 1 completado. GENERAL-01 completo. Refactor App.jsx en main. Pendiente merge de horasMaq + proyeccion + DashboardCampo Phase 1.
 
 ## Estado al cierre
@@ -14,7 +14,10 @@
 - GENERAL-01 claves residuales completas (5/5): tarifaStd, asistencias, pagosSemana, horasMaq, proyeccion.
 - Refactor App.jsx: AppRouter.jsx + useAppNavigation.js extraídos (−90 líneas).
 - MAQUINARIA-CONSUMOS-01 resuelto (UPSERT + display + feedback).
-- Merge a main pendiente de: horasMaq, proyeccion, DashboardCampo Phase 1.
+- BITACORA-DELETE-01 confirmado resuelto (estaba stale en el HANDOFF).
+- Bitácora responsive: filtros por rango de fecha, sticky grid tipos, botón limpiar filtros.
+- Diesel y OrdenDia ya eran responsive — sin cambios necesarios.
+- DashboardCampo Phase 1 + postDieselCarga ya en main. Pendiente merge: responsive Bitácora.
 
 ## Cambios técnicos de esta sesión
 
@@ -38,24 +41,22 @@
 
 ## Bugs estructurales pendientes
 
-### BITACORA-DELETE-01: Pendiente
-El 🗑 en Bitácora UI borra del state local pero no envía DELETE a Supabase. Fix trivial (~30 min).
+### BITACORA-DELETE-01: RESUELTO ✅ (confirmado — fix existía desde commit 3ee9b59)
+El 🗑 en Bitácora usa patrón Supabase-first: `await deleteBitacora(b.id) → if (ok) dispatch DEL_BITACORA`. Entry en HANDOFF estaba stale.
 
 ## Tabla de pendientes actualizada
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
 | 1 | Alta | Verificar dev URL (todo) → merge a main | 20 min | Deploy |
-| 2 | Alta | BITACORA-DELETE-01 | 30 min | Bug |
-| 3 | Media | Responsive módulos críticos (Diesel, Bitácora, Órdenes) | 3-4 hrs | UX |
-| 4 | Media | Feedback guardado global (Toast) | 1 hr | UX |
-| 5 | Baja | Fix bug egresos/gastos rol socio | 15 min | Bug |
-| 6 | Baja | Centralizar POST inline restantes (OrdenDia, CajaChica) | 2 hrs | Refactor |
-| 7 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 8 | Baja | Migrar cosecha a Supabase | 45 min | Migración |
-| 9 | Futuro | DashboardCampo Phase 2: crear órdenes + WhatsApp desde dashboard | 2 hrs | Feature |
-| 10 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
-| 11 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
+| 2 | Media | Feedback guardado global (Toast) | 1 hr | UX |
+| 3 | Baja | Fix bug egresos/gastos rol socio | 15 min | Bug |
+| 4 | Baja | Centralizar POST inline restantes (OrdenDia, CajaChica) | 2 hrs | Refactor |
+| 5 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 6 | Baja | Migrar cosecha a Supabase | 45 min | Migración |
+| 7 | Futuro | DashboardCampo Phase 2: crear órdenes + WhatsApp desde dashboard | 2 hrs | Feature |
+| 8 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
+| 9 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
 
 ## Siguiente sesión — recomendación
 
