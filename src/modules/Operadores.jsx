@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
+import { updateTarifaStd, postAsistencia, deleteAsistencia, postPagoSemana } from '../core/supabaseWriters.js';
 
 
 export default function OperadoresModule({ userRol, puedeEditar }) {
@@ -334,15 +335,24 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
     };
 
     const guardarDia = () => {
-      asistDia.forEach(a=>dispatch({type:"DEL_ASISTENCIA",payload:a.id}));
-      Object.entries(marcas).forEach(([opId,m])=>{
-        if(!m?.activo) return;
-        const op = operadores.find(o=>String(o.id)===String(opId));
-        dispatch({type:"ADD_ASISTENCIA",payload:{
-          fecha:fechaA, operadorId:parseInt(opId),
-          tarifaDia: parseFloat(m.tarifaDia)||op?.salarioDia||0,
-          nota:m.nota||"", loteId:m.loteId||"", trabajo:m.trabajo||"",
-        }});
+      asistDia.forEach(a => {
+        dispatch({type:"DEL_ASISTENCIA", payload:a.id});
+        deleteAsistencia(a.id).catch(e => console.warn('[deleteAsistencia]:', e));
+      });
+      const baseId = Date.now();
+      let idx = 0;
+      Object.entries(marcas).forEach(([opId, m]) => {
+        if (!m?.activo) return;
+        const op = operadores.find(o => String(o.id) === String(opId));
+        const asisPayload = {
+          id: baseId + idx,
+          fecha: fechaA, operadorId: parseInt(opId),
+          tarifaDia: parseFloat(m.tarifaDia) || op?.salarioDia || 0,
+          nota: m.nota || "", loteId: m.loteId || "", trabajo: m.trabajo || "",
+        };
+        idx++;
+        dispatch({type:"ADD_ASISTENCIA", payload: asisPayload});
+        postAsistencia(asisPayload).catch(e => console.warn('[postAsistencia]:', e));
       });
       setVista("resumen");
     };
@@ -523,9 +533,15 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
         detalle:opsConAsis.map(op=>({...calcPagoOp(op.id,semSelReal),operadorId:op.id,nombre:op.nombre})),
       };
       const prev=pagosSemana.find(p=>p.semana===semSelReal);
-      if(prev) dispatch({type:"UPD_PAGO_SEM",payload:{...prev,...payload}});
+      if(prev) {
+        const merged = {...prev,...payload};
+        dispatch({type:"UPD_PAGO_SEM",payload: merged});
+        postPagoSemana(merged).catch(e => console.warn('[postPagoSemana upd]:', e));
+      }
       else {
-        dispatch({type:"ADD_PAGO_SEM",payload});
+        const addPayload = {...payload, id: Date.now()};
+        dispatch({type:"ADD_PAGO_SEM",payload: addPayload});
+        postPagoSemana(addPayload).catch(e => console.warn('[postPagoSemana add]:', e));
         // Solo crear egreso si es pago nuevo (no actualización)
         const cid = state.cicloActivoId||1;
         // Verificar que no exista ya un egreso de esta semana
@@ -734,7 +750,10 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
                       <td style={{background:bg}}>
                         {userRol==="admin"&&<button className="btn btn-sm btn-danger"
                           onClick={()=>confirmarEliminar("¿Eliminar esta asistencia?",
-                            ()=>dispatch({type:"DEL_ASISTENCIA",payload:a.id}))}>🗑</button>}
+                            ()=>{
+                              dispatch({type:"DEL_ASISTENCIA",payload:a.id});
+                              deleteAsistencia(a.id).catch(e => console.warn('[deleteAsistencia]:', e));
+                            })}>🗑</button>}
                       </td>
                     </tr>
                   );
@@ -871,7 +890,11 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
           <button className="btn btn-primary" onClick={()=>{
             const n=parseFloat(formTarifa.normal)||0;
             const e=parseFloat(formTarifa.especial)||0;
-            if(n>0&&e>0){dispatch({type:"UPD_TARIFA_STD",payload:{normal:n,especial:e}});setModalTarifa(false);}
+            if(n>0&&e>0){
+              dispatch({type:"UPD_TARIFA_STD",payload:{normal:n,especial:e}});
+              setModalTarifa(false);
+              updateTarifaStd({normal:n,especial:e}).catch(err=>console.warn('tarifaStd sync:',err));
+            }
           }}>💾 Guardar</button></>}>
         <div style={{fontSize:12,color:T.fog,marginBottom:12}}>
           Estos valores se usan como default al crear nuevos operadores. No afecta a operadores existentes.

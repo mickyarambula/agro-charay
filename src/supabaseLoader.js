@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -68,6 +68,9 @@ export async function loadStateFromSupabase() {
       supaFetch('personal').catch(() => []),
       supaFetch('creditos_refaccionarios').catch(() => []),
       supaFetch('rentas_tierra').catch(() => []),
+      supaFetch('tarifa_std').catch(() => []),
+      supaFetch('asistencias').catch(() => []),
+      supaFetch('pagos_semana').catch(() => []),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -210,7 +213,7 @@ export async function loadStateFromSupabase() {
       creditoParams:      estadoExistente.creditoParams      || undefined,
       creditoLimites:     estadoExistente.creditoLimites     || {},
       paramsCultivo:      estadoExistente.paramsCultivo      || {},
-      tarifaStd:          estadoExistente.tarifaStd          || undefined,
+      // tarifaStd: viene directo de Supabase (tabla tarifa_std) — ver abajo
       // Permisos y roles
       permisosUsuario:    estadoExistente.permisosUsuario    || {},
       permisosGranulares: estadoExistente.permisosGranulares || {},
@@ -224,8 +227,8 @@ export async function loadStateFromSupabase() {
       // Datos operativos que NO están aún en Supabase — se preservan locales
       // bitacora: ahora viene de Supabase (ver mapeo abajo) — ya NO se preserva de localStorage
       trabajos:           estadoExistente.trabajos           || [],
-      asistencias:        estadoExistente.asistencias        || [],
-      pagosSemana:        estadoExistente.pagosSemana        || [],
+      // asistencias: viene directo de Supabase (tabla asistencias) — ver abajo
+      // pagosSemana: viene directo de Supabase (tabla pagos_semana) — ver abajo
       horasMaq:           estadoExistente.horasMaq           || [],
       // capital: ahora viene de Supabase (ver mapeo abajo)
       creditosRef:        estadoExistente.creditosRef        || [],
@@ -416,6 +419,27 @@ export async function loadStateFromSupabase() {
       personal:           personalRows           || [],
       creditosRef:        creditosRefRows        || [],
       rentas:             rentasRows             || [],
+      tarifaStd: (Array.isArray(tarifaStdRows) && tarifaStdRows[0])
+        ? { normal: parseFloat(tarifaStdRows[0].normal) || 600, especial: parseFloat(tarifaStdRows[0].especial) || 750 }
+        : { normal: 600, especial: 750 },
+      asistencias: (asistenciasRows || []).map(r => ({
+        id: r.legacy_id || Date.now(),
+        fecha: r.fecha,
+        operadorId: r.operador_id,
+        tarifaDia: parseFloat(r.tarifa_dia) || 0,
+        nota: r.nota || '',
+        loteId: r.lote_id || '',
+        trabajo: r.trabajo || '',
+      })),
+      pagosSemana: (pagosSemanaRows || []).map(r => ({
+        id: r.legacy_id || Date.now(),
+        semana: r.semana || '',
+        label: r.label || '',
+        fechaPago: r.fecha_pago,
+        total: parseFloat(r.total) || 0,
+        pagado: r.pagado ?? true,
+        detalle: r.detalle || [],
+      })),
       _supabaseCargado: Date.now(),
     };
 

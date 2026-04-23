@@ -1,5 +1,29 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 23 Abril 2026 (mañana)
+
+### ✅ Completado
+
+**Merge a main** — MAQUINARIA-CONSUMOS-01 mergeado (9b080ac). Tag backup-pre-merge-22abr2026-session3.
+
+**MAQUINARIA-CONSUMOS-01 verificado en dev URL** — Smoke test OK, merge limpio.
+
+**tarifaStd migrada a Supabase** — Tabla tarifa_std (singleton {normal, especial}). Helper updateTarifaStd con PATCH. Bug RLS descubierto: policy era solo para `authenticated` pero el proyecto usa `anon` key → añadida policy para `anon`. Commit 28f972b.
+
+**asistencias migrada a Supabase** — Tabla asistencias recreada con schema alineado al código (operador_id int, tarifa_dia, nota, lote_id text). Helpers postAsistencia/deleteAsistencia. 3 call sites en Operadores.jsx cableados con patrón dispatch-first + Supabase-background. Complicación resuelta: colisión Date.now() en forEach multi-operador → baseId+idx. Commit 72837fd.
+
+**pagosSemana migrada a Supabase** — Tabla pagos_semana recreada (semana UNIQUE, detalle jsonb). UPSERT con on_conflict=semana. Complicación resuelta: detalle jsonb doble-stringify prevenido. Commit 72837fd.
+
+**GENERAL-01 estado confirmado** — Fases 1-3 completas. Solo quedan 2 claves residuales: horasMaq (candidata a deprecar), proyeccion.
+
+### 🎓 Lecciones aprendidas
+1. **RLS para anon obligatoria.** El proyecto usa SUPABASE_ANON_KEY para todos los writes. Tablas nuevas necesitan `CREATE POLICY ... FOR ALL TO anon`. Sin esto, writes fallan silenciosamente (tarifa_std lo demostró).
+2. **Generar id antes del dispatch.** Cuando el caller necesita el id para postX(legacy_id), debe generarlo ANTES del dispatch — el reducer lo genera internamente pero no lo devuelve.
+3. **Date.now() colisiona en loops.** Múltiples dispatches en el mismo ms producen legacy_ids duplicados → UNIQUE violation. Usar baseId + idx.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — tabla actualizada. Próximo: verificar dev URL + merge a main.
+
 ## Sesión 22 Abril 2026 (noche, sesión 2)
 
 ### ✅ Completado

@@ -1,26 +1,32 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 22 Abril 2026 (noche, sesión 2)
+**Última actualización:** 23 Abril 2026 (mañana)
 **Branch activo:** dev
-**Último commit dev:** 7cac871 (fix(maquinaria): MAQUINARIA-CONSUMOS-01 — UPSERT on_conflict + display hydration + save feedback)
-**Último commit main:** 46b1fcf (merge: DIESEL-ESPEJO-01 + REALTIME-MAPPER-GAP fixes)
-**Tag de respaldo:** backup-pre-merge-22abr2026-session2
-**Estado:** MAQUINARIA-CONSUMOS-01 resuelto. Main al día con DIESEL-ESPEJO-01 + REALTIME-MAPPER-GAP.
+**Último commit dev:** 72837fd (feat(operadores): migrar asistencias + pagosSemana de localStorage a Supabase)
+**Último commit main:** 9b080ac (merge: MAQUINARIA-CONSUMOS-01 fix + docs)
+**Tag de respaldo:** backup-pre-merge-22abr2026-session3
+**Estado:** 3 claves residuales migradas a Supabase (tarifaStd, asistencias, pagosSemana). MAQUINARIA-CONSUMOS-01 en main. Pendiente merge de sesión actual.
 
 ## Estado al cierre
 
-- Merge a main exitoso: DIESEL-ESPEJO-01 + REALTIME-MAPPER-GAP (tag backup-pre-merge-22abr2026-session2).
-- MAQUINARIA-CONSUMOS-01 resuelto: 409 Conflict eliminado, valores persisten tras recarga, feedback visual al guardar.
-- Causa raíz del display bug: `maquinariaConsumos` faltaba en whitelist GRUPO_A de HYDRATE_FROM_SUPABASE — datos de Supabase se descartaban silenciosamente.
-- Fix: 3 cambios en 2 archivos (DataContext.jsx whitelist + Maquinaria.jsx URL on_conflict + feedback botón).
+- Merge a main: MAQUINARIA-CONSUMOS-01 (tag backup-pre-merge-22abr2026-session3, main=9b080ac).
+- tarifaStd migrada a Supabase: tabla tarifa_std (singleton), helper updateTarifaStd, RLS anon+authenticated.
+- asistencias migrada a Supabase: tabla asistencias (legacy_id bigint UNIQUE), helpers postAsistencia/deleteAsistencia.
+- pagosSemana migrada a Supabase: tabla pagos_semana (semana text UNIQUE, detalle jsonb), helpers postPagoSemana/deletePagoSemana, UPSERT por on_conflict=semana.
+- GRUPO_A whitelist actualizada: +tarifaStd, +asistencias, +pagosSemana, +maquinariaConsumos.
+- PERSIST_KEYS reducida: removidas tarifaStd, asistencias, pagosSemana.
+- GENERAL-01 Fases 1-3 confirmadas completas. Solo quedan 2 claves residuales sin tabla Supabase: horasMaq, proyeccion.
+- Lección RLS: tablas nuevas necesitan policy para rol `anon` además de `authenticated` — el proyecto usa anon key para todos los writes.
 
 ## Cambios técnicos de esta sesión
 
-1. **Merge a main**: DIESEL-ESPEJO-01 + REALTIME-MAPPER-GAP → main 46b1fcf.
-2. **Maquinaria.jsx**: URL del POST cambiada a `?on_conflict=maquinaria_id,tipo_labor` para UPSERT por constraint compuesta.
-3. **Maquinaria.jsx**: `id` removido del body del POST — PK auto-generado por Supabase (`gen_random_uuid()`).
-4. **Maquinaria.jsx**: Feedback visual en botón ✓ — estado 'ok' (✅ verde 2s), 'error' (❌ rojo 2s), null (✓ default).
-5. **DataContext.jsx**: `'maquinariaConsumos'` añadido a GRUPO_A whitelist de HYDRATE_FROM_SUPABASE.
+1. **Merge a main**: MAQUINARIA-CONSUMOS-01 → main 9b080ac (session3 tag).
+2. **MAQUINARIA-CONSUMOS-01**: URL on_conflict + id removido del body + feedback visual botón + maquinariaConsumos en GRUPO_A.
+3. **tarifa_std**: tabla creada (singleton), RLS anon+auth, fetch en loader, updateTarifaStd en writers, Operadores.jsx cableado.
+4. **asistencias**: tabla recreada (schema alineado con código), RLS, fetch en loader, postAsistencia/deleteAsistencia en writers, 3 call sites en Operadores.jsx (guardarDia DEL+ADD, botón 🗑).
+5. **pagos_semana**: tabla recreada (schema alineado), RLS, fetch en loader, postPagoSemana (UPSERT)/deletePagoSemana en writers, 2 call sites en Operadores.jsx (ADD/UPD).
+6. **DataContext.jsx**: GRUPO_A +maquinariaConsumos, +tarifaStd, +asistencias, +pagosSemana.
+7. **App.jsx**: PERSIST_KEYS y savedState IIFE limpiados de las 3 claves migradas.
 
 ## Bugs estructurales pendientes
 
@@ -30,20 +36,21 @@ Ninguno conocido activo.
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Media | Verificar MAQUINARIA-CONSUMOS-01 en dev URL → merge a main | 15 min | Deploy |
-| 2 | Media | GENERAL-01 Fase 1: migrar ciclo de vida 22 claves | 60-90 min | Migración |
-| 3 | Media | Refactor App.jsx — extraer routes | 45 min | Refactor |
-| 4 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 5 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
-| 6 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
-| 7 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
-| 8 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
+| 1 | Media | Verificar dev URL (tarifaStd + asistencias + pagosSemana) → merge a main | 20 min | Deploy |
+| 2 | Baja | Migrar horasMaq a Supabase (o deprecar a favor de bitácora) | 30 min | Migración |
+| 3 | Baja | Migrar proyeccion a Supabase | 45 min | Migración |
+| 4 | Media | Refactor App.jsx — extraer routes | 45 min | Refactor |
+| 5 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 6 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
+| 7 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
+| 8 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
+| 9 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
 
 ## Siguiente sesión — recomendación
 
-**Opción A: #1 — Verificar dev URL + merge a main (15 min).** Clear site data en agro-charay-dev.vercel.app, smoke test consumos maquinaria, tag backup, merge.
+**Opción A: #1 — Verificar dev URL + merge a main (20 min).** Clear site data en agro-charay-dev.vercel.app, smoke test tarifaStd + asistencias + pagosSemana + maquinaria consumos, tag backup, merge.
 
-**Opción B: #2 — GENERAL-01 Fase 1 (60-90 min).** Migrar ciclo de vida de las 22 claves ya en Supabase. Sesión larga pero alto impacto.
+**Opción B: #2/#3 — Migrar horasMaq o proyeccion (30-45 min).** Las últimas 2 claves residuales. horasMaq podría deprecarse si bitácora cubre los casos.
 
 ## Reglas de trabajo
 
@@ -61,4 +68,6 @@ Ninguno conocido activo.
 - Para debugging, usar Claude Code directo (no Claude web paso a paso)
 - Cualquier mapper de Supabase (loader, realtime, etc.) debe tener schema simétrico
 - Verificar TODOS los paths de hidratación al añadir campo nuevo (loader + realtime channels + cualquier otro mapper)
-- **NUEVO: Al añadir una clave al loader, verificar que también esté en GRUPO_A whitelist — sin esto los datos se descartan silenciosamente**
+- Al añadir una clave al loader, verificar que también esté en GRUPO_A whitelist — sin esto los datos se descartan silenciosamente
+- **NUEVO: Tablas nuevas en Supabase necesitan RLS policy para rol `anon` — el proyecto usa anon key, no JWT autenticado**
+- **NUEVO: Generar id en el caller ANTES del dispatch cuando se necesita legacy_id para Supabase — el reducer genera id internamente pero no lo expone al caller**
