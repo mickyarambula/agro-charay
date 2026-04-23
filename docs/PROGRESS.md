@@ -1,5 +1,15 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 24 Abril 2026 (mañana)
+
+### ✅ Completado
+- **Merge dev → main**: responsive Bitácora + fix acceso socio (egresos→gastos) + Toast global en 7 módulos.
+- Tag de respaldo: backup-pre-merge-24abr2026.
+- Main y dev sincronizados — no hay delta pendiente.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — próximo objetivo sugerido: centralizar POST inline o migrar cosecha.
+
 ## Sesión 23 Abril 2026 (noche)
 
 ### ✅ Completado
