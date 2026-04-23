@@ -23,6 +23,7 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { postProyeccion, deleteProyeccion } from '../core/supabaseWriters.js';
 
 
 export default function ProyeccionModule() {
@@ -183,8 +184,9 @@ export default function ProyeccionModule() {
     const p = { ...form, cantidad:parseFloat(form.cantidad)||0, costoUnit:parseFloat(form.costoUnit)||0,
       totalProy:total, ha:parseFloat(form.ha)||ha, egresoIds:form.egresoIds||[] };
     if(!p.concepto||!total) return;
-    if(selRow) dispatch({ type:"UPD_PROY", payload:{...p,id:selRow.id} });
-    else       dispatch({ type:"ADD_PROY", payload:{...p,id:"P"+Date.now()} });
+    const payload = selRow ? {...p, id:selRow.id} : {...p, id:"P"+Date.now()};
+    dispatch({ type: selRow ? "UPD_PROY" : "ADD_PROY", payload });
+    postProyeccion(payload).catch(e => console.warn('[postProyeccion]:', e));
     setModalEdit(false); setSelRow(null); setForm({});
   };
   const editRow = r => { setSelRow(r); setForm({...r,cantidad:String(r.cantidad),costoUnit:String(r.costoUnit),ha:String(r.ha)}); setModalEdit(true); };
@@ -333,7 +335,10 @@ export default function ProyeccionModule() {
                             {p.vinculo==="manual"&&(
                               <button className="btn btn-sm btn-secondary" title="Vincular egresos" onClick={()=>setModalLink(p)}>🔗</button>
                             )}
-                            <button className="btn btn-sm btn-danger" onClick={()=>confirmarEliminar("¿Eliminar esta partida?",()=>dispatch({type:"DEL_PROY",payload:p.id}))}>🗑</button>
+                            <button className="btn btn-sm btn-danger" onClick={()=>confirmarEliminar("¿Eliminar esta partida?",()=>{
+                              dispatch({type:"DEL_PROY",payload:p.id});
+                              deleteProyeccion(p.id).catch(e => console.warn('[deleteProyeccion]:', e));
+                            })}>🗑</button>
                           </div>
                         </td>
                       </tr>
@@ -591,6 +596,7 @@ export default function ProyeccionModule() {
                       const newIds = linked ? ids.filter(x=>x!==e.id) : [...ids,e.id];
                       const updated = {...modalLink, egresoIds:newIds, real:newIds.reduce((s,eid)=>{const eg=egresos_r.find(x=>x.id===eid);return s+(eg?parseFloat(eg.monto)||0:0);},0)};
                       dispatch({type:"UPD_PROY", payload:updated});
+                      postProyeccion(updated).catch(e => console.warn('[postProyeccion]:', e));
                       setModalLink(updated);
                     }}/>
                   <div style={{flex:1}}>

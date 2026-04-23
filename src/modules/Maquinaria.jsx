@@ -27,6 +27,7 @@ import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
+import { postHorasMaq, deleteHorasMaq } from '../core/supabaseWriters.js';
 
 const TIPOS_LABOR_DIESEL = ['Barbecho','Rastreo','Siembra','Fertilización','Aplicación herbicida','Aplicación insecticida','Cosecha / apoyo'];
 
@@ -84,7 +85,10 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
   const saveH = () => {
     const p = {...formH, horas:parseFloat(formH.horas)||0, maqId:parseInt(formH.maqId)||formH.maqId};
     if(!p.horas||!p.maqId) return;
-    dispatch({type:"ADD_HORAS",payload:{...p, fuente:"manual"}});
+    const horasId = Date.now();
+    const payload = {...p, id: horasId, fuente: "manual"};
+    dispatch({type:"ADD_HORAS", payload});
+    postHorasMaq(payload).catch(e => console.warn('[postHorasMaq]:', e));
     setModalH(false); setFormH(emptyH);
   };
 
@@ -153,7 +157,10 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
                       <td style={{background:bg}}>
                         {h.fuente==="manual"&&userRol==="admin"&&(
                           <button className="btn btn-sm btn-danger"
-                            onClick={()=>confirmarEliminar("¿Eliminar este registro?",()=>dispatch({type:"DEL_HORAS",payload:h.id}))}>
+                            onClick={()=>confirmarEliminar("¿Eliminar este registro?",()=>{
+                              dispatch({type:"DEL_HORAS",payload:h.id});
+                              deleteHorasMaq(h.id).catch(e => console.warn('[deleteHorasMaq]:', e));
+                            })}>
                             🗑
                           </button>
                         )}

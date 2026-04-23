@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows, horasMaqRows, proyeccionRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -71,6 +71,8 @@ export async function loadStateFromSupabase() {
       supaFetch('tarifa_std').catch(() => []),
       supaFetch('asistencias').catch(() => []),
       supaFetch('pagos_semana').catch(() => []),
+      supaFetch('horas_maq').catch(() => []),
+      supaFetch('proyeccion').catch(() => []),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -229,14 +231,14 @@ export async function loadStateFromSupabase() {
       trabajos:           estadoExistente.trabajos           || [],
       // asistencias: viene directo de Supabase (tabla asistencias) — ver abajo
       // pagosSemana: viene directo de Supabase (tabla pagos_semana) — ver abajo
-      horasMaq:           estadoExistente.horasMaq           || [],
+      // horasMaq: viene directo de Supabase (tabla horas_maq) — ver abajo
       // capital: ahora viene de Supabase (ver mapeo abajo)
       creditosRef:        estadoExistente.creditosRef        || [],
       activos:            estadoExistente.activos            || [],
       rentas:             estadoExistente.rentas             || [],
       personal:           estadoExistente.personal           || [],
       cosecha:            estadoExistente.cosecha            || undefined,
-      proyeccion:         estadoExistente.proyeccion         || [],
+      // proyeccion: viene directo de Supabase (tabla proyeccion) — ver abajo
       // inventario: NO se preserva — siempre viene de Supabase (fresco)
       // Workflow local (solicitudes, órdenes de compra, notificaciones, etc.)
       solicitudesCompra:  estadoExistente.solicitudesCompra  || [],
@@ -439,6 +441,29 @@ export async function loadStateFromSupabase() {
         total: parseFloat(r.total) || 0,
         pagado: r.pagado ?? true,
         detalle: r.detalle || [],
+      })),
+      horasMaq: (horasMaqRows || []).map(r => ({
+        id: r.legacy_id || Date.now(),
+        maqId: r.maquinaria_id,
+        horas: parseFloat(r.horas) || 0,
+        fecha: r.fecha,
+        concepto: r.nota || '',
+        fuente: r.fuente || 'manual',
+      })),
+      proyeccion: (proyeccionRows || []).map(r => ({
+        id: r.legacy_id,
+        etapa: r.etapa || '',
+        concepto: r.concepto || '',
+        categoria: r.categoria || '',
+        unidad: r.unidad || 'ha',
+        cantidad: parseFloat(r.cantidad) || 0,
+        costoUnit: parseFloat(r.costo_unit) || 0,
+        totalProy: parseFloat(r.total_proy) || 0,
+        ha: parseFloat(r.ha) || 0,
+        notas: r.notas || '',
+        vinculo: r.vinculo || 'manual',
+        egresoIds: r.egreso_ids || [],
+        real: parseFloat(r.real_monto) || 0,
       })),
       _supabaseCargado: Date.now(),
     };
