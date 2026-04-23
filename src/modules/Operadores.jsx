@@ -25,6 +25,7 @@ import {
 } from '../shared/helpers.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import { updateTarifaStd, postAsistencia, deleteAsistencia, postPagoSemana } from '../core/supabaseWriters.js';
+import { showToast } from '../components/mobile/Toast.jsx';
 
 
 export default function OperadoresModule({ userRol, puedeEditar }) {
@@ -354,6 +355,7 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
         dispatch({type:"ADD_ASISTENCIA", payload: asisPayload});
         postAsistencia(asisPayload).catch(e => console.warn('[postAsistencia]:', e));
       });
+      showToast("Asistencia guardada ✓", "success");
       setVista("resumen");
     };
 
@@ -537,11 +539,13 @@ export default function OperadoresModule({ userRol, puedeEditar }) {
         const merged = {...prev,...payload};
         dispatch({type:"UPD_PAGO_SEM",payload: merged});
         postPagoSemana(merged).catch(e => console.warn('[postPagoSemana upd]:', e));
+        showToast("Pago registrado ✓", "success");
       }
       else {
         const addPayload = {...payload, id: Date.now()};
         dispatch({type:"ADD_PAGO_SEM",payload: addPayload});
         postPagoSemana(addPayload).catch(e => console.warn('[postPagoSemana add]:', e));
+        showToast("Pago registrado ✓", "success");
         // Solo crear egreso si es pago nuevo (no actualización)
         const cid = state.cicloActivoId||1;
         // Verificar que no exista ya un egreso de esta semana

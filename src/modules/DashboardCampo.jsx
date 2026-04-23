@@ -27,6 +27,7 @@ import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
 import { solicitarPermisoPush } from '../core/push.js';
 import { postBitacora, postDieselCarga } from '../core/supabaseWriters.js';
+import { showToast } from '../components/mobile/Toast.jsx';
 
 
 export default function DashboardCampo({ userRol, usuario, onNavigate }) {
@@ -142,6 +143,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
       id: saved?.id || Date.now(),
       foto: null,
     }});
+    showToast("Trabajo registrado ✓", "success");
     cerrarModal();
   };
 
@@ -222,6 +224,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
       notas: formD.notas || '',
     }});
 
+    showToast("Diesel registrado ✓", "success");
     cerrarModal();
   };
 

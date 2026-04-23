@@ -1,14 +1,15 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 23 Abril 2026 (tarde, sesión 2)
+**Última actualización:** 23 Abril 2026 (noche)
 **Branch activo:** dev
-**Último commit dev:** 7e93081 (feat(bitacora): filtros por rango de fecha + sticky grid tipos en móvil + botón limpiar filtros)
+**Último commit dev:** 025613c (fix(roles): egresos→gastos socio + feat: Toast global en 7 módulos con feedback guardado)
 **Último commit main:** d2111af (merge: DashboardCampo Phase 1 + postDieselCarga helper + docs)
 **Tag de respaldo:** backup-pre-merge-23abr2026-session4
 **Estado:** DashboardCampo Phase 1 completado. GENERAL-01 completo. Refactor App.jsx en main. Pendiente merge de horasMaq + proyeccion + DashboardCampo Phase 1.
 
 ## Estado al cierre
 
+- Fix egresos→gastos acceso socio. Toast global implementado en 7 módulos.
 - DashboardCampo Phase 1 completado: diesel actualiza saldo cilindro, selector tractor, precio dinámico, validación saldo, botón asistencia.
 - postDieselCarga helper creado en supabaseWriters.js — Diesel.jsx refactoreado para usarlo también (fix latente: legacy_id ahora se envía).
 - GENERAL-01 claves residuales completas (5/5): tarifaStd, asistencias, pagosSemana, horasMaq, proyeccion.
@@ -49,14 +50,12 @@ El 🗑 en Bitácora usa patrón Supabase-first: `await deleteBitacora(b.id) →
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
 | 1 | Alta | Verificar dev URL (todo) → merge a main | 20 min | Deploy |
-| 2 | Media | Feedback guardado global (Toast) | 1 hr | UX |
-| 3 | Baja | Fix bug egresos/gastos rol socio | 15 min | Bug |
-| 4 | Baja | Centralizar POST inline restantes (OrdenDia, CajaChica) | 2 hrs | Refactor |
-| 5 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 6 | Baja | Migrar cosecha a Supabase | 45 min | Migración |
-| 7 | Futuro | DashboardCampo Phase 2: crear órdenes + WhatsApp desde dashboard | 2 hrs | Feature |
-| 8 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
-| 9 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
+| 2 | Baja | Centralizar POST inline restantes (OrdenDia, CajaChica) | 2 hrs | Refactor |
+| 3 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 4 | Baja | Migrar cosecha a Supabase | 45 min | Migración |
+| 5 | Futuro | DashboardCampo Phase 2: crear órdenes + WhatsApp desde dashboard | 2 hrs | Feature |
+| 6 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
+| 7 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
 
 ## Siguiente sesión — recomendación
 

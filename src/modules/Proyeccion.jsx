@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { postProyeccion, deleteProyeccion } from '../core/supabaseWriters.js';
+import { showToast } from '../components/mobile/Toast.jsx';
 
 
 export default function ProyeccionModule() {
@@ -187,6 +188,7 @@ export default function ProyeccionModule() {
     const payload = selRow ? {...p, id:selRow.id} : {...p, id:"P"+Date.now()};
     dispatch({ type: selRow ? "UPD_PROY" : "ADD_PROY", payload });
     postProyeccion(payload).catch(e => console.warn('[postProyeccion]:', e));
+    showToast("Partida guardada ✓", "success");
     setModalEdit(false); setSelRow(null); setForm({});
   };
   const editRow = r => { setSelRow(r); setForm({...r,cantidad:String(r.cantidad),costoUnit:String(r.costoUnit),ha:String(r.ha)}); setModalEdit(true); };
@@ -338,6 +340,7 @@ export default function ProyeccionModule() {
                             <button className="btn btn-sm btn-danger" onClick={()=>confirmarEliminar("¿Eliminar esta partida?",()=>{
                               dispatch({type:"DEL_PROY",payload:p.id});
                               deleteProyeccion(p.id).catch(e => console.warn('[deleteProyeccion]:', e));
+                              showToast("Partida eliminada", "info");
                             })}>🗑</button>
                           </div>
                         </td>

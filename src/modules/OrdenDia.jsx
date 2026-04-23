@@ -11,7 +11,7 @@ import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import MobileCard from '../components/mobile/MobileCard.jsx';
 import BottomSheet from '../components/mobile/BottomSheet.jsx';
 import SkeletonCard from '../components/mobile/SkeletonCard.jsx';
-import ToastContainer, { showToast } from '../components/mobile/Toast.jsx';
+import { showToast } from '../components/mobile/Toast.jsx';
 import { enviarNotifLocal } from '../core/push.js';
 import { postBitacora } from '../core/supabaseWriters.js';
 
@@ -498,7 +498,7 @@ export default function OrdenDia({ userRol, usuario }) {
       )}
 
       {/* Toast container (solo móvil) */}
-      {isMobile && <ToastContainer />}
+      {/* ToastContainer ahora vive en App.jsx (global) */}
 
       {/* Header */}
       <div style={{

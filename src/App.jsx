@@ -26,6 +26,7 @@ import {
 import VistaOperador from "./modules/VistaOperador.jsx";
 import useAppNavigation from "./core/useAppNavigation.js";
 import AppRouter from "./core/AppRouter.jsx";
+import ToastContainer from "./components/mobile/Toast.jsx";
 
 // ─── SUPABASE REALTIME SYNC ───────────────────────────────────────────────────
 // Canal único para sincronizar en tiempo real entre sesiones conectadas.
@@ -2003,6 +2004,7 @@ export default function App() {
         </div>
       </div>
     </Ctx.Provider>
+    <ToastContainer />
     </ErrorBoundary>
   );
 }
