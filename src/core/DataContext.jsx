@@ -533,6 +533,8 @@ export function reducer(s, a) {
         'solicitudesCompra','ordenesCompra','solicitudesGasto',
         'activos','personal','creditosRef','rentas',
         'cicloActual',
+        // Extra hidratada (maquinariaConsumos no se auto-gestiona — Maquinaria.jsx solo dispatcha al guardar)
+        'maquinariaConsumos',
       ];
       const next = { ...s };
       for (const k of GRUPO_A) {
