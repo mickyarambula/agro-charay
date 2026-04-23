@@ -2,10 +2,10 @@
 
 **Última actualización:** 22 Abril 2026 (mediodía)
 **Branch activo:** dev
-**Último commit código:** e0f1061 (fix(core): GENERAL-01 Fase 3 — migrar 10 claves vacías + cicloActual)
+**Último commit código:** f827ad8 (feat(diesel): productor auto desde lote via ciclo_asignaciones + indicador UI)
 **Último commit main:** 3bb4a85 (merge: dev → main — GENERAL-01 Fase 3)
 **Tag de respaldo:** backup-pre-merge-22abr2026-fase3
-**Estado:** GENERAL-01 Fases 1, 2 y 3 completadas. 28 claves Grupo A hidratadas desde Supabase. localStorage reducido a 21 claves (Grupo B + C + 5 pendientes: asistencias, pagosSemana, tarifaStd, horasMaq, proyeccion). Capital DELETE fix en producción.
+**Estado:** GENERAL-01 Fases 1-3 completadas + Capital DELETE + productor auto diesel. Dos bugs preexistentes documentados (DIESEL-ESPEJO-01, MAQUINARIA-CONSUMOS-01).
 
 ## Estado al cierre
 
@@ -35,19 +35,26 @@
 ### Bug DIESEL-01: RESUELTO
 Consecuencia de GENERAL-01. Resuelto al completar Fase 1 — datos diesel vienen directo de Supabase.
 
+### Bug DIESEL-ESPEJO-01: Cancelar diesel no cancela espejo en bitácora (nuevo)
+Severidad: Media. Al cancelar una carga de diesel (salida_interna), la fila en diesel se marca cancelado=true pero el espejo en bitacora_trabajos queda huérfano. No hay FK entre ambas tablas. Fix aprobado: Opción 3 — añadir columna bitacora_legacy_id a tabla diesel, guardarla al crear, usarla para hard-delete al cancelar. Requiere ALTER TABLE + cambios en guardarMovimiento + handler cancel. Sesión dedicada ~45 min.
+
+### Bug MAQUINARIA-CONSUMOS-01: 409 Conflict al guardar consumos L/ha (nuevo)
+Severidad: Baja. POST a maquinaria_consumos da 409 duplicate key. Preexistente. Probable causa: no verifica si ya existe antes de insertar (necesita UPSERT en vez de INSERT). Investigar en sesión futura ~20 min.
+
 ## Tabla de pendientes actualizada
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
 | 1 | Media | GENERAL-01: migrar 5 claves residuales (asistencias, pagosSemana, tarifaStd, horasMaq, proyeccion) | 60 min c/u | Migración |
 | 2 | Media | Refactor App.jsx — extraer routes (archivo grande) | 45 min | Refactor |
-| 3 | Media | Asignar productor auto desde lote al cargar tractor | 30 min | Feature Diesel |
-| 4 | Media | Cleanup imports huérfanos en Diesel.jsx | 10 min | Housekeeping |
+| 3 | Media | Cleanup imports huérfanos en Diesel.jsx | 10 min | Housekeeping |
+| 4 | Media | DIESEL-ESPEJO-01: cancelar diesel no borra espejo bitácora | 45 min | Bug |
 | 5 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
 | 6 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
 | 7 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
-| 8 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
-| 9 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
+| 8 | Baja | MAQUINARIA-CONSUMOS-01: 409 Conflict al guardar consumos L/ha | 20 min | Bug |
+| 9 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
+| 10 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
 
 ## Siguiente sesión — recomendación
 

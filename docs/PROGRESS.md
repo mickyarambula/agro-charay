@@ -1,5 +1,27 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 22 Abril 2026 (tarde-3)
+
+### ✅ Completado
+
+**GENERAL-01 Fase 3 — migración lote 10 claves + cicloActual**
+- 10 fetches añadidos en supabaseLoader, HYDRATE ampliado a 27 claves (28 menos cosecha devuelta a localStorage).
+- IIFE/PERSIST reducidos de 32 a 22 claves (simétricos). localStorage limpio.
+
+**Fix cosecha — prevenir data loss**
+- cosecha devuelta a IIFE/PERSIST y removida de HYDRATE (no tiene tabla Supabase aún).
+
+**Feature: productor auto desde lote al cargar tractor**
+- Helper productorIdFromLote via ciclo_asignaciones. productor_legacy_id ahora se escribe al POST de diesel.
+- Indicador UI verde "👤 Productor: X" debajo del select de lote. Warning amarillo si lote sin asignación.
+
+### 🐛 Bugs descubiertos (preexistentes)
+- DIESEL-ESPEJO-01: cancelar diesel no cancela espejo en bitácora. Fix diseñado (Opción 3), pendiente.
+- MAQUINARIA-CONSUMOS-01: 409 Conflict al guardar consumos L/ha. Pendiente investigar.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md.
+
 ## Sesión 22 Abril 2026 (tarde-2)
 
 ### ✅ Completado
