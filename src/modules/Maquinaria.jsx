@@ -243,13 +243,12 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
                                 if (!m._uuid) { console.warn('Tractor sin UUID:', m.nombre); return; }
                                 const skey = `${maqKey}-${labor}`;
                                 const body = {
-                                  id: existing?.id || newId,
                                   maquinaria_id: m._uuid,
                                   tipo_labor: labor,
                                   litros_por_ha: val,
                                   updated_at: new Date().toISOString()
                                 };
-                                fetch(`${SUPABASE_URL}/rest/v1/maquinaria_consumos`, {
+                                fetch(`${SUPABASE_URL}/rest/v1/maquinaria_consumos?on_conflict=maquinaria_id,tipo_labor`, {
                                   method: 'POST',
                                   headers: {
                                     apikey: SUPABASE_ANON_KEY,
@@ -260,14 +259,20 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
                                   body: JSON.stringify(body),
                                 }).then(res => {
                                   if (res.ok) {
-                                    setSavedConsumo(p => ({...p, [skey]: true}));
-                                    setTimeout(() => setSavedConsumo(p => ({...p, [skey]: false})), 2000);
+                                    setSavedConsumo(p => ({...p, [skey]: 'ok'}));
+                                    setTimeout(() => setSavedConsumo(p => ({...p, [skey]: null})), 2000);
                                   } else {
+                                    setSavedConsumo(p => ({...p, [skey]: 'error'}));
+                                    setTimeout(() => setSavedConsumo(p => ({...p, [skey]: null})), 2000);
                                     res.text().then(t => console.error('Error guardando consumo:', t));
                                   }
-                                }).catch(e => console.warn('Consumo save fail:', e));
-                              }} style={{padding:'4px 10px',background:savedConsumo[`${maqKey}-${labor}`]?'#2d7a2d':'#1a3a0f',color:'#fff',border:'none',borderRadius:6,fontSize:11,cursor:'pointer',fontWeight:600,transition:'background 0.2s'}}>
-                                {savedConsumo[`${maqKey}-${labor}`] ? '✅' : '✓'}
+                                }).catch(e => {
+                                  setSavedConsumo(p => ({...p, [skey]: 'error'}));
+                                  setTimeout(() => setSavedConsumo(p => ({...p, [skey]: null})), 2000);
+                                  console.warn('Consumo save fail:', e);
+                                });
+                              }} style={{padding:'4px 10px',background:savedConsumo[`${maqKey}-${labor}`]==='ok'?'#2d7a2d':savedConsumo[`${maqKey}-${labor}`]==='error'?'#c84b4b':'#1a3a0f',color:'#fff',border:'none',borderRadius:6,fontSize:11,cursor:'pointer',fontWeight:600,transition:'background 0.2s',whiteSpace:'nowrap'}}>
+                                {savedConsumo[`${maqKey}-${labor}`]==='ok'?'✅':savedConsumo[`${maqKey}-${labor}`]==='error'?'❌ Error':'✓'}
                               </button>
                             </React.Fragment>
                           );

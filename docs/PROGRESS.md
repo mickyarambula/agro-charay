@@ -1,5 +1,23 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 22 Abril 2026 (noche, sesión 2)
+
+### ✅ Completado
+
+**Merge a main** — DIESEL-ESPEJO-01 + REALTIME-MAPPER-GAP mergeados a main (46b1fcf). Tag backup-pre-merge-22abr2026-session2.
+
+**MAQUINARIA-CONSUMOS-01 resuelto** — 409 Conflict al guardar consumos L/ha en maquinaria_consumos.
+- Causa raíz 1 (409): POST usaba `resolution=merge-duplicates` que resuelve por PK, pero el conflicto real era en UNIQUE constraint compuesta `(maquinaria_id, tipo_labor)`. Fix: `?on_conflict=maquinaria_id,tipo_labor` en URL + remover `id` del body.
+- Causa raíz 2 (display): `maquinariaConsumos` no estaba en whitelist GRUPO_A de HYDRATE_FROM_SUPABASE en DataContext.jsx — el loader traía los datos de Supabase pero el reducer los descartaba. Fix: añadir a whitelist.
+- Bonus: feedback visual en botón ✓ (✅ ok / ❌ error / ✓ default) con timeout 2s.
+- Commit: 7cac871
+
+### 🎓 Lección aprendida
+**Whitelist GRUPO_A es un gate silencioso.** Si una clave se añade al loader pero no a GRUPO_A, los datos llegan del fetch pero se descartan en el dispatch sin warning. Al migrar cualquier clave nueva a Supabase, verificar ambos: loader + whitelist.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — tabla actualizada.
+
 ## Sesión 22 Abril 2026 (noche)
 
 ### ✅ Completado
