@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { postCapital, deleteCapital } from '../core/supabaseWriters.js';
+import { showToast } from '../components/mobile/Toast.jsx';
 
 
 export default function CapitalModule({ userRol, puedeEditar }) {
@@ -52,6 +53,7 @@ export default function CapitalModule({ userRol, puedeEditar }) {
       const saved = await postCapital(1, formA);
       if (!saved) return;
       dispatch({ type: "ADD_APORTACION", payload: { ...formA, id: saved.id, monto: parseFloat(formA.monto) || 0 } });
+      showToast("Movimiento registrado ✓", "success");
       setModalA(false);
       setFormA(emptyA);
     } finally {
@@ -67,6 +69,7 @@ export default function CapitalModule({ userRol, puedeEditar }) {
       const saved = await postCapital(-1, formR);
       if (!saved) return;
       dispatch({ type: "ADD_RETIRO", payload: { ...formR, id: saved.id, monto: parseFloat(formR.monto) || 0 } });
+      showToast("Movimiento registrado ✓", "success");
       setModalR(false);
       setFormR(emptyR);
     } finally {
@@ -103,7 +106,7 @@ export default function CapitalModule({ userRol, puedeEditar }) {
                   <td style={{background:bg,fontSize:12}}>{mv.concepto}</td>
                   <td style={{background:bg,fontSize:11,color:"#8a8070"}}>{mv.referencia}</td>
                   <td style={{background:bg,textAlign:"right",fontFamily:"monospace",fontWeight:700,color:mv.signo===1?"#2d5a1b":"#c0392b"}}>{mv.signo===1?"+":"-"}{mxnFmt(mv.monto)}</td>
-                  <td style={{background:bg}}>{userRol==="admin"&&<button className="btn btn-sm btn-danger" onClick={()=>confirmarEliminar("¿Eliminar este movimiento?",async ()=>{ const ok = await deleteCapital(mv.id); if (ok) dispatch({type:mv.signo===1?"DEL_APORTACION":"DEL_RETIRO",payload:mv.id}); else alert("Error al eliminar en servidor"); })}>🗑</button>}</td>
+                  <td style={{background:bg}}>{userRol==="admin"&&<button className="btn btn-sm btn-danger" onClick={()=>confirmarEliminar("¿Eliminar este movimiento?",async ()=>{ const ok = await deleteCapital(mv.id); if (ok) { dispatch({type:mv.signo===1?"DEL_APORTACION":"DEL_RETIRO",payload:mv.id}); showToast("Movimiento eliminado", "info"); } else { showToast("Error al eliminar en servidor", "error"); } })}>🗑</button>}</td>
                 </tr>);
               })}
             </tbody>

@@ -27,6 +27,7 @@ const mxn = n => (parseFloat(n)||0).toLocaleString('es-MX',{style:'currency',cur
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
 import { postBitacora, deleteBitacora } from '../core/supabaseWriters.js';
+import { showToast } from '../components/mobile/Toast.jsx';
 
 
 export default function BitacoraModule({ userRol, puedeEditar }) {
@@ -291,6 +292,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
           ref: "bitacora",
         }});
       }
+      showToast("Registro guardado ✓", "success");
       setTipoModal(null); setFormInsumo({...emptyBase, insumoId:"", producto:"", dosis:"", unidad:"L/ha", haAplicadas:""});
     } finally {
       setSavingInsumo(false);
@@ -314,6 +316,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
       if(f.litros) dispatch({ type:"ADD_DIESEL", payload:{ productorId:null, fecha:f.fecha, litros:parseFloat(f.litros)||0, precioLitro:parseFloat(f.precioLitro)||27, unidad:maqId||"Tractor", loteId:parseInt(f.loteId), concepto:f.actividad||"Registro campo", operador:f.operador, formaPago:"credito" }});
+      showToast("Registro guardado ✓", "success");
       setTipoModal(null); setFormDiesel({...emptyBase, tractorId:"", litros:"", precioLitro:"27", actividad:""});
     } finally {
       setSavingDiesel(false);
@@ -335,6 +338,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
       const saved = await postBitacora(payload, state.cicloActivoId);
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
+      showToast("Registro guardado ✓", "success");
       setTipoModal(null); setFormRiego({...emptyBase, horasRiego:"", volumenM3:"", tipoRiego:"Gravedad"});
     } finally {
       setSavingRiego(false);
@@ -357,6 +361,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
       loteIdsF.forEach(lid=>{ const lote=state.lotes.find(l=>l.id===lid); if(lote) dispatch({type:"UPD_LOTE",payload:{...lote,fenologia:f.fenologia}}); });
+      showToast("Registro guardado ✓", "success");
       setTipoModal(null); setFormFenol({...emptyBase, fenologia:"Vegetativo", observacion:""});
     } finally {
       setSavingFenol(false);
@@ -378,6 +383,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
       const saved = await postBitacora(payload, state.cicloActivoId);
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
+      showToast("Registro guardado ✓", "success");
       setTipoModal(null); setFormReporte({...emptyBase, titulo:"", descripcion:""});
     } finally {
       setSavingReporte(false);
@@ -397,6 +403,7 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
       const saved = await postBitacora(payload, state.cicloActivoId);
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
+      showToast("Registro guardado ✓", "success");
       setTipoModal(null); setFormFoto({...emptyBase, descripcion:"", fotoData:null}); setFotoPreview(null);
     } finally {
       setSavingFoto(false);

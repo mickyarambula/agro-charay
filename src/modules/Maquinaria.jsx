@@ -28,6 +28,7 @@ import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
 import { postHorasMaq, deleteHorasMaq } from '../core/supabaseWriters.js';
+import { showToast } from '../components/mobile/Toast.jsx';
 
 const TIPOS_LABOR_DIESEL = ['Barbecho','Rastreo','Siembra','Fertilización','Aplicación herbicida','Aplicación insecticida','Cosecha / apoyo'];
 
@@ -89,6 +90,7 @@ export default function MaquinariaModule({ userRol, puedeEditar: _puedeEditar })
     const payload = {...p, id: horasId, fuente: "manual"};
     dispatch({type:"ADD_HORAS", payload});
     postHorasMaq(payload).catch(e => console.warn('[postHorasMaq]:', e));
+    showToast("Horas registradas ✓", "success");
     setModalH(false); setFormH(emptyH);
   };
 
