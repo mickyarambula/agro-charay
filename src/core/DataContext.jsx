@@ -539,6 +539,8 @@ export function reducer(s, a) {
         'tarifaStd',
         // asistencias + pagosSemana: migrados (Operadores.jsx)
         'asistencias','pagosSemana',
+        // horasMaq: migrado (Maquinaria.jsx)
+        'horasMaq',
       ];
       const next = { ...s };
       for (const k of GRUPO_A) {

@@ -220,3 +220,32 @@ export async function deletePagoSemana(legacyId) {
   if (!res.ok) { const t = await res.text(); console.error('deletePagoSemana error:', t); return false; }
   return true;
 }
+
+// --- HORAS MAQ ---
+export async function postHorasMaq(record) {
+  const body = {
+    legacy_id: record.id,
+    maquinaria_id: String(record.maqId),
+    horas: record.horas || 0,
+    fecha: record.fecha,
+    nota: record.concepto || '',
+    fuente: record.fuente || 'manual',
+  };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/horas_maq`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) { const t = await res.text(); console.error('postHorasMaq error:', t); return null; }
+  const rows = await res.json();
+  return rows[0] || null;
+}
+
+export async function deleteHorasMaq(legacyId) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/horas_maq?legacy_id=eq.${legacyId}`, {
+    method: 'DELETE',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+  });
+  if (!res.ok) { const t = await res.text(); console.error('deleteHorasMaq error:', t); return false; }
+  return true;
+}

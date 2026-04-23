@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows, horasMaqRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -71,6 +71,7 @@ export async function loadStateFromSupabase() {
       supaFetch('tarifa_std').catch(() => []),
       supaFetch('asistencias').catch(() => []),
       supaFetch('pagos_semana').catch(() => []),
+      supaFetch('horas_maq').catch(() => []),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -229,7 +230,7 @@ export async function loadStateFromSupabase() {
       trabajos:           estadoExistente.trabajos           || [],
       // asistencias: viene directo de Supabase (tabla asistencias) — ver abajo
       // pagosSemana: viene directo de Supabase (tabla pagos_semana) — ver abajo
-      horasMaq:           estadoExistente.horasMaq           || [],
+      // horasMaq: viene directo de Supabase (tabla horas_maq) — ver abajo
       // capital: ahora viene de Supabase (ver mapeo abajo)
       creditosRef:        estadoExistente.creditosRef        || [],
       activos:            estadoExistente.activos            || [],
@@ -439,6 +440,14 @@ export async function loadStateFromSupabase() {
         total: parseFloat(r.total) || 0,
         pagado: r.pagado ?? true,
         detalle: r.detalle || [],
+      })),
+      horasMaq: (horasMaqRows || []).map(r => ({
+        id: r.legacy_id || Date.now(),
+        maqId: r.maquinaria_id,
+        horas: parseFloat(r.horas) || 0,
+        fecha: r.fecha,
+        concepto: r.nota || '',
+        fuente: r.fuente || 'manual',
       })),
       _supabaseCargado: Date.now(),
     };

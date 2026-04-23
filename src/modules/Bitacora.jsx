@@ -289,14 +289,6 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
           ref: "bitacora",
         }});
       }
-      if(f.maquinariaId && parseFloat(f.horas)>0) {
-        dispatch({type:"ADD_HORAS", payload:{
-          fecha:f.fecha, maqId:parseInt(f.maquinariaId),
-          operadorId:f.operadorId||"", loteId:parseInt(f.loteId)||"",
-          horas:parseFloat(f.horas),
-          concepto:`Aplicación: ${f.producto}`, fuente:"bitacora"
-        }});
-      }
       setTipoModal(null); setFormInsumo({...emptyBase, insumoId:"", producto:"", dosis:"", unidad:"L/ha", haAplicadas:""});
     } finally {
       setSavingInsumo(false);
@@ -320,11 +312,6 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
       if(f.litros) dispatch({ type:"ADD_DIESEL", payload:{ productorId:null, fecha:f.fecha, litros:parseFloat(f.litros)||0, precioLitro:parseFloat(f.precioLitro)||27, unidad:maqId||"Tractor", loteId:parseInt(f.loteId), concepto:f.actividad||"Registro campo", operador:f.operador, formaPago:"credito" }});
-      if(maqId && parseFloat(f.horas)>0) dispatch({type:"ADD_HORAS", payload:{
-        fecha:f.fecha, maqId:parseInt(maqId)||maqId, operadorId:f.operadorId||"",
-        loteId:parseInt(f.loteId)||"", horas:parseFloat(f.horas),
-        concepto:f.actividad||"Diesel", fuente:"bitacora"
-      }});
       setTipoModal(null); setFormDiesel({...emptyBase, tractorId:"", litros:"", precioLitro:"27", actividad:""});
     } finally {
       setSavingDiesel(false);
@@ -346,11 +333,6 @@ export default function BitacoraModule({ userRol, puedeEditar }) {
       const saved = await postBitacora(payload, state.cicloActivoId);
       if(!saved) return;
       dispatch({ type:"ADD_BITACORA", payload:{ ...payload, id: saved.id }});
-      if(f.maquinariaId && parseFloat(f.horas)>0) dispatch({type:"ADD_HORAS", payload:{
-        fecha:f.fecha, maqId:parseInt(f.maquinariaId), operadorId:f.operadorId||"",
-        loteId:parseInt(f.loteId)||"", horas:parseFloat(f.horas),
-        concepto:"Riego", fuente:"bitacora"
-      }});
       setTipoModal(null); setFormRiego({...emptyBase, horasRiego:"", volumenM3:"", tipoRiego:"Gravedad"});
     } finally {
       setSavingRiego(false);
