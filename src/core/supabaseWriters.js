@@ -249,3 +249,41 @@ export async function deleteHorasMaq(legacyId) {
   if (!res.ok) { const t = await res.text(); console.error('deleteHorasMaq error:', t); return false; }
   return true;
 }
+
+// --- PROYECCION ---
+export async function postProyeccion(record) {
+  const body = {
+    legacy_id: String(record.id),
+    etapa: record.etapa || '',
+    concepto: record.concepto || '',
+    categoria: record.categoria || '',
+    unidad: record.unidad || 'ha',
+    cantidad: record.cantidad || 0,
+    costo_unit: record.costoUnit || 0,
+    total_proy: record.totalProy || 0,
+    ha: record.ha || 0,
+    notas: record.notas || '',
+    vinculo: record.vinculo || 'manual',
+    egreso_ids: record.egresoIds || [],
+    real_monto: record.real || 0,
+    updated_at: new Date().toISOString(),
+  };
+  // UPSERT por legacy_id (para que UPD_PROY también funcione)
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/proyeccion?on_conflict=legacy_id`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) { const t = await res.text(); console.error('postProyeccion error:', t); return null; }
+  const rows = await res.json();
+  return rows[0] || null;
+}
+
+export async function deleteProyeccion(legacyId) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/proyeccion?legacy_id=eq.${encodeURIComponent(String(legacyId))}`, {
+    method: 'DELETE',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+  });
+  if (!res.ok) { const t = await res.text(); console.error('deleteProyeccion error:', t); return false; }
+  return true;
+}

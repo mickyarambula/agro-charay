@@ -468,7 +468,7 @@ export function reducer(s, a) {
     // Config
     case "SET_PRECIO_VENTA": return { ...s, precioVentaMXN: parseFloat(a.payload)||0 };
     // Proyección
-    case "ADD_PROY":    return { ...s, proyeccion: [...s.proyeccion, { ...a.payload, id:`U${Date.now()}` }] };
+    case "ADD_PROY":    return { ...s, proyeccion: [...s.proyeccion, { ...a.payload, id: a.payload.id ?? `U${Date.now()}` }] };
     case "UPD_PROY":    return { ...s, proyeccion: s.proyeccion.map(p => p.id===a.payload.id ? a.payload : p) };
     case "DEL_PROY":    return { ...s, proyeccion: s.proyeccion.filter(p => p.id!==a.payload) };
     case "SET_REND_ESP": return { ...s, rendimientoEsperado: parseFloat(a.payload)||0 };
@@ -541,6 +541,8 @@ export function reducer(s, a) {
         'asistencias','pagosSemana',
         // horasMaq: migrado (Maquinaria.jsx)
         'horasMaq',
+        // proyeccion: migrado (Proyeccion.jsx)
+        'proyeccion',
       ];
       const next = { ...s };
       for (const k of GRUPO_A) {

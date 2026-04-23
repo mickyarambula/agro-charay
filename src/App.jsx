@@ -1179,7 +1179,6 @@ export default function App() {
         invCampo:           parsed.invCampo            || [],
         colaOffline:        (parsed.colaOffline||[]).filter(x=>!x.sincronizado),
         // Pendientes de migrar a Supabase en futuras fases
-        proyeccion:      parsed.proyeccion      || [],
         // cosecha: sin tabla Supabase aún — persiste en localStorage hasta migración
         cosecha:         parsed.cosecha         || initState.cosecha,
       };
@@ -1205,7 +1204,7 @@ export default function App() {
         'usuariosExtra', 'usuariosBaseEdit',
         // Config temporal (pendiente de decisión Fase 2) + pendientes de migrar
         'alertaParams', 'creditoLimites', 'creditoParams', 'paramsCultivo',
-        'cultivosCatalogo', 'proyeccion',
+        'cultivosCatalogo',
         // cosecha: sin tabla Supabase aún — persiste en localStorage hasta migración
         'cosecha',
       ];
