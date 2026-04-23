@@ -1,32 +1,28 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 23 Abril 2026 (mañana)
+**Última actualización:** 23 Abril 2026 (mediodía)
 **Branch activo:** dev
-**Último commit dev:** 72837fd (feat(operadores): migrar asistencias + pagosSemana de localStorage a Supabase)
-**Último commit main:** 9b080ac (merge: MAQUINARIA-CONSUMOS-01 fix + docs)
-**Tag de respaldo:** backup-pre-merge-22abr2026-session3
-**Estado:** 3 claves residuales migradas a Supabase (tarifaStd, asistencias, pagosSemana). MAQUINARIA-CONSUMOS-01 en main. Pendiente merge de sesión actual.
+**Último commit dev:** 92accec (refactor(app): extraer renderPage → AppRouter.jsx + navegación → useAppNavigation.js (−90 líneas))
+**Último commit main:** 7f9c4fb (merge: horasMaq + proyeccion migración Supabase — GENERAL-01 residuales completas)
+**Tag de respaldo:** backup-pre-merge-23abr2026-session2
+**Estado:** GENERAL-01 claves residuales completas. Refactor App.jsx en dev pendiente merge.
 
 ## Estado al cierre
 
-- Merge a main: MAQUINARIA-CONSUMOS-01 (tag backup-pre-merge-22abr2026-session3, main=9b080ac).
-- tarifaStd migrada a Supabase: tabla tarifa_std (singleton), helper updateTarifaStd, RLS anon+authenticated.
-- asistencias migrada a Supabase: tabla asistencias (legacy_id bigint UNIQUE), helpers postAsistencia/deleteAsistencia.
-- pagosSemana migrada a Supabase: tabla pagos_semana (semana text UNIQUE, detalle jsonb), helpers postPagoSemana/deletePagoSemana, UPSERT por on_conflict=semana.
-- GRUPO_A whitelist actualizada: +tarifaStd, +asistencias, +pagosSemana, +maquinariaConsumos.
-- PERSIST_KEYS reducida: removidas tarifaStd, asistencias, pagosSemana.
-- GENERAL-01 Fases 1-3 confirmadas completas. Solo quedan 2 claves residuales sin tabla Supabase: horasMaq, proyeccion.
-- Lección RLS: tablas nuevas necesitan policy para rol `anon` además de `authenticated` — el proyecto usa anon key para todos los writes.
+- Merge a main: tarifaStd + asistencias + pagosSemana + horasMaq + proyeccion (7f9c4fb).
+- GENERAL-01 claves residuales completadas: las 5 (tarifaStd, asistencias, pagosSemana, horasMaq, proyeccion) migradas a Supabase.
+- horasMaq: 3 espejos muertos en Bitacora.jsx eliminados (dispatches ADD_HORAS fuente:"bitacora" que se ignoraban en el render).
+- proyeccion: fix reducer ADD_PROY id override (patrón GENERAL-02).
+- Refactor App.jsx: renderPage extraído a AppRouter.jsx, navegación extraída a useAppNavigation.js. App.jsx −90 líneas.
+- PERSIST_KEYS reducida a solo: Grupo B (UI/prefs) + Grupo C (permisos/config) + cosecha.
 
 ## Cambios técnicos de esta sesión
 
-1. **Merge a main**: MAQUINARIA-CONSUMOS-01 → main 9b080ac (session3 tag).
-2. **MAQUINARIA-CONSUMOS-01**: URL on_conflict + id removido del body + feedback visual botón + maquinariaConsumos en GRUPO_A.
-3. **tarifa_std**: tabla creada (singleton), RLS anon+auth, fetch en loader, updateTarifaStd en writers, Operadores.jsx cableado.
-4. **asistencias**: tabla recreada (schema alineado con código), RLS, fetch en loader, postAsistencia/deleteAsistencia en writers, 3 call sites en Operadores.jsx (guardarDia DEL+ADD, botón 🗑).
-5. **pagos_semana**: tabla recreada (schema alineado), RLS, fetch en loader, postPagoSemana (UPSERT)/deletePagoSemana en writers, 2 call sites en Operadores.jsx (ADD/UPD).
-6. **DataContext.jsx**: GRUPO_A +maquinariaConsumos, +tarifaStd, +asistencias, +pagosSemana.
-7. **App.jsx**: PERSIST_KEYS y savedState IIFE limpiados de las 3 claves migradas.
+1. **Merge a main**: tarifaStd + asistencias + pagosSemana → 7f9c4fb (session1).
+2. **horasMaq migrada**: tabla horas_maq, helpers postHorasMaq/deleteHorasMaq, 3 espejos muertos eliminados de Bitacora.jsx.
+3. **proyeccion migrada**: tabla proyeccion (legacy_id text, real_monto por palabra reservada), helpers postProyeccion (UPSERT)/deleteProyeccion, fix reducer ADD_PROY.
+4. **Merge a main**: horasMaq + proyeccion → main (session2).
+5. **Refactor App.jsx**: 2 archivos nuevos (useAppNavigation.js 42 líneas, AppRouter.jsx 64 líneas), −90 líneas netas de App.jsx (2097→2007). WidgetCBOTDashboard pasado como prop para evitar import circular.
 
 ## Bugs estructurales pendientes
 
@@ -36,21 +32,19 @@ Ninguno conocido activo.
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Media | Verificar dev URL (tarifaStd + asistencias + pagosSemana) → merge a main | 20 min | Deploy |
-| 2 | Baja | Migrar horasMaq a Supabase (o deprecar a favor de bitácora) | 30 min | Migración |
-| 3 | Baja | Migrar proyeccion a Supabase | 45 min | Migración |
-| 4 | Media | Refactor App.jsx — extraer routes | 45 min | Refactor |
-| 5 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 6 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
-| 7 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
-| 8 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
-| 9 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
+| 1 | Media | Verificar refactor App.jsx en dev URL → merge a main | 15 min | Deploy |
+| 2 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 3 | Baja | Alertas WhatsApp al socio | 2 hrs | Feature |
+| 4 | Baja | Dashboard histórico entre ciclos | 3 hrs | Feature |
+| 5 | Futuro | DashboardCampo Phase 1 — móvil encargado | 2 hrs | Feature |
+| 6 | Futuro | Cosecha Fase 2: boletas → pago banco → cierre | 3 hrs | Cuando llegue cosecha |
+| 7 | Futuro | Migrar cosecha a Supabase (última clave en localStorage) | 45 min | Migración |
 
 ## Siguiente sesión — recomendación
 
-**Opción A: #1 — Verificar dev URL + merge a main (20 min).** Clear site data en agro-charay-dev.vercel.app, smoke test tarifaStd + asistencias + pagosSemana + maquinaria consumos, tag backup, merge.
+**Opción A: #1 — Verificar dev URL + merge a main (15 min).** Smoke test navegación en agro-charay-dev.vercel.app, tag backup, merge.
 
-**Opción B: #2/#3 — Migrar horasMaq o proyeccion (30-45 min).** Las últimas 2 claves residuales. horasMaq podría deprecarse si bitácora cubre los casos.
+**Opción B: Feature work.** Con GENERAL-01 y el refactor cerrados, el sistema está estable. Buen momento para DashboardCampo Phase 1 o alertas WhatsApp.
 
 ## Reglas de trabajo
 
@@ -67,7 +61,8 @@ Ninguno conocido activo.
 - HYDRATE_FROM_SUPABASE whitelist protege contra claves no-Grupo-A
 - Para debugging, usar Claude Code directo (no Claude web paso a paso)
 - Cualquier mapper de Supabase (loader, realtime, etc.) debe tener schema simétrico
-- Verificar TODOS los paths de hidratación al añadir campo nuevo (loader + realtime channels + cualquier otro mapper)
-- Al añadir una clave al loader, verificar que también esté en GRUPO_A whitelist — sin esto los datos se descartan silenciosamente
-- **NUEVO: Tablas nuevas en Supabase necesitan RLS policy para rol `anon` — el proyecto usa anon key, no JWT autenticado**
-- **NUEVO: Generar id en el caller ANTES del dispatch cuando se necesita legacy_id para Supabase — el reducer genera id internamente pero no lo expone al caller**
+- Verificar TODOS los paths de hidratación al añadir campo nuevo
+- Al añadir una clave al loader, verificar que también esté en GRUPO_A whitelist
+- Tablas nuevas en Supabase necesitan RLS policy para rol `anon`
+- Generar id en el caller ANTES del dispatch cuando se necesita legacy_id para Supabase
+- **NUEVO: Al refactorear, pasar componentes declarados en App.jsx como props (no importar desde App.jsx — causa circular)**
