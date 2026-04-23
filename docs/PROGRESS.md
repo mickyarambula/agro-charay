@@ -1,5 +1,16 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 23 Abril 2026 (noche)
+
+### ✅ Completado
+
+**Fix acceso socio** — "egresos"→"gastos" en ACCESO de roles.js. Socio ahora puede ver Egresos del Ciclo.
+
+**Toast global** — ToastContainer montado en App.jsx (global, desktop+mobile). showToast integrado en 7 módulos: DashboardCampo (2), Bitácora (6), Operadores (3), Maquinaria (1), Proyección (2), Capital (3), OrdenDia (existente). Total: ~20 puntos de feedback al usuario.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — tabla actualizada.
+
 ## Sesión 23 Abril 2026 (tarde, sesión 2)
 
 ### ✅ Completado
