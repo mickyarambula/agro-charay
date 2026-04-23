@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows, horasMaqRows, proyeccionRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows, horasMaqRows, proyeccionRows, cosechaBoletasRows, cosechaCuadrillasRows, cosechaFletesRows, cosechaMaquilaRows, cosechaSecadoRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -73,6 +73,11 @@ export async function loadStateFromSupabase() {
       supaFetch('pagos_semana').catch(() => []),
       supaFetch('horas_maq').catch(() => []),
       supaFetch('proyeccion').catch(() => []),
+      supaFetch('cosecha_boletas').catch(() => []),
+      supaFetch('cosecha_cuadrillas').catch(() => []),
+      supaFetch('cosecha_fletes').catch(() => []),
+      supaFetch('cosecha_maquila').catch(() => []),
+      supaFetch('cosecha_secado').catch(() => []),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -237,7 +242,7 @@ export async function loadStateFromSupabase() {
       activos:            estadoExistente.activos            || [],
       rentas:             estadoExistente.rentas             || [],
       personal:           estadoExistente.personal           || [],
-      cosecha:            estadoExistente.cosecha            || undefined,
+      // cosecha: viene directo de Supabase (5 tablas cosecha_*) — ver abajo
       // proyeccion: viene directo de Supabase (tabla proyeccion) — ver abajo
       // inventario: NO se preserva — siempre viene de Supabase (fresco)
       // Workflow local (solicitudes, órdenes de compra, notificaciones, etc.)
@@ -465,6 +470,83 @@ export async function loadStateFromSupabase() {
         egresoIds: r.egreso_ids || [],
         real: parseFloat(r.real_monto) || 0,
       })),
+      cosecha: {
+        boletas: (cosechaBoletasRows || []).map(r => {
+          let extras = {};
+          try { const p = JSON.parse(r.notas || '{}'); if (p && typeof p === 'object') extras = p; } catch {}
+          return {
+            id: r.legacy_id || r.id,
+            boleta: r.num_boleta || '',
+            fecha: r.fecha || '',
+            codigo: extras.codigo || '',
+            productorId: productoresRows.find(p => p.id === r.productor_id)?.legacy_id || null,
+            productorNombre: extras.productorNombre || '',
+            cultivo: extras.cultivo || 'MAIZ',
+            bruto: parseFloat(r.kg_bruto) || 0,
+            tara: parseFloat(r.kg_tara) || 0,
+            pnsa: extras.pnsa ?? 0,
+            pna: parseFloat(r.kg_neto) || 0,
+            chofer: r.chofer || '',
+            camion: extras.camion || '',
+            placas: r.placas || '',
+            hum: parseFloat(r.humedad) || 0,
+            cancelado: r.cancelado === true,
+            _uuid: r.id,
+          };
+        }),
+        cuadrillas: (cosechaCuadrillasRows || []).map(r => {
+          let extras = {};
+          try { const p = JSON.parse(r.notas || '{}'); if (p && typeof p === 'object') extras = p; } catch {}
+          return {
+            id: r.legacy_id || r.id,
+            fecha: extras.fecha || '',
+            ha: extras.ha ?? (parseFloat(r.integrantes) || 0),
+            precioHa: extras.precioHa ?? (parseFloat(r.tarifa) || 0),
+            concepto: extras.concepto || r.nombre || '',
+            notas: extras.notas || '',
+            _uuid: r.id,
+          };
+        }),
+        fletes: (cosechaFletesRows || []).map(r => {
+          let extras = {};
+          try { const p = JSON.parse(r.notas || '{}'); if (p && typeof p === 'object') extras = p; } catch {}
+          return {
+            id: r.legacy_id || r.id,
+            fecha: r.fecha || extras.fecha || '',
+            toneladas: extras.toneladas ?? ((parseFloat(r.kg) || 0) / 1000),
+            precioTon: extras.precioTon ?? (parseFloat(r.tarifa_ton) || 0),
+            concepto: extras.concepto || r.transportista || '',
+            notas: extras.notas || '',
+            _uuid: r.id,
+          };
+        }),
+        maquila: (cosechaMaquilaRows || []).map(r => {
+          let extras = {};
+          try { const p = JSON.parse(r.notas || '{}'); if (p && typeof p === 'object') extras = p; } catch {}
+          return {
+            id: r.legacy_id || r.id,
+            fecha: r.fecha || extras.fecha || '',
+            ha: extras.ha ?? 0,
+            precioHa: extras.precioHa ?? 0,
+            concepto: extras.concepto || r.concepto || r.prestador || '',
+            notas: extras.notas || '',
+            _uuid: r.id,
+          };
+        }),
+        secado: (cosechaSecadoRows || []).map(r => {
+          let extras = {};
+          try { const p = JSON.parse(r.notas || '{}'); if (p && typeof p === 'object') extras = p; } catch {}
+          return {
+            id: r.legacy_id || r.id,
+            fecha: r.fecha || extras.fecha || '',
+            toneladas: extras.toneladas ?? ((parseFloat(r.kg_humedo) || 0) / 1000),
+            costoTon: extras.costoTon ?? (parseFloat(r.tarifa_punto) || 0),
+            concepto: extras.concepto || r.planta || '',
+            notas: extras.notas || '',
+            _uuid: r.id,
+          };
+        }),
+      },
       _supabaseCargado: Date.now(),
     };
 

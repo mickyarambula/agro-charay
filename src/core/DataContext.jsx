@@ -522,7 +522,7 @@ export function reducer(s, a) {
     case "SET_ROL": return { ...s, rolesPersonalizados: { ...(s.rolesPersonalizados||{}), [a.payload.id]: a.payload } };
     case "HYDRATE_FROM_SUPABASE": {
       const GRUPO_A = [
-        // Fase 1 — 16 claves originales (cosecha removida: sin tabla Supabase, persiste en localStorage)
+        // Fase 1 — 16 claves originales
         'productores','lotes','bitacora','insumos','diesel',
         'dispersiones','egresosManual','expedientes','ciclos',
         'maquinaria','operadores','ordenesTrabajo',
@@ -543,6 +543,8 @@ export function reducer(s, a) {
         'horasMaq',
         // proyeccion: migrado (Proyeccion.jsx)
         'proyeccion',
+        // cosecha: migrado a 5 tablas Supabase (boletas/cuadrillas/fletes/maquila/secado)
+        'cosecha',
       ];
       const next = { ...s };
       for (const k of GRUPO_A) {

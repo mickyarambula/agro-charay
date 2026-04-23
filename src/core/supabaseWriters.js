@@ -288,6 +288,212 @@ export async function deleteProyeccion(legacyId) {
   return true;
 }
 
+// ───── COSECHA ─────────────────────────────────────────────────────
+// 5 subtablas: boletas, cuadrillas, fletes, maquila, secado
+// El shape del state y el schema de Supabase no coinciden 1:1 — se
+// mapean los campos comunes a columnas, y los extras se guardan como
+// JSON en la columna `notas` para preservar fidelidad en round-trip.
+
+export async function postCosechaBoleta(record, cicloUuid, productorUuid) {
+  const legacyId = record.id || Date.now();
+  const extras = {
+    codigo: record.codigo || '',
+    cultivo: record.cultivo || '',
+    pnsa: record.pnsa || 0,
+    camion: record.camion || '',
+    productorNombre: record.productorNombre || '',
+  };
+  const body = {
+    legacy_id: legacyId,
+    ciclo_id: cicloUuid || null,
+    productor_id: productorUuid || null,
+    fecha: record.fecha || null,
+    num_boleta: record.boleta || '',
+    kg_bruto: parseFloat(record.bruto) || 0,
+    kg_tara: parseFloat(record.tara) || 0,
+    kg_neto: parseFloat(record.pna) || 0,
+    humedad: parseFloat(record.hum) || 0,
+    placas: record.placas || '',
+    chofer: record.chofer || '',
+    cancelado: record.cancelado === true,
+    notas: JSON.stringify(extras),
+  };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cosecha_boletas`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const t = await res.text(); console.error('postCosechaBoleta error:', t); return null; }
+    const rows = await res.json();
+    return rows[0] ? { ...rows[0], id: legacyId } : null;
+  } catch (e) { console.error('postCosechaBoleta exception:', e); return null; }
+}
+
+export async function postCosechaCuadrilla(record, cicloUuid) {
+  const legacyId = record.id || Date.now();
+  const extras = {
+    fecha: record.fecha || '',
+    ha: parseFloat(record.ha) || 0,
+    precioHa: parseFloat(record.precioHa) || 0,
+    concepto: record.concepto || '',
+    notas: record.notas || '',
+  };
+  const body = {
+    legacy_id: legacyId,
+    ciclo_id: cicloUuid || null,
+    nombre: record.concepto || '',
+    tarifa: parseFloat(record.precioHa) || 0,
+    notas: JSON.stringify(extras),
+  };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cosecha_cuadrillas`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const t = await res.text(); console.error('postCosechaCuadrilla error:', t); return null; }
+    const rows = await res.json();
+    return rows[0] ? { ...rows[0], id: legacyId } : null;
+  } catch (e) { console.error('postCosechaCuadrilla exception:', e); return null; }
+}
+
+export async function postCosechaFlete(record, cicloUuid) {
+  const legacyId = record.id || Date.now();
+  const toneladas = parseFloat(record.toneladas) || 0;
+  const precioTon = parseFloat(record.precioTon) || 0;
+  const extras = {
+    toneladas,
+    precioTon,
+    concepto: record.concepto || '',
+    notas: record.notas || '',
+  };
+  const body = {
+    legacy_id: legacyId,
+    ciclo_id: cicloUuid || null,
+    fecha: record.fecha || null,
+    transportista: record.concepto || '',
+    kg: toneladas * 1000,
+    tarifa_ton: precioTon,
+    importe: toneladas * precioTon,
+    notas: JSON.stringify(extras),
+  };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cosecha_fletes`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const t = await res.text(); console.error('postCosechaFlete error:', t); return null; }
+    const rows = await res.json();
+    return rows[0] ? { ...rows[0], id: legacyId } : null;
+  } catch (e) { console.error('postCosechaFlete exception:', e); return null; }
+}
+
+export async function postCosechaMaquila(record, cicloUuid) {
+  const legacyId = record.id || Date.now();
+  const ha = parseFloat(record.ha) || 0;
+  const precioHa = parseFloat(record.precioHa) || 0;
+  const extras = {
+    fecha: record.fecha || '',
+    ha,
+    precioHa,
+    concepto: record.concepto || '',
+    notas: record.notas || '',
+  };
+  const body = {
+    legacy_id: legacyId,
+    ciclo_id: cicloUuid || null,
+    fecha: record.fecha || null,
+    concepto: record.concepto || '',
+    importe: ha * precioHa,
+    notas: JSON.stringify(extras),
+  };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cosecha_maquila`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const t = await res.text(); console.error('postCosechaMaquila error:', t); return null; }
+    const rows = await res.json();
+    return rows[0] ? { ...rows[0], id: legacyId } : null;
+  } catch (e) { console.error('postCosechaMaquila exception:', e); return null; }
+}
+
+export async function postCosechaSecado(record, cicloUuid) {
+  const legacyId = record.id || Date.now();
+  const toneladas = parseFloat(record.toneladas) || 0;
+  const costoTon = parseFloat(record.costoTon) || 0;
+  const extras = {
+    toneladas,
+    costoTon,
+    concepto: record.concepto || '',
+    notas: record.notas || '',
+  };
+  const body = {
+    legacy_id: legacyId,
+    ciclo_id: cicloUuid || null,
+    fecha: record.fecha || null,
+    planta: record.concepto || '',
+    kg_humedo: toneladas * 1000,
+    tarifa_punto: costoTon,
+    importe: toneladas * costoTon,
+    notas: JSON.stringify(extras),
+  };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cosecha_secado`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const t = await res.text(); console.error('postCosechaSecado error:', t); return null; }
+    const rows = await res.json();
+    return rows[0] ? { ...rows[0], id: legacyId } : null;
+  } catch (e) { console.error('postCosechaSecado exception:', e); return null; }
+}
+
+export async function patchCosechaBoleta(legacyId, fields) {
+  if (legacyId == null) { console.error('patchCosechaBoleta: legacyId nulo'); return false; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cosecha_boletas?legacy_id=eq.${encodeURIComponent(String(legacyId))}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify(fields),
+    });
+    if (!res.ok) { const t = await res.text(); console.error('patchCosechaBoleta error:', t); return false; }
+    const rows = await res.json();
+    if (!rows || rows.length === 0) { console.warn('patchCosechaBoleta: sin filas afectadas para legacy_id', legacyId); return false; }
+    return true;
+  } catch (e) { console.error('patchCosechaBoleta exception:', e); return false; }
+}
+
+const COSECHA_TABLAS = {
+  boletas: 'cosecha_boletas',
+  cuadrillas: 'cosecha_cuadrillas',
+  fletes: 'cosecha_fletes',
+  maquila: 'cosecha_maquila',
+  secado: 'cosecha_secado',
+};
+
+export async function deleteCosechaRecord(tabla, legacyId) {
+  const tablaReal = COSECHA_TABLAS[tabla] || tabla;
+  if (legacyId == null) { console.error('[Cosecha] DELETE abortado: legacyId nulo'); return false; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${tablaReal}?legacy_id=eq.${encodeURIComponent(String(legacyId))}`, {
+      method: 'DELETE',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (!res.ok) { const t = await res.text(); console.error('deleteCosechaRecord error:', tablaReal, t); return false; }
+    return true;
+  } catch (e) { console.error('deleteCosechaRecord exception:', e); return false; }
+}
+
 /**
  * POST a tabla diesel — registra un movimiento (entrada/salida_interna/salida_externa).
  * Encapsula el payload completo para que DashboardCampo y Diesel.jsx compartan el mismo schema.
