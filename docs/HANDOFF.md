@@ -26,7 +26,7 @@
 | 2 | Media | Capturar teléfonos de 4 operadores sin WhatsApp (Javier, Jesús, Manuel, Ramón) | 10 min | Data |
 | 3 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
 | 4 | Baja | Limpiar GET inline OrdenDia (SUPA_URL2/SUPA_KEY2) | 15 min | Refactor |
-| 5 | Futuro | GENERAL-01 Fase 1: fix ciclo de vida localStorage → Supabase fuente única | 2-3 sesiones | Arquitectura |
+| 5 | Futuro | GENERAL-01 Fase 2: decisiones Grupo C (config temporal: alertaParams, creditoLimites, creditoParams, paramsCultivo, cultivosCatalogo) | 1 sesión | Arquitectura |
 | 6 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
 | 7 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
 

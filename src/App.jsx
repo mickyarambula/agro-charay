@@ -1177,8 +1177,7 @@ export default function App() {
         // Config temporal (pendiente de decisión Fase 2) + pendientes de migrar
         'alertaParams', 'creditoLimites', 'creditoParams', 'paramsCultivo',
         'cultivosCatalogo',
-        // cosecha: sin tabla Supabase aún — persiste en localStorage hasta migración
-        'cosecha',
+        // cosecha: migrada a Supabase (5 subtablas) — hidrata vía HYDRATE_FROM_SUPABASE, ya no persiste localStorage
       ];
       const toSave = {};
       for (const k of PERSIST_KEYS) {
