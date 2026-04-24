@@ -1,5 +1,21 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 23 Abril 2026 (noche)
+
+### ✅ Completado
+- **DashboardCampo Phase 2**: botón "🚜 Nueva orden" para encargado/admin. BottomSheet con form (operador, tractor, tipo, lotes multi-select, descripción, urgente).
+- **Flujo Supabase-first**: `crypto.randomUUID()` antes del dispatch; una orden por cada lote seleccionado. `postOrdenTrabajo` extendido en supabaseWriters.js para aceptar id/legacy_id/ciclo_id/descripcion/operador_id/maquinaria_id/lote_id/urgente como opcionales.
+- **Mensaje WhatsApp post-guardado**: preview en el sheet + botón "📲 Enviar WhatsApp". Si operador tiene teléfono, abre wa.me; si no, copia al portapapeles + Toast de aviso.
+- **Fix productor en chips**: lotes con mismo apodo ahora muestran "{apodo} — {apellido}" para desambiguar.
+- **Fix key warning**: `.map((orden, i) => ...)` con `key={`${orden.id}-${i}`}` en órdenes del día.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — próximo: diagnosticar por qué las órdenes no aparecen en OrdenDia.
+
+### 🐛 Bugs descubiertos
+1. **Órdenes no visibles en OrdenDia**: las órdenes creadas desde DashboardCampo no aparecen en el módulo OrdenDia (dice "Sin órdenes para hoy"). Posible causa: filtro de fecha UTC vs hora local, o OrdenDia filtra por un campo que DashboardCampo no setea.
+2. **Chips lotes aún duplicados**: mostrar productor ayuda pero lotes del mismo productor con mismo apodo siguen idénticos (ej: "AVANCE — CASTRO" x5). Solución: agregar folio_corto al chip display.
+
 ## Sesión 24 Abril 2026 (tarde)
 
 ### ✅ Completado
