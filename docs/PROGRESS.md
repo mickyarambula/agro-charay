@@ -1,5 +1,16 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 24 Abril 2026 (tarde — sesión 3)
+
+### ✅ Completado
+- **Merge fix diesel a main**: mensaje mejorado de calculadora en producción.
+- **Consumos provisionales**: insertadas 28 filas en maquinaria_consumos para T-2, T-4, T-6, Aspersora T-8 (7 labores × 4 tractores, valores copiados de T-1). Calculadora diesel ahora operativa para todos los equipos.
+- **Actualización supabase-js**: 2.103.0 → 2.104.1. Build OK. Warning httpSend pendiente de verificar en dev.
+- **Limpieza dead code en App.jsx**: eliminado helper restore muerto (8 líneas), 5 comentarios stale de migración GENERAL-01, lectura muerta de cosecha desde localStorage, header stale en PERSIST_KEYS. −23 líneas netas, cero cambio de comportamiento. Babel parse OK.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — merge limpieza a main, encargado ajustar consumos reales, migrar PATCH OrdenDia.
+
 ## Sesión 24 Abril 2026 (mediodía — sesión 2)
 
 ### ✅ Completado
