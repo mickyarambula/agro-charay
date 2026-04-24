@@ -97,5 +97,5 @@ Orden sugerido por prioridad de negocio (confirmar al arrancar Fase 3):
 ## Estado actual
 
 - [x] Fase 1 (completada incrementalmente, sesiones 21-23 abr 2026)
-- [ ] Fase 2
+- [x] Fase 2 (decisiones tomadas 24-abr-2026, documentadas en DECISIONS.md)
 - [ ] Fase 3 (por módulo, ver checklist dinámico en HANDOFF.md)
