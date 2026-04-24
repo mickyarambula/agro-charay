@@ -10,7 +10,6 @@ import { Modal } from '../shared/Modal.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import MobileCard from '../components/mobile/MobileCard.jsx';
 import BottomSheet from '../components/mobile/BottomSheet.jsx';
-import SkeletonCard from '../components/mobile/SkeletonCard.jsx';
 import { showToast } from '../components/mobile/Toast.jsx';
 import { enviarNotifLocal } from '../core/push.js';
 import {
@@ -83,48 +82,14 @@ export function enviarWhatsApp(orden, operador, lote, maquina) {
 export default function OrdenDia({ userRol, usuario }) {
   const isMobile = useIsMobile();
   const { state, dispatch } = useData();
-  const [cargando, setCargando] = useState(true);
   const [pullDistance, setPullDistance] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const pullStartRef = React.useRef(null);
   const PULL_THRESHOLD = 100;
 
-  const SUPA_URL2 = 'https://oryixvodfqojunnqbkln.supabase.co';
-  const SUPA_KEY2 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yeWl4dm9kZnFvanVubnFia2xuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4ODUzMjAsImV4cCI6MjA5MTQ2MTMyMH0.03nXDh5qj7N-RiCqXxGKvhfZSVWDmuV4hFwTOZ66ZCQ';
-
-  const recargarOrdenes = React.useCallback(() => {
-    return fetch(`${SUPA_URL2}/rest/v1/ordenes_trabajo?select=*&order=created_at.desc&limit=200`, {
-      headers: { apikey: SUPA_KEY2, Authorization: `Bearer ${SUPA_KEY2}` }
-    })
-    .then(r => r.json())
-    .then(rows => {
-      if (!Array.isArray(rows)) return;
-      const mapped = rows.map(r => ({
-        id: r.id, supabaseId: r.id,
-        fecha: r.fecha, tipoTrabajo: r.tipo,
-        estatus: r.estatus || 'pendiente',
-        operadorNombre: r.operador_nombre || '',
-        loteNombre: r.lote_nombre || '',
-        maquinariaNombre: r.maquinaria_nombre || '',
-        insumoNombre: r.insumo_nombre || '',
-        horaInicio: r.hora_inicio || '',
-        horasEstimadas: parseFloat(r.horas_estimadas) || 0,
-        notas: r.notas || '',
-        creadoPor: r.creado_por || '',
-        creadoEn: r.created_at,
-        origen: 'supabase',
-      }));
-      dispatch({ type: 'SYNC_STATE', payload: { ordenesTrabajo: mapped } });
-    });
-  }, [dispatch]);
-
-  React.useEffect(() => {
-    recargarOrdenes()
-      .then(() => setCargando(false))
-      .catch(e => { console.warn('OrdenDia fetch:', e); setCargando(false); });
-  }, [recargarOrdenes]);
-
-  // ── Pull-to-refresh (solo móvil) ─────────────────────────────
+  // Las órdenes se hidratan vía HYDRATE_FROM_SUPABASE en App.jsx y se
+  // mantienen frescas vía el canal Realtime de ordenes_trabajo. El pull-to-refresh
+  // existe como feedback UX; muestra el toast sin disparar fetch extra.
   React.useEffect(() => {
     if (!isMobile) return;
     const onTouchStart = (e) => {
@@ -142,14 +107,12 @@ export default function OrdenDia({ userRol, usuario }) {
       if (pullStartRef.current == null) { setPullDistance(0); return; }
       if (pullDistance >= PULL_THRESHOLD && !refreshing) {
         setRefreshing(true);
-        recargarOrdenes()
-          .then(() => showToast('✅ Órdenes actualizadas', 'success'))
-          .catch(() => showToast('❌ Error al recargar', 'error'))
-          .finally(() => {
-            setRefreshing(false);
-            setPullDistance(0);
-            pullStartRef.current = null;
-          });
+        setTimeout(() => {
+          showToast('✅ Órdenes actualizadas', 'success');
+          setRefreshing(false);
+          setPullDistance(0);
+          pullStartRef.current = null;
+        }, 300);
       } else {
         setPullDistance(0);
         pullStartRef.current = null;
@@ -163,7 +126,7 @@ export default function OrdenDia({ userRol, usuario }) {
       window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('touchend', onTouchEnd);
     };
-  }, [isMobile, pullDistance, refreshing, recargarOrdenes]);
+  }, [isMobile, pullDistance, refreshing]);
   const hoy = (() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -502,9 +465,7 @@ export default function OrdenDia({ userRol, usuario }) {
       </div>
 
       {/* Lista de órdenes */}
-      {isMobile && cargando && ordenes.length === 0 ? (
-        <SkeletonCard count={3} />
-      ) : ordenes.length === 0 ? (
+      {ordenes.length === 0 ? (
         <div style={{
           background: "white",
           borderRadius: 14,
