@@ -1,19 +1,20 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 24 Abril 2026 (mediodía, sesión 2)
+**Última actualización:** 24 Abril 2026 (tarde, sesión 3)
 **Branch activo:** dev
-**Último commit dev:** c43b4cc (fix(diesel): mejorar mensaje calculadora sin consumo configurado — muestra tractor y labor)
-**Último commit main:** 3217a33 (merge: GENERAL-01 completo — config temporal migrada a Supabase)
+**Último commit dev:** 2c30aaf (refactor: limpiar dead code — helper restore, comentarios stale, lectura muerta cosecha)
+**Último commit main:** 811a5dd (merge: fix diesel mensaje calculadora + docs cierre sesión)
 **Tag de respaldo:** backup-pre-merge-24abr2026-general01
-**Estado:** GENERAL-01 en producción. Calculadora diesel mejorada en dev.
+**Estado:** GENERAL-01 + fix diesel en producción. Dead code limpiado. supabase-js actualizado. Consumos provisionales para 5 tractores.
 
 ## Estado al cierre
 
-- GENERAL-01 Fase 3 mergeada a main — smoke test aprobado, producción estable.
-- Tag backup-pre-merge-24abr2026-general01 creado antes del merge.
-- Calculadora diesel: no era bug de código — solo T-1 tiene consumos configurados. Los otros 4 tractores (T-2, T-4, T-6, Aspersora T-8) no tienen datos en maquinaria_consumos.
-- Mensaje mejorado: ahora muestra nombre del tractor + tipo de labor + indicación de configurar en Maquinaria → ⛽. Estilo ámbar warning en vez de gris neutro.
-- DashboardCampo Phase 2 en producción (main 394cea3).
+- GENERAL-01 en producción (main). Smoke test aprobado.
+- Fix diesel (mensaje calculadora) en producción (main).
+- Consumos provisionales insertados para T-2, T-4, T-6, Aspersora T-8 (mismos valores que T-1). Encargado debe ajustar a valores reales desde Maquinaria → ⛽.
+- supabase-js actualizado de 2.103.0 a 2.104.1.
+- Dead code limpiado en App.jsx: helper restore muerto, 5 comentarios stale de migración, lectura muerta de cosecha, header stale en PERSIST_KEYS. −23 líneas netas.
+- Calculadora diesel operativa para los 5 tractores.
 
 ## Bugs estructurales pendientes
 
@@ -23,21 +24,19 @@
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Alta | Merge fix diesel (mensaje calculadora) de dev a main | 10 min | Deploy |
-| 2 | Media | Capturar teléfonos de 4 operadores sin WhatsApp (Javier, Jesús, Manuel, Ramón) | 10 min | Data |
-| 3 | Media | Configurar consumos L/ha para T-2, T-4, T-6, Aspersora T-8 (encargado con datos reales) | 20 min | Data |
-| 4 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 5 | Baja | Limpiar dead code: helper restore en App.jsx, comentarios stale en PERSIST_KEYS/IIFE | 15 min | Refactor |
-| 6 | Baja | Migrar PATCH inline de OrdenDia (completar/editar) a supabaseWriters.js | 30 min | Refactor |
-| 7 | Futuro | Permisos/roles Grupo C restante → Supabase | 2 hrs | Arquitectura |
-| 8 | Futuro | Diesel: asignar productor automático desde lote al cargar tractor | 45 min | Feature |
-| 9 | Futuro | Panel Daniela: exportación a formatos contables | 2 hrs | Feature |
-| 10 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
-| 11 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
+| 1 | Alta | Merge limpieza + supabase-js de dev a main | 10 min | Deploy |
+| 2 | Media | Encargado: ajustar consumos L/ha reales para T-2, T-4, T-6, Aspersora T-8 en Maquinaria → ⛽ | 20 min | Data |
+| 3 | Media | Capturar teléfonos de 4 operadores sin WhatsApp (Javier, Jesús, Manuel, Ramón) | 10 min | Data |
+| 4 | Media | Migrar PATCH inline de OrdenDia (completar/editar) a supabaseWriters.js | 30 min | Refactor |
+| 5 | Futuro | Permisos/roles Grupo C restante → Supabase | 2 hrs | Arquitectura |
+| 6 | Futuro | Diesel: asignar productor automático desde lote al cargar tractor | 45 min | Feature |
+| 7 | Futuro | Panel Daniela: exportación a formatos contables | 2 hrs | Feature |
+| 8 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
+| 9 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
 
 ## Siguiente sesión — recomendación
 
-Merge rápido del fix diesel a main (10 min). Después, el encargado debería configurar los consumos L/ha reales para los 4 tractores sin datos desde Maquinaria → ⛽. Con eso, la calculadora diesel queda 100% operativa para todos los equipos.
+Merge rápido de limpieza + supabase-js a main (10 min). Después, migrar PATCH inline de OrdenDia a supabaseWriters.js (#4, 30 min) — es el último refactor pendiente de baja complejidad.
 
 ## Reglas de trabajo
 

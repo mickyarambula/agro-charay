@@ -1120,42 +1120,21 @@ export default function App() {
       if (!s) return {};
       const parsed = JSON.parse(s);
 
-      // Helper: si parsed tiene el key con datos reales úsalo, si no usa initState
-      const restore = (key, fallback) => {
-        const v = parsed[key];
-        if (v === undefined || v === null) return fallback;
-        if (Array.isArray(v) && v.length === 0) return fallback; // array vacío → usar initState
-        return v;
-      };
-
-      // NOTA: Grupo A (Fase 1 + Fase 3) viene por HYDRATE_FROM_SUPABASE — ya no se lee de localStorage:
-      // Fase 1: productores, lotes, bitacora, insumos, diesel, dispersiones, egresosManual,
-      //   expedientes, ciclos, maquinaria, operadores, ordenesTrabajo, capital, cosecha,
-      //   inventario, cicloActivoId. `trabajos` también se quita (valor no confiable).
-      // Fase 3: cicloActual, creditosRef, activos, rentas, personal, solicitudesCompra,
-      //   ordenesCompra, solicitudesGasto, recomendaciones, notificaciones, delegaciones.
       return {
-        // Grupo C (permisos / roles) + config temporal
-        // alertaParams: migrado a Supabase (tabla configuracion) — hidrata vía HYDRATE_FROM_SUPABASE
-        // creditoLimites: migrado a Supabase (tabla credito_limites) — hidrata vía HYDRATE_FROM_SUPABASE
+        // Grupo C (permisos / roles)
         alertasLeidas:   parsed.alertasLeidas   || [],
         usuariosExtra:   parsed.usuariosExtra   || [],
         usuariosBaseEdit:parsed.usuariosBaseEdit || {},
         permisosUsuario: parsed.permisosUsuario || {},
         permisosGranulares: parsed.permisosGranulares || {},
         rolesPersonalizados: parsed.rolesPersonalizados || {},
-        // creditoParams: migrado a Supabase (tabla configuracion) — hidrata vía HYDRATE_FROM_SUPABASE
-        // paramsCultivo: migrado a Supabase (tabla params_cultivo) — hidrata vía HYDRATE_FROM_SUPABASE
-        // cultivosCatalogo: migrado a Supabase — hidrata vía HYDRATE_FROM_SUPABASE
         // Grupo B (UI local / preferencias)
         cultivoActivo:      parsed.cultivoActivo       || null,
         precioVentaMXN:     parsed.precioVentaMXN      || initState.precioVentaMXN,
         rendimientoEsperado:parsed.rendimientoEsperado || initState.rendimientoEsperado,
         invCampo:           parsed.invCampo            || [],
         colaOffline:        (parsed.colaOffline||[]).filter(x=>!x.sincronizado),
-        // Pendientes de migrar a Supabase en futuras fases
-        // cosecha: sin tabla Supabase aún — persiste en localStorage hasta migración
-        cosecha:         parsed.cosecha         || initState.cosecha,
+        // Grupo A + config Fase 3 + cosecha → HYDRATE_FROM_SUPABASE
       };
     } catch(e) {
       console.warn('Error restaurando localStorage:', e);
@@ -1177,9 +1156,7 @@ export default function App() {
         // Grupo C (permisos / roles)
         'permisosUsuario', 'permisosGranulares', 'rolesPersonalizados',
         'usuariosExtra', 'usuariosBaseEdit',
-        // Config temporal (pendiente de decisión Fase 2) + pendientes de migrar
-        // alertaParams, creditoParams, paramsCultivo, cultivosCatalogo, creditoLimites: migrados a Supabase (Fase 3.1-3.4 — GENERAL-01 completo)
-        // cosecha: migrada a Supabase (5 subtablas) — hidrata vía HYDRATE_FROM_SUPABASE, ya no persiste localStorage
+        // Solo Grupo B (UI prefs) + Grupo C (permisos/roles) — todo lo demás viene de Supabase
       ];
       const toSave = {};
       for (const k of PERSIST_KEYS) {
