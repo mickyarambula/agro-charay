@@ -551,3 +551,158 @@ export async function postDieselCarga(record, { registradoPor } = {}) {
     return null;
   }
 }
+
+// ───── ÓRDENES DE TRABAJO (OrdenDia) ────────────────────────────
+// Tabla ordenes_trabajo. Usa id (uuid generado por Supabase) como PK.
+// Helpers extraídos de OrdenDia.jsx (guardar/completar/actualizar).
+
+export async function postOrdenTrabajo(orden, operador, lote, maquina) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/ordenes_trabajo`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify({
+        fecha: orden.fecha,
+        tipo: orden.tipoTrabajo,
+        estatus: orden.estatus || 'pendiente',
+        operador_nombre:   operador?.nombre || '',
+        maquinaria_nombre: maquina?.nombre || '',
+        lote_nombre:       lote?.apodo || lote?.nombre || '',
+        insumo_nombre:     orden.insumoNombre || '',
+        hora_inicio:       orden.horaInicio || null,
+        horas_estimadas:   parseFloat(orden.horasEstimadas) || 0,
+        notas:             orden.notas || '',
+        creado_por:        orden.creadoPor || '',
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('[Supabase] orden POST failed:', res.status, errText);
+      return null;
+    }
+    const rows = await res.json();
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return row?.id || null;
+  } catch (e) { console.warn('[Supabase] orden save failed:', e.message); return null; }
+}
+
+export async function patchOrdenTrabajoCompletar(orden) {
+  try {
+    const wid = orden?.supabaseId || orden?.id;
+    if (!wid) return false;
+    await fetch(`${SUPABASE_URL}/rest/v1/ordenes_trabajo?id=eq.${encodeURIComponent(String(wid))}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({
+        estatus: 'completado',
+        hora_fin: new Date().toISOString().slice(0,19),
+      }),
+    });
+    return true;
+  } catch (e) { console.warn('[Supabase] orden update failed:', e.message); return false; }
+}
+
+export async function patchOrdenTrabajo(orden, operador, lote, maquina) {
+  try {
+    const wid = orden?.supabaseId || orden?.id;
+    if (!wid) return false;
+    await fetch(`${SUPABASE_URL}/rest/v1/ordenes_trabajo?id=eq.${encodeURIComponent(String(wid))}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({
+        tipo: orden.tipoTrabajo,
+        operador_nombre:   operador?.nombre || '',
+        maquinaria_nombre: maquina?.nombre || '',
+        lote_nombre:       lote?.apodo || lote?.nombre || '',
+        insumo_nombre:     orden.insumoNombre || '',
+        hora_inicio:       orden.horaInicio || null,
+        horas_estimadas:   parseFloat(orden.horasEstimadas) || 0,
+        notas:             orden.notas || '',
+      }),
+    });
+    return true;
+  } catch (e) { console.warn('[Supabase] orden patch failed:', e.message); return false; }
+}
+
+// ───── CAJA CHICA ───────────────────────────────────────────────
+// Tablas: caja_chica_fondos, caja_chica_movimientos. Usan id (uuid)
+// como PK. Helpers extraídos de CajaChica.jsx (guardar/aprobar/rechazar).
+
+export async function postCajaChicaMovimiento(payload) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/caja_chica_movimientos`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(payload),
+    });
+    return true;
+  } catch (e) { console.warn('[Supabase] caja_chica gasto fail:', e); return false; }
+}
+
+export async function patchCajaChicaMovimiento(id, fields) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/caja_chica_movimientos?id=eq.${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(fields),
+    });
+    return true;
+  } catch (e) { console.warn('[Supabase] caja_chica mov patch fail:', e); return false; }
+}
+
+export async function postCajaChicaFondo(payload) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/caja_chica_fondos`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(payload),
+    });
+    return true;
+  } catch (e) { console.warn('[Supabase] caja_chica fondo post fail:', e); return false; }
+}
+
+export async function patchCajaChicaFondo(id, fields) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/caja_chica_fondos?id=eq.${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(fields),
+    });
+    return true;
+  } catch (e) { console.warn('[Supabase] caja_chica fondo patch fail:', e); return false; }
+}

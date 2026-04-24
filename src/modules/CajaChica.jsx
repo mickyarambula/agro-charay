@@ -8,7 +8,10 @@ import React, { useState } from 'react';
 import { useData } from '../core/DataContext.jsx';
 import { T, mxnFmt } from '../shared/utils.js';
 import { Modal } from '../shared/Modal.jsx';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
+import {
+  postCajaChicaMovimiento, patchCajaChicaMovimiento,
+  postCajaChicaFondo, patchCajaChicaFondo,
+} from '../core/supabaseWriters.js';
 
 export default function CajaChicaModule({ userRol, usuario }) {
   const { state, dispatch } = useData();
@@ -65,29 +68,18 @@ export default function CajaChicaModule({ userRol, usuario }) {
       notas: formGasto.notas || '',
       created_at: new Date().toISOString(),
     };
-    try {
-      await fetch(`${SUPABASE_URL}/rest/v1/caja_chica_movimientos`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=minimal',
-        },
-        body: JSON.stringify({
-          id,
-          fondo_id: fondo?.id || null,
-          tipo: 'gasto',
-          concepto: payload.concepto,
-          monto: payload.monto,
-          foto_url: payload.foto_url,
-          estatus: 'pendiente',
-          registrado_por: payload.registradoPor,
-          fecha: payload.fecha,
-          notas: payload.notas,
-        }),
-      });
-    } catch(e) { console.warn('[Supabase] caja_chica gasto fail:', e); }
+    await postCajaChicaMovimiento({
+      id,
+      fondo_id: fondo?.id || null,
+      tipo: 'gasto',
+      concepto: payload.concepto,
+      monto: payload.monto,
+      foto_url: payload.foto_url,
+      estatus: 'pendiente',
+      registrado_por: payload.registradoPor,
+      fecha: payload.fecha,
+      notas: payload.notas,
+    });
     dispatch({ type: 'ADD_CAJA_CHICA_GASTO', payload });
     cerrarGasto();
   };
@@ -106,22 +98,11 @@ export default function CajaChicaModule({ userRol, usuario }) {
         monto_disponible: nuevoDisponible,
         estatus: 'activo',
       };
-      try {
-        await fetch(`${SUPABASE_URL}/rest/v1/caja_chica_fondos?id=eq.${encodeURIComponent(fondo.id)}`, {
-          method: 'PATCH',
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-            Prefer: 'return=minimal',
-          },
-          body: JSON.stringify({
-            monto_asignado: nuevoAsignado,
-            monto_disponible: nuevoDisponible,
-            estatus: 'activo',
-          }),
-        });
-      } catch(e) { console.warn('[Supabase] caja_chica fondo patch fail:', e); }
+      await patchCajaChicaFondo(fondo.id, {
+        monto_asignado: nuevoAsignado,
+        monto_disponible: nuevoDisponible,
+        estatus: 'activo',
+      });
       dispatch({ type: 'SET_CAJA_CHICA_FONDO', payload });
     } else {
       // Nuevo fondo
@@ -136,26 +117,15 @@ export default function CajaChicaModule({ userRol, usuario }) {
         fechaApertura: hoy,
         notas: formFondo.notas || '',
       };
-      try {
-        await fetch(`${SUPABASE_URL}/rest/v1/caja_chica_fondos`, {
-          method: 'POST',
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-            Prefer: 'return=minimal',
-          },
-          body: JSON.stringify({
-            id,
-            monto_asignado: monto,
-            monto_disponible: monto,
-            estatus: 'activo',
-            creado_por: payload.creadoPor,
-            fecha_apertura: hoy,
-            notas: payload.notas,
-          }),
-        });
-      } catch(e) { console.warn('[Supabase] caja_chica fondo post fail:', e); }
+      await postCajaChicaFondo({
+        id,
+        monto_asignado: monto,
+        monto_disponible: monto,
+        estatus: 'activo',
+        creado_por: payload.creadoPor,
+        fecha_apertura: hoy,
+        notas: payload.notas,
+      });
       dispatch({ type: 'SET_CAJA_CHICA_FONDO', payload });
     }
     cerrarFondo();
@@ -163,48 +133,17 @@ export default function CajaChicaModule({ userRol, usuario }) {
 
   const aprobarGasto = async (mov) => {
     if (!window.confirm(`¿Aprobar gasto "${mov.concepto}" por ${mxnFmt(mov.monto)}?`)) return;
-    try {
-      await fetch(`${SUPABASE_URL}/rest/v1/caja_chica_movimientos?id=eq.${encodeURIComponent(mov.id)}`, {
-        method: 'PATCH',
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=minimal',
-        },
-        body: JSON.stringify({ estatus: 'aprobado', aprobado_por: usuario?.usuario || userRol }),
-      });
-      if (fondo?.id) {
-        const nuevoDisp = Math.max(0, montoDisponible - mov.monto);
-        await fetch(`${SUPABASE_URL}/rest/v1/caja_chica_fondos?id=eq.${encodeURIComponent(fondo.id)}`, {
-          method: 'PATCH',
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-            Prefer: 'return=minimal',
-          },
-          body: JSON.stringify({ monto_disponible: nuevoDisp, estatus: nuevoDisp<=0 ? 'agotado' : 'activo' }),
-        });
-      }
-    } catch(e) { console.warn('[Supabase] aprobar gasto fail:', e); }
+    await patchCajaChicaMovimiento(mov.id, { estatus: 'aprobado', aprobado_por: usuario?.usuario || userRol });
+    if (fondo?.id) {
+      const nuevoDisp = Math.max(0, montoDisponible - mov.monto);
+      await patchCajaChicaFondo(fondo.id, { monto_disponible: nuevoDisp, estatus: nuevoDisp<=0 ? 'agotado' : 'activo' });
+    }
     dispatch({ type: 'UPDATE_CAJA_CHICA_MOV', payload: { id: mov.id, estatus: 'aprobado', aprobadoPor: usuario?.usuario || userRol, monto: mov.monto } });
   };
 
   const rechazarGasto = async (mov) => {
     if (!window.confirm(`¿Rechazar gasto "${mov.concepto}"?`)) return;
-    try {
-      await fetch(`${SUPABASE_URL}/rest/v1/caja_chica_movimientos?id=eq.${encodeURIComponent(mov.id)}`, {
-        method: 'PATCH',
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=minimal',
-        },
-        body: JSON.stringify({ estatus: 'rechazado', aprobado_por: usuario?.usuario || userRol }),
-      });
-    } catch(e) { console.warn('[Supabase] rechazar gasto fail:', e); }
+    await patchCajaChicaMovimiento(mov.id, { estatus: 'rechazado', aprobado_por: usuario?.usuario || userRol });
     dispatch({ type: 'UPDATE_CAJA_CHICA_MOV', payload: { id: mov.id, estatus: 'rechazado', aprobadoPor: usuario?.usuario || userRol } });
   };
 
