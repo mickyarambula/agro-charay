@@ -558,6 +558,28 @@ export async function postDieselCarga(record, { registradoPor } = {}) {
 
 export async function postOrdenTrabajo(orden, operador, lote, maquina) {
   try {
+    const body = {
+      fecha: orden.fecha,
+      tipo: orden.tipoTrabajo || orden.tipo,
+      estatus: orden.estatus || 'pendiente',
+      operador_nombre:   orden.operador_nombre ?? (operador?.nombre || ''),
+      maquinaria_nombre: orden.maquinaria_nombre ?? (maquina?.nombre || ''),
+      lote_nombre:       orden.lote_nombre ?? (lote?.apodo || lote?.nombre || ''),
+      insumo_nombre:     orden.insumo_nombre ?? (orden.insumoNombre || ''),
+      hora_inicio:       orden.hora_inicio ?? (orden.horaInicio || null),
+      horas_estimadas:   parseFloat(orden.horas_estimadas ?? orden.horasEstimadas) || 0,
+      notas:             orden.notas || '',
+      creado_por:        orden.creado_por ?? (orden.creadoPor || ''),
+    };
+    // Campos opcionales: solo se incluyen si el caller los provee
+    if (orden.id) body.id = orden.id;
+    if (orden.legacy_id != null) body.legacy_id = orden.legacy_id;
+    if (orden.ciclo_id) body.ciclo_id = orden.ciclo_id;
+    if (orden.descripcion != null) body.descripcion = orden.descripcion;
+    if (orden.operador_id) body.operador_id = orden.operador_id;
+    if (orden.maquinaria_id) body.maquinaria_id = orden.maquinaria_id;
+    if (orden.lote_id) body.lote_id = orden.lote_id;
+    if (orden.urgente != null) body.urgente = !!orden.urgente;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/ordenes_trabajo`, {
       method: 'POST',
       headers: {
@@ -566,19 +588,7 @@ export async function postOrdenTrabajo(orden, operador, lote, maquina) {
         'Content-Type': 'application/json',
         Prefer: 'return=representation',
       },
-      body: JSON.stringify({
-        fecha: orden.fecha,
-        tipo: orden.tipoTrabajo,
-        estatus: orden.estatus || 'pendiente',
-        operador_nombre:   operador?.nombre || '',
-        maquinaria_nombre: maquina?.nombre || '',
-        lote_nombre:       lote?.apodo || lote?.nombre || '',
-        insumo_nombre:     orden.insumoNombre || '',
-        hora_inicio:       orden.horaInicio || null,
-        horas_estimadas:   parseFloat(orden.horasEstimadas) || 0,
-        notas:             orden.notas || '',
-        creado_por:        orden.creadoPor || '',
-      }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       const errText = await res.text();
