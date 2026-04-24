@@ -1,19 +1,18 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 24 Abril 2026 (mediodía)
+**Última actualización:** 24 Abril 2026 (tarde)
 **Branch activo:** dev
-**Último commit dev:** 3c8ab69aadc365ffcffd062a9c04bab9b3772bb2
-**Último commit main:** 87a38fa (merge: responsive Bitácora + fix acceso socio + Toast global + docs)
-**Tag de respaldo:** backup-pre-merge-24abr2026
-**Estado:** Cosecha migrada a Supabase. Main pendiente de merge.
+**Último commit dev:** fa91e73 (refactor: centralizar POST inline OrdenDia + CajaChica → supabaseWriters.js)
+**Último commit main:** e53489c10be9a3e085f8e5cf81c54ee16499d4a5
+**Tag de respaldo:** backup-pre-merge-24abr2026-refactor
+**Estado:** Main al día. Refactor POST inline completo. Cosecha migrada.
 
 ## Estado al cierre
 
-- Cosecha migrada: 5 subtablas (boletas, cuadrillas, fletes, maquila, secado) leen y escriben desde Supabase.
-- cancelar/reactivar boleta sincroniza campo `cancelado` vía PATCH a Supabase.
-- Schema mismatch resuelto con JSON round-trip en columna `notas` (extras del state que no tienen columna dedicada).
-- Whitelist GRUPO_A incluye `cosecha`.
-- Main al día con merge anterior (87a38fa). Dev tiene cosecha pendiente de merge.
+- POST inline centralizados: OrdenDia (3 helpers) y CajaChica (4 helpers) extraídos a supabaseWriters.js.
+- Cosecha migrada a Supabase (5 subtablas + cancelar/reactivar boleta) — mergeado a main.
+- Todos los módulos con mutaciones a Supabase ahora usan helpers centralizados excepto: GET de recargarOrdenes en OrdenDia (deuda menor).
+- Dev y main sincronizados.
 
 ## Bugs estructurales pendientes
 
@@ -23,18 +22,15 @@ Ninguno activo.
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Alta | Verificar dev + merge cosecha a main | 20 min | Deploy |
-| 2 | Media | Centralizar POST inline restantes (OrdenDia, CajaChica) | 2 hrs | Refactor |
-| 3 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 4 | Futuro | DashboardCampo Phase 2: crear órdenes + WhatsApp desde dashboard | 2 hrs | Feature |
-| 5 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
-| 6 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
+| 1 | Alta | DashboardCampo Phase 2: crear órdenes + WhatsApp desde dashboard | 2 hrs | Feature |
+| 2 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 3 | Baja | Limpiar GET inline OrdenDia (SUPA_URL2/SUPA_KEY2) | 15 min | Refactor |
+| 4 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
+| 5 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
 
 ## Siguiente sesión — recomendación
 
-**Opción A: #1 — Verificar dev + merge cosecha a main (20 min).** Smoke test en dev, tag, merge.
-**Opción B: #2 — Centralizar POST inline (OrdenDia, CajaChica).** Limpieza técnica.
-**Opción C: #4 — DashboardCampo Phase 2.** Feature de alto impacto operativo.
+**DashboardCampo Phase 2**: crear órdenes de trabajo y generar mensaje WhatsApp para tractoristas desde el dashboard del encargado. Abrir chat nuevo con contexto limpio.
 
 ## Reglas de trabajo
 

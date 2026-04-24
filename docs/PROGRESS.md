@@ -1,5 +1,15 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 24 Abril 2026 (tarde)
+
+### ✅ Completado
+- **Merge cosecha a main**: tag backup-pre-merge-24abr2026-cosecha, commit db29ac7.
+- **Centralizar POST inline**: 10 fetch inline extraídos de OrdenDia (3) y CajaChica (6+1) → 7 helpers nuevos en supabaseWriters.js. ~188 líneas removidas de módulos.
+- **Merge refactor a main**: tag backup-pre-merge-24abr2026-refactor.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — próximo objetivo: DashboardCampo Phase 2.
+
 ## Sesión 24 Abril 2026 (mediodía)
 
 ### ✅ Completado
