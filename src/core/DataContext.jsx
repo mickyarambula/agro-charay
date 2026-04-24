@@ -541,6 +541,10 @@ export function reducer(s, a) {
         'cosecha',
         // cultivosCatalogo: migrado a tabla cultivos_catalogo (Fase 3 — GENERAL-01)
         'cultivosCatalogo',
+        // alertaParams + creditoParams: singletons en tabla configuracion (Fase 3.2)
+        'alertaParams', 'creditoParams',
+        // paramsCultivo: migrado a tabla params_cultivo (Fase 3.3)
+        'paramsCultivo',
       ];
       const next = { ...s };
       for (const k of GRUPO_A) {

@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows, horasMaqRows, proyeccionRows, cosechaBoletasRows, cosechaCuadrillasRows, cosechaFletesRows, cosechaMaquilaRows, cosechaSecadoRows, cultivosCatRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows, horasMaqRows, proyeccionRows, cosechaBoletasRows, cosechaCuadrillasRows, cosechaFletesRows, cosechaMaquilaRows, cosechaSecadoRows, cultivosCatRows, configuracionRows, paramsCultivoRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -79,7 +79,15 @@ export async function loadStateFromSupabase() {
       supaFetch('cosecha_maquila').catch(() => []),
       supaFetch('cosecha_secado').catch(() => []),
       supaFetch('cultivos_catalogo', 'order=legacy_id').catch(() => []),
+      supaFetch('configuracion').catch(() => []),
+      supaFetch('params_cultivo').catch(() => []),
     ]);
+
+    // Singletons de tabla configuracion (clave-valor jsonb)
+    const configMap = {};
+    for (const row of (configuracionRows || [])) {
+      if (row.clave && row.valor != null) configMap[row.clave] = row.valor;
+    }
 
     const productores = productoresRows.map(r => ({
       id: r.legacy_id, tipo: r.tipo, apPat: r.ap_pat||'', apMat: r.ap_mat||'',
@@ -217,10 +225,20 @@ export async function loadStateFromSupabase() {
     //     operativos con los de Supabase (evita duplicados).
     const configPreservada = {
       // Parámetros y configuración
-      alertaParams:       estadoExistente.alertaParams       || {},
-      creditoParams:      estadoExistente.creditoParams      || undefined,
+      // alertaParams + creditoParams: hidratan desde tabla configuracion (Fase 3.2)
+      alertaParams:       configMap.alertaParams  || estadoExistente.alertaParams  || {},
+      creditoParams:      configMap.creditoParams || estadoExistente.creditoParams || undefined,
       creditoLimites:     estadoExistente.creditoLimites     || {},
-      paramsCultivo:      estadoExistente.paramsCultivo      || {},
+      // paramsCultivo: reconstruido desde tabla params_cultivo (Fase 3.3) — ver abajo
+      paramsCultivo:      (() => {
+        const map = {};
+        for (const r of (paramsCultivoRows || [])) {
+          const key = r.variedad ? `${r.ciclo_id}|${r.cultivo_id}|${r.variedad}` : `${r.ciclo_id}|global`;
+          map[key] = { precio: Number(r.precio) || 0, rendimiento: Number(r.rendimiento) || 0 };
+          if (r.fecha_precio) map[key].fechaPrecio = r.fecha_precio;
+        }
+        return Object.keys(map).length > 0 ? map : (estadoExistente.paramsCultivo || {});
+      })(),
       // tarifaStd: viene directo de Supabase (tabla tarifa_std) — ver abajo
       // Permisos y roles
       permisosUsuario:    estadoExistente.permisosUsuario    || {},

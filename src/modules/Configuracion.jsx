@@ -54,6 +54,7 @@ const TODOS_MODULOS = [
   { id:"reportes",      label:"Reportes del Ciclo",   section:"Financiero" },
 ];
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
+import { upsertConfiguracion } from '../core/supabaseWriters.js';
 
 
 export default function ConfiguracionModule({ userRol }) {
@@ -588,7 +589,9 @@ export default function ConfiguracionModule({ userRol }) {
         const setLocal = setAlertaLocal;
         const upd = (k,v) => setAlertaLocal(s=>({...s,[k]:parseFloat(v)||0}));
         const guardar = () => {
+          const nuevoValor = { ...(state.alertaParams || {}), ...local };
           dispatch({type:"SET_ALERTA_PARAMS", payload:{...local}});
+          upsertConfiguracion('alertaParams', nuevoValor);
           setSavedAlerta(true);
           setTimeout(()=>setSavedAlerta(false), 2500);
         };

@@ -779,3 +779,69 @@ export async function deleteCultivoCatalogo(id) {
     return true;
   } catch (e) { console.error('deleteCultivoCatalogo exception:', e); return false; }
 }
+
+// ───── CONFIGURACION (key-value singleton) ──────────────────────
+// Tabla configuracion: clave PK text + valor jsonb. Usada para
+// alertaParams y creditoParams (Fase 3.2 — GENERAL-01).
+
+export async function upsertConfiguracion(clave, valor) {
+  if (!clave) { console.error('upsertConfiguracion: clave vacía'); return false; }
+  try {
+    const body = {
+      clave,
+      valor,
+      updated_at: new Date().toISOString(),
+    };
+    // UPSERT por clave (PK). Prefer resolution=merge-duplicates merge con on_conflict=clave.
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?on_conflict=clave`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const t = await res.text(); console.error('upsertConfiguracion error:', clave, t); return false; }
+    return true;
+  } catch (e) { console.error('upsertConfiguracion exception:', e); return false; }
+}
+
+// ───── PARAMS CULTIVO (mapa compuesto) ──────────────────────────
+// Tabla params_cultivo: ciclo_id + cultivo_id + variedad + precio + rendimiento.
+// Key shape en state: "cicloId|cultivoId|variedad" o "cicloId|global".
+// Variedad null ↔ key "cicloId|global". Fase 3.3 — GENERAL-01.
+
+export async function upsertParamsCultivo(key, data) {
+  if (!key) { console.error('upsertParamsCultivo: key vacía'); return false; }
+  try {
+    // Parsear key: "cicloId|cultivoId|variedad" o "cicloId|global"
+    const parts = String(key).split('|');
+    const cicloId = parts[0] ? parseInt(parts[0], 10) || null : null;
+    const cultivoId = (parts[1] && parts[1] !== 'global') ? parseInt(parts[1], 10) || null : null;
+    const variedad = (parts[2] && parts[1] !== 'global') ? parts[2] : null;
+    const body = {
+      ciclo_id: cicloId,
+      cultivo_id: cultivoId,
+      variedad,
+      precio: data.precio != null ? Number(data.precio) || 0 : 0,
+      rendimiento: data.rendimiento != null ? Number(data.rendimiento) || 0 : 0,
+      fecha_precio: data.fechaPrecio || null,
+      updated_at: new Date().toISOString(),
+    };
+    // UPSERT por combinación ciclo_id + cultivo_id + variedad (constraint nombre puede variar — usar merge-duplicates)
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/params_cultivo?on_conflict=ciclo_id,cultivo_id,variedad`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const t = await res.text(); console.error('upsertParamsCultivo error:', key, t); return false; }
+    return true;
+  } catch (e) { console.error('upsertParamsCultivo exception:', e); return false; }
+}
