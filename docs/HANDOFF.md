@@ -27,12 +27,11 @@
 | 1 | Alta | Merge limpieza + supabase-js de dev a main | 10 min | Deploy |
 | 2 | Media | Encargado: ajustar consumos L/ha reales para T-2, T-4, T-6, Aspersora T-8 en Maquinaria → ⛽ | 20 min | Data |
 | 3 | Media | Capturar teléfonos de 4 operadores sin WhatsApp (Javier, Jesús, Manuel, Ramón) | 10 min | Data |
-| 4 | Media | Migrar PATCH inline de OrdenDia (completar/editar) a supabaseWriters.js | 30 min | Refactor |
-| 5 | Futuro | Permisos/roles Grupo C restante → Supabase | 2 hrs | Arquitectura |
-| 6 | Futuro | Diesel: asignar productor automático desde lote al cargar tractor | 45 min | Feature |
-| 7 | Futuro | Panel Daniela: exportación a formatos contables | 2 hrs | Feature |
-| 8 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
-| 9 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
+| 4 | Futuro | Permisos/roles Grupo C restante → Supabase | 2 hrs | Arquitectura |
+| 5 | Futuro | Diesel: asignar productor automático desde lote al cargar tractor | 45 min | Feature |
+| 6 | Futuro | Panel Daniela: exportación a formatos contables | 2 hrs | Feature |
+| 7 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
+| 8 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
 
 ## Siguiente sesión — recomendación
 
