@@ -3,8 +3,8 @@
 **Última actualización:** 24 Abril 2026 (mañana)
 **Branch activo:** dev
 **Último commit dev:** fix(dashboardcampo): fecha local en vez de UTC + folioCorto en chips de lotes
-**Último commit main:** e53489c (merge: centralizar POST inline OrdenDia + CajaChica)
-**Tag de respaldo:** backup-pre-merge-24abr2026-refactor
+**Último commit main:** 394cea3 (merge: DashboardCampo Phase 2 — órdenes de trabajo + WhatsApp + fix timezone + folioCorto)
+**Tag de respaldo:** backup-pre-merge-24abr2026-dashcampo
 **Estado:** DashboardCampo Phase 2 estable con 2 fixes aplicados. Pendiente validación en campo.
 
 ## Estado al cierre
@@ -23,13 +23,12 @@
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
 | 1 | Alta | Validar en campo: crear orden desde DashboardCampo y verificar que aparece en OrdenDia | 10 min | Validación |
-| 2 | Media | Merge DashboardCampo Phase 2 a main (después de validar en campo) | 15 min | Deploy |
-| 3 | Media | Capturar teléfonos de 4 operadores sin WhatsApp (Javier, Jesús, Manuel, Ramón) | 10 min | Data |
-| 4 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 5 | Baja | Limpiar GET inline OrdenDia (SUPA_URL2/SUPA_KEY2) | 15 min | Refactor |
-| 6 | Futuro | GENERAL-01 Fase 1: fix ciclo de vida localStorage → Supabase fuente única | 2-3 sesiones | Arquitectura |
-| 7 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
-| 8 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
+| 2 | Media | Capturar teléfonos de 4 operadores sin WhatsApp (Javier, Jesús, Manuel, Ramón) | 10 min | Data |
+| 3 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 4 | Baja | Limpiar GET inline OrdenDia (SUPA_URL2/SUPA_KEY2) | 15 min | Refactor |
+| 5 | Futuro | GENERAL-01 Fase 1: fix ciclo de vida localStorage → Supabase fuente única | 2-3 sesiones | Arquitectura |
+| 6 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
+| 7 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
 
 ## Siguiente sesión — recomendación
 
