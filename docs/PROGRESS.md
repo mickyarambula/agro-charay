@@ -5,23 +5,35 @@
 ### ✅ Completado
 
 **Fix #1 — Órdenes DashboardCampo no visibles en OrdenDia (timezone bug)**
-- Root cause: `new Date().toISOString().split("T")[0]` devuelve fecha UTC. Después de las 18:00 MST (UTC-7), la fecha UTC rueda al día siguiente. DashboardCampo guardaba "2026-04-24" mientras OrdenDia filtraba por "2026-04-23" (fecha local).
+- Root cause: `new Date().toISOString().split("T")[0]` devuelve fecha UTC. Después de las 18:00 MST (UTC-7), la fecha UTC rueda al día siguiente.
 - Fix: reemplazar por `getFullYear()/getMonth()/getDate()` — fecha local, mismo patrón que OrdenDia.
-- Beneficio colateral: guardarTrabajo y guardarDiesel también usaban la misma variable `hoy`, así que quedan corregidos.
 
 **Fix #2 — Chips de lotes duplicados en multi-select de Nueva Orden**
-- Root cause: display mostraba solo "{apodo} — {productor}", pero múltiples lotes comparten apodo (ej: 5 lotes "AVANCE" del mismo productor).
-- Fix: formato ahora es "{apodo} {folioCorto} — {productor}" (ej: "CHEVETO 5 — CASTRO").
-- Aplicado tanto en chips del BottomSheet como en loteName de guardarOrden (para cards y WhatsApp).
+- Formato ahora es "{apodo} {folioCorto} — {productor}" (ej: "CHEVETO 5 — CASTRO").
+- Aplicado en chips del BottomSheet y en loteName de guardarOrden.
 
-Archivo modificado: `src/modules/DashboardCampo.jsx` (único).
+**Merge DashboardCampo Phase 2 a main**
+- Commit main: 394cea3. Tag: backup-pre-merge-24abr2026-dashcampo.
+- Validado en producción (agro-charay.vercel.app).
 
-### 🎓 Lección aprendida
+**GENERAL-01 Fase 1 — marcada como completada**
+- Las 5 tareas (HYDRATE_FROM_SUPABASE, loader dispatch, init sin localStorage, persist selectivo, loading state) ya estaban implementadas incrementalmente en sesiones anteriores.
+- cosecha removida de PERSIST_KEYS (ya está en Grupo A).
+- Plan actualizado en GENERAL-01-PLAN.md.
 
-**toISOString() es peligroso para fechas locales en México**: después de las 18:00 MST, UTC ya es el día siguiente. Usar siempre componentes locales (getFullYear/getMonth/getDate) para fechas que se comparan con filtros de UI local. Regla añadida a HANDOFF.md.
+**Refactor OrdenDia — eliminar GET inline Supabase**
+- Eliminado: SUPA_URL2, SUPA_KEY2, recargarOrdenes(), useEffect de carga, useState cargando, import SkeletonCard.
+- OrdenDia ahora lee exclusivamente de state.ordenesTrabajo (hidratado vía HYDRATE_FROM_SUPABASE + Realtime).
+- Pull-to-refresh preservado como feedback UX (toast), sin fetch extra.
+- -50 líneas netas.
+
+### 🎓 Lecciones aprendidas
+
+1. **toISOString() es peligroso para fechas locales en México**: después de las 18:00 MST, UTC ya es el día siguiente.
+2. **Verificar antes de implementar**: GENERAL-01 Fase 1 ya estaba implementada — Claude Code detectó correctamente y paró en vez de duplicar trabajo.
 
 ### 📋 Pendientes al cierre
-Ver HANDOFF.md — validación en campo es el siguiente paso antes de merge a main.
+Ver HANDOFF.md — siguiente objetivo: GENERAL-01 Fase 2 (decisiones Grupo C, sin código).
 
 ## Sesión 23 Abril 2026 (noche)
 

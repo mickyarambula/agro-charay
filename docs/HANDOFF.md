@@ -2,37 +2,37 @@
 
 **Última actualización:** 24 Abril 2026 (mañana)
 **Branch activo:** dev
-**Último commit dev:** fix(dashboardcampo): fecha local en vez de UTC + folioCorto en chips de lotes
+**Último commit dev:** refactor(ordendia): eliminar GET inline Supabase, leer de state global + Realtime
 **Último commit main:** 394cea3 (merge: DashboardCampo Phase 2 — órdenes de trabajo + WhatsApp + fix timezone + folioCorto)
 **Tag de respaldo:** backup-pre-merge-24abr2026-dashcampo
-**Estado:** DashboardCampo Phase 2 estable con 2 fixes aplicados. Pendiente validación en campo.
+**Estado:** Sesión productiva — 2 bug fixes, merge a main, GENERAL-01 Fase 1 cerrada, refactor OrdenDia.
 
 ## Estado al cierre
 
-- Fix timezone: DashboardCampo ahora usa fecha local (getFullYear/getMonth/getDate) en vez de UTC (toISOString). Esto corrige que órdenes creadas después de las 18:00 MST aparecían con fecha del día siguiente y no se mostraban en OrdenDia.
-- Fix chips lotes: el multi-select y las órdenes guardadas ahora muestran "{apodo} {folioCorto} — {productor}" (ej: "CHEVETO 5 — CASTRO") para desambiguar lotes con mismo apodo.
-- El fix de fecha también beneficia guardarTrabajo y guardarDiesel en DashboardCampo, que usaban la misma variable `hoy`.
-- Solo se modificó DashboardCampo.jsx. OrdenDia.jsx no requirió cambios.
+- DashboardCampo Phase 2 mergeado a main y validado en producción.
+- Fix timezone (fecha local vs UTC) aplicado en DashboardCampo — órdenes ya aparecen en OrdenDia.
+- Fix chips lotes con folioCorto para desambiguar lotes con mismo apodo.
+- GENERAL-01 Fase 1 marcada como completada — las 5 tareas ya estaban implementadas incrementalmente.
+- cosecha removida de PERSIST_KEYS (ya está en Grupo A, hidrata vía Supabase).
+- OrdenDia refactorizado: eliminado GET inline con SUPA_URL2/SUPA_KEY2 hardcodeados, ahora lee de state global + Realtime. -50 líneas.
 
 ## Bugs estructurales pendientes
 
-- Ninguno nuevo. Los 2 bugs de la sesión anterior (#1 y #2) fueron resueltos.
+- Ninguno conocido.
 
 ## Tabla de pendientes actualizada
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Alta | Validar en campo: crear orden desde DashboardCampo y verificar que aparece en OrdenDia | 10 min | Validación |
-| 2 | Media | Capturar teléfonos de 4 operadores sin WhatsApp (Javier, Jesús, Manuel, Ramón) | 10 min | Data |
-| 3 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 4 | Baja | Limpiar GET inline OrdenDia (SUPA_URL2/SUPA_KEY2) | 15 min | Refactor |
-| 5 | Futuro | GENERAL-01 Fase 2: decisiones Grupo C (config temporal: alertaParams, creditoLimites, creditoParams, paramsCultivo, cultivosCatalogo) | 1 sesión | Arquitectura |
-| 6 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
-| 7 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
+| 1 | Media | Capturar teléfonos de 4 operadores sin WhatsApp (Javier, Jesús, Manuel, Ramón) | 10 min | Data |
+| 2 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 3 | Futuro | GENERAL-01 Fase 2: decisiones Grupo C (config temporal: alertaParams, creditoLimites, creditoParams, paramsCultivo, cultivosCatalogo) | 1 sesión | Arquitectura |
+| 4 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
+| 5 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
 
 ## Siguiente sesión — recomendación
 
-**Validación en campo**: crear una orden real desde DashboardCampo en el celular del encargado, verificar que aparece en OrdenDia tanto en el celular como en desktop admin. Si pasa, merge a main. Si no, diagnosticar con DevTools del celular.
+**GENERAL-01 Fase 2** (decisiones Grupo C): sesión sin código. Revisar las 5 claves de config temporal que siguen en PERSIST_KEYS (alertaParams, creditoLimites, creditoParams, paramsCultivo, cultivosCatalogo) y decidir si son datos de negocio (→ Supabase) o config local legítima (→ se quedan). Resultado: entrada en DECISIONS.md.
 
 ## Reglas de trabajo
 
@@ -56,4 +56,4 @@
 - Al refactorear, pasar componentes declarados en App.jsx como props (no importar — causa circular)
 - Para prompts a Claude Code, dar el objetivo completo y dejar que lea el código y diseñe la solución
 - Schema mismatch state↔Supabase se resuelve con JSON en columna `notas` para round-trip sin pérdida
-- **NUEVO: Nunca usar toISOString() para fechas locales en México — usar getFullYear/getMonth/getDate para evitar desfase UTC después de las 18:00 MST**
+- Nunca usar toISOString() para fechas locales en México — usar getFullYear/getMonth/getDate para evitar desfase UTC después de las 18:00 MST
