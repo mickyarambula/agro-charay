@@ -96,6 +96,13 @@ Orden sugerido por prioridad de negocio (confirmar al arrancar Fase 3):
 
 ## Estado actual
 
-- [ ] Fase 1
-- [ ] Fase 2
-- [ ] Fase 3 (por módulo, ver checklist dinámico en HANDOFF.md)
+- [x] Fase 1 (completada incrementalmente, sesiones 21-23 abr 2026)
+- [x] Fase 2 (decisiones tomadas 24-abr-2026, documentadas en DECISIONS.md)
+- [x] Fase 3 (completada 24-abr-2026, 4 sub-fases en una sesión)
+
+### Fase 3 — Progreso (COMPLETA)
+
+- [x] 3.1 cultivosCatalogo (24-abr-2026) — tabla poblada, loader, writers, call sites migrados
+- [x] 3.2 alertaParams + creditoParams (24-abr-2026) — singletons en tabla configuracion
+- [x] 3.3 paramsCultivo (24-abr-2026) — tabla nueva params_cultivo con UNIQUE constraint
+- [x] 3.4 creditoLimites (24-abr-2026) — tabla nueva credito_limites, upsert onBlur

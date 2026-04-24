@@ -23,6 +23,7 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import { upsertParamsCultivo } from '../core/supabaseWriters.js';
 
 
 export default function CostosModule({ userRol, puedeEditar, onNavigate }) {
@@ -70,12 +71,16 @@ export default function CostosModule({ userRol, puedeEditar, onNavigate }) {
       cultivos.forEach(cv => {
         const key = `${cicloId}|${cv.cultivoId}|${cv.variedad}`;
         dispatch({ type:"UPD_PARAMS_CULTIVO", payload:{ key, precio: precioParsed, rendimiento: rendParsed }});
+        upsertParamsCultivo(key, { precio: precioParsed, rendimiento: rendParsed });
       });
       // También guardar en global del ciclo como fallback
-      dispatch({ type:"UPD_PARAMS_CULTIVO", payload:{ key: `${cicloId}|global`, precio: precioParsed, rendimiento: rendParsed }});
+      const globalKey = `${cicloId}|global`;
+      dispatch({ type:"UPD_PARAMS_CULTIVO", payload:{ key: globalKey, precio: precioParsed, rendimiento: rendParsed }});
+      upsertParamsCultivo(globalKey, { precio: precioParsed, rendimiento: rendParsed });
     } else {
       // Guardar en la key específica del cultivo activo
       dispatch({ type:"UPD_PARAMS_CULTIVO", payload:{ key: p.key, precio: precioParsed, rendimiento: rendParsed }});
+      upsertParamsCultivo(p.key, { precio: precioParsed, rendimiento: rendParsed });
     }
     setEditParams(false);
   };

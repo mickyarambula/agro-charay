@@ -157,14 +157,8 @@ export const initState = {
   cicloActual: "OI 2025-2026",
   cicloActivoId: 1,        // id del ciclo que se visualiza (no solo el predeterminado)
   cultivoActivo: null,      // { cultivoId, variedad } | null = todos los cultivos
-  cultivosCatalogo: [
-    { id:1, nombre:"Maíz",    variedades:["Blanco","Amarillo","Dulce"] },
-    { id:2, nombre:"Sorgo",   variedades:["Rojo","Blanco","Nervadura Café"] },
-    { id:3, nombre:"Frijol",  variedades:["Pinto","Reyna","Flor de Mayo","Azufrado"] },
-    { id:4, nombre:"Papa",    variedades:["Alpha","Fianna","Atlantic"] },
-    { id:5, nombre:"Garbanzo",variedades:["M-38","Sonora"] },
-    { id:6, nombre:"Trigo",   variedades:["Yécora Rojo","Cajeme 71"] },
-  ],
+  // Los datos reales vienen de Supabase (tabla cultivos_catalogo) vía HYDRATE_FROM_SUPABASE
+  cultivosCatalogo: [],
 
   ciclos: [],
 
@@ -478,7 +472,7 @@ export function reducer(s, a) {
     case "DEL_PRODUCTOR":   return { ...s, productores: s.productores.filter(p => p.id!==a.payload) };
     // ── CICLOS ──
 
-    case "ADD_CULTIVO_CAT":   return { ...s, cultivosCatalogo: [...(s.cultivosCatalogo||[]), {...a.payload,id:Date.now()}] };
+    case "ADD_CULTIVO_CAT":   return { ...s, cultivosCatalogo: [...(s.cultivosCatalogo||[]), {...a.payload, id: a.payload.id ?? Date.now()}] };
     case "UPD_CULTIVO_CAT":   return { ...s, cultivosCatalogo: (s.cultivosCatalogo||[]).map(c=>c.id===a.payload.id?a.payload:c) };
     case "DEL_CULTIVO_CAT":   return { ...s, cultivosCatalogo: (s.cultivosCatalogo||[]).filter(c=>c.id!==a.payload) };
     case "ADD_VAR_CAT":       return { ...s, cultivosCatalogo: (s.cultivosCatalogo||[]).map(c=>c.id===a.payload.cultivoId?{...c,variedades:[...c.variedades,a.payload.variedad]}:c) };
@@ -545,6 +539,14 @@ export function reducer(s, a) {
         'proyeccion',
         // cosecha: migrado a 5 tablas Supabase (boletas/cuadrillas/fletes/maquila/secado)
         'cosecha',
+        // cultivosCatalogo: migrado a tabla cultivos_catalogo (Fase 3 — GENERAL-01)
+        'cultivosCatalogo',
+        // alertaParams + creditoParams: singletons en tabla configuracion (Fase 3.2)
+        'alertaParams', 'creditoParams',
+        // paramsCultivo: migrado a tabla params_cultivo (Fase 3.3)
+        'paramsCultivo',
+        // creditoLimites: migrado a tabla credito_limites (Fase 3.4 — última clave de config temporal)
+        'creditoLimites',
       ];
       const next = { ...s };
       for (const k of GRUPO_A) {

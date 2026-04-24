@@ -1,27 +1,55 @@
 # AgroSistema Charay — Progress Log
 
-## Sesión 24 Abril 2026 (mañana)
+## Sesión 24 Abril 2026 (mañana → mediodía, extendida)
+
+**Sesión maratónica — GENERAL-01 cerrado completo.**
 
 ### ✅ Completado
 
 **Fix #1 — Órdenes DashboardCampo no visibles en OrdenDia (timezone bug)**
-- Root cause: `new Date().toISOString().split("T")[0]` devuelve fecha UTC. Después de las 18:00 MST (UTC-7), la fecha UTC rueda al día siguiente. DashboardCampo guardaba "2026-04-24" mientras OrdenDia filtraba por "2026-04-23" (fecha local).
-- Fix: reemplazar por `getFullYear()/getMonth()/getDate()` — fecha local, mismo patrón que OrdenDia.
-- Beneficio colateral: guardarTrabajo y guardarDiesel también usaban la misma variable `hoy`, así que quedan corregidos.
+- Root cause: toISOString() devuelve fecha UTC, rueda al día siguiente después de 18:00 MST.
+- Fix: getFullYear()/getMonth()/getDate() — fecha local.
 
-**Fix #2 — Chips de lotes duplicados en multi-select de Nueva Orden**
-- Root cause: display mostraba solo "{apodo} — {productor}", pero múltiples lotes comparten apodo (ej: 5 lotes "AVANCE" del mismo productor).
-- Fix: formato ahora es "{apodo} {folioCorto} — {productor}" (ej: "CHEVETO 5 — CASTRO").
-- Aplicado tanto en chips del BottomSheet como en loteName de guardarOrden (para cards y WhatsApp).
+**Fix #2 — Chips de lotes duplicados en multi-select**
+- Formato ahora "{apodo} {folioCorto} — {productor}" para desambiguar.
 
-Archivo modificado: `src/modules/DashboardCampo.jsx` (único).
+**Merge DashboardCampo Phase 2 a main** — 394cea3, validado en producción.
 
-### 🎓 Lección aprendida
+**GENERAL-01 Fase 1** — confirmada completada (5 tareas implementadas incrementalmente).
 
-**toISOString() es peligroso para fechas locales en México**: después de las 18:00 MST, UTC ya es el día siguiente. Usar siempre componentes locales (getFullYear/getMonth/getDate) para fechas que se comparan con filtros de UI local. Regla añadida a HANDOFF.md.
+**Refactor OrdenDia** — eliminado GET inline con SUPA_URL2/SUPA_KEY2 hardcodeados. -50 líneas.
+
+**GENERAL-01 Fase 2** — decisiones: las 5 claves config temporal son datos de negocio → todas a Supabase.
+
+**GENERAL-01 Fase 3.1 — cultivosCatalogo**
+- Tabla poblada con 6 registros (corregidos post-insert para coincidir con initState original).
+- Loader, 3 writers, 3 call sites en Ciclos.jsx migrados. initState vaciado.
+
+**GENERAL-01 Fase 3.2 — alertaParams + creditoParams**
+- Singletons en tabla `configuracion` (key-value jsonb). 2 filas insertadas.
+- Loader con configMap. upsertConfiguracion helper. Call sites en Configuracion.jsx y Credito.jsx.
+
+**GENERAL-01 Fase 3.3 — paramsCultivo**
+- Tabla nueva `params_cultivo` con UNIQUE (ciclo_id, cultivo_id, variedad).
+- Loader reconstruye map compuesto. upsertParamsCultivo helper. Call sites en Costos.jsx y App.jsx.
+
+**GENERAL-01 Fase 3.4 — creditoLimites**
+- Tabla nueva `credito_limites` con UNIQUE (productor_id).
+- Loader reconstruye map por productor. upsertCreditoLimites helper. Call sites en Configuracion.jsx con onBlur.
+
+**Limpieza PERSIST_KEYS**: las 5 claves config temporal eliminadas. Solo quedan Grupo B (UI prefs) + permisos/roles.
+
+### 🎓 Lecciones aprendidas
+
+1. **toISOString() peligroso para fechas locales en México** — usar getFullYear/getMonth/getDate.
+2. **Verificar antes de implementar** — GENERAL-01 Fase 1 ya estaba hecha.
+3. **uuid client-side con crypto.randomUUID()** — reducer y Supabase comparten identidad.
+4. **onBlur para upserts en inputs** — dispatch onChange (UI reactiva) + upsert onBlur (1 escritura).
+5. **UNIQUE constraints antes de on_conflict** — sin constraint el upsert silenciosamente inserta duplicados.
+6. **Verificar datos seed contra initState original** — las variedades de cultivosCatalogo no coincidían.
 
 ### 📋 Pendientes al cierre
-Ver HANDOFF.md — validación en campo es el siguiente paso antes de merge a main.
+Ver HANDOFF.md — smoke test + merge a main, luego bug calculadora diesel.
 
 ## Sesión 23 Abril 2026 (noche)
 

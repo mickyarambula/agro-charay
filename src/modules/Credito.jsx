@@ -24,6 +24,7 @@ import {
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
+import { upsertConfiguracion } from '../core/supabaseWriters.js';
 
 
 export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFiltro = {} }) {
@@ -83,6 +84,7 @@ export default function CreditoModule({ userRol, puedeEditar, onNavigate, navFil
 
   const guardarParams = () => {
     dispatch({ type:"SET_CREDITO_PARAMS", payload: formParams });
+    upsertConfiguracion('creditoParams', formParams);
     setEditParams(false);
   };
 

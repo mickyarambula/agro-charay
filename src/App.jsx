@@ -1,6 +1,7 @@
 import React, { useState, useReducer, createContext, useContext, useCallback, useRef, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { loadStateFromSupabase } from "./supabaseLoader.js";
+import { upsertParamsCultivo } from "./core/supabaseWriters.js";
 import { ROLES, ACCESO, USUARIOS, getRolPermisos, getRolesDisponibles, getRolInfo, getPermisosUsuario } from "./shared/roles.js";
 import {
   T, css, confirmarEliminar, puedeEliminarLote, puedeEliminarProductor,
@@ -309,12 +310,14 @@ export function WidgetCBOTDashboard(){
   const persistirPrecio = () => {
     if (!dispatch || !_mercadoState.precioMXN) return;
     const pcp = getParamsCultivo(stateCtx || {});
-    dispatch({ type:'UPD_PARAMS_CULTIVO', payload: {
+    const payload = {
       key: pcp.key || '1|global',
       precio: _mercadoState.precioMXN,
       rendimiento: pcp.rendimiento || 10,
       fechaPrecio: new Date().toISOString().split('T')[0],
-    }});
+    };
+    dispatch({ type:'UPD_PARAMS_CULTIVO', payload });
+    upsertParamsCultivo(payload.key, { precio: payload.precio, rendimiento: payload.rendimiento, fechaPrecio: payload.fechaPrecio });
   };
   const apCBOT=v=>{const n=parseFloat(v);if(!n||n<100||n>2000){setErrCBOT(true);return;}setErrCBOT(false);setInCBOT("");aplicarMercado({cbot:n,base:BASE_USD,fechaCBOT:"Manual"});setTimeout(persistirPrecio,100);};
   const apTC=v=>{const n=parseFloat(v);if(!n||n<5||n>50){setErrTC(true);return;}setErrTC(false);setInTC("");aplicarMercado({tc:n,base:BASE_USD,fechaTC:"Manual"});setTimeout(persistirPrecio,100);if(m.cbot)setAbierto(false);};
@@ -1133,17 +1136,17 @@ export default function App() {
       //   ordenesCompra, solicitudesGasto, recomendaciones, notificaciones, delegaciones.
       return {
         // Grupo C (permisos / roles) + config temporal
-        alertaParams:    parsed.alertaParams    || {},
-        creditoLimites:  parsed.creditoLimites  || {},
+        // alertaParams: migrado a Supabase (tabla configuracion) — hidrata vía HYDRATE_FROM_SUPABASE
+        // creditoLimites: migrado a Supabase (tabla credito_limites) — hidrata vía HYDRATE_FROM_SUPABASE
         alertasLeidas:   parsed.alertasLeidas   || [],
         usuariosExtra:   parsed.usuariosExtra   || [],
         usuariosBaseEdit:parsed.usuariosBaseEdit || {},
         permisosUsuario: parsed.permisosUsuario || {},
         permisosGranulares: parsed.permisosGranulares || {},
         rolesPersonalizados: parsed.rolesPersonalizados || {},
-        creditoParams:   parsed.creditoParams   || {},
-        paramsCultivo:   parsed.paramsCultivo   || {},
-        cultivosCatalogo:restore('cultivosCatalogo', initState.cultivosCatalogo || []),
+        // creditoParams: migrado a Supabase (tabla configuracion) — hidrata vía HYDRATE_FROM_SUPABASE
+        // paramsCultivo: migrado a Supabase (tabla params_cultivo) — hidrata vía HYDRATE_FROM_SUPABASE
+        // cultivosCatalogo: migrado a Supabase — hidrata vía HYDRATE_FROM_SUPABASE
         // Grupo B (UI local / preferencias)
         cultivoActivo:      parsed.cultivoActivo       || null,
         precioVentaMXN:     parsed.precioVentaMXN      || initState.precioVentaMXN,
@@ -1175,10 +1178,8 @@ export default function App() {
         'permisosUsuario', 'permisosGranulares', 'rolesPersonalizados',
         'usuariosExtra', 'usuariosBaseEdit',
         // Config temporal (pendiente de decisión Fase 2) + pendientes de migrar
-        'alertaParams', 'creditoLimites', 'creditoParams', 'paramsCultivo',
-        'cultivosCatalogo',
-        // cosecha: sin tabla Supabase aún — persiste en localStorage hasta migración
-        'cosecha',
+        // alertaParams, creditoParams, paramsCultivo, cultivosCatalogo, creditoLimites: migrados a Supabase (Fase 3.1-3.4 — GENERAL-01 completo)
+        // cosecha: migrada a Supabase (5 subtablas) — hidrata vía HYDRATE_FROM_SUPABASE, ya no persiste localStorage
       ];
       const toSave = {};
       for (const k of PERSIST_KEYS) {

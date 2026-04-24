@@ -122,3 +122,38 @@ Prioridad: baja. Hoy los roles están hardcoded en roles.js y estas claves tiene
 
 ### proyeccion → pendiente de revisión
 Decisión aplazada. Necesita inspección del módulo Proyeccion para determinar si es data capturada (→ Supabase) o cálculo derivado (→ computed, no persiste). Se decide al migrar en Fase 3.
+
+## GENERAL-01 Fase 2 — Decisiones config temporal (24-abr-2026)
+
+Las 5 claves de config temporal que vivían en PERSIST_KEYS (localStorage) son datos de negocio. Todas migran a Supabase en Fase 3.
+
+### alertaParams → Supabase singleton
+- Tabla: `configuracion` (existente, key-value con clave text + valor jsonb)
+- Clave: "alertaParams", valor: jsonb con los 15 campos (7 umbrales + 8 toggles)
+- Razón: si admin cambia un umbral de alerta, todos los roles deben verlo. localStorage es por dispositivo.
+
+### creditoParams → Supabase singleton
+- Tabla: `configuracion` (misma tabla key-value)
+- Clave: "creditoParams", valor: jsonb con los 8 parámetros financieros (tasas, factibilidad, FEGA, IVA)
+- Razón: fan-out altísimo (11 call sites en helpers, crédito, reportes, dashboard). Si la tasa cambia y un dispositivo no lo ve, toda la contabilidad se descuadra.
+
+### creditoLimites → Supabase tabla propia
+- Tabla: `credito_limites` (nueva, 1 fila por productor)
+- Columnas: id, productor_id (FK), limite_para, limite_dir, limite_total, notificar_cambio, created_at, updated_at
+- Razón: mapa por productor, conceptualmente gemelo de expedientes. No cabe en key-value singleton.
+
+### paramsCultivo → Supabase tabla propia
+- Tabla: `params_cultivo` (nueva)
+- Columnas: id, ciclo_id, cultivo_id, variedad, precio, rendimiento, fecha_precio, created_at, updated_at
+- Razón: mapa compuesto (ciclo × cultivo × variedad). Cambia estacionalmente. Afecta proyecciones y costos.
+
+### cultivosCatalogo → Supabase tabla existente
+- Tabla: `cultivos_catalogo` (existente, vacía)
+- Poblar con los 6 registros del initState (Maíz, Sorgo, Frijol, etc.) con variedades en columna jsonb
+- Razón: catálogo maestro reutilizado entre ciclos. Cambio rarísimo pero debe ser compartido.
+
+### Orden de migración sugerido (Fase 3)
+1. cultivosCatalogo (tabla existe, solo poblar + loader + writer)
+2. alertaParams + creditoParams (tabla configuracion existe, 2 inserts + loader)
+3. paramsCultivo (tabla nueva, schema + loader + writer)
+4. creditoLimites (tabla nueva, schema + loader + writer + FK)
