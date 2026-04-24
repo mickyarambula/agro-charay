@@ -1,55 +1,55 @@
 # AgroSistema Charay — Progress Log
 
-## Sesión 24 Abril 2026 (mañana)
+## Sesión 24 Abril 2026 (mañana → mediodía, extendida)
 
-**Nota: sesión extendida — los siguientes items se completaron en continuación de la misma sesión.**
+**Sesión maratónica — GENERAL-01 cerrado completo.**
 
 ### ✅ Completado
 
 **Fix #1 — Órdenes DashboardCampo no visibles en OrdenDia (timezone bug)**
-- Root cause: `new Date().toISOString().split("T")[0]` devuelve fecha UTC. Después de las 18:00 MST (UTC-7), la fecha UTC rueda al día siguiente.
-- Fix: reemplazar por `getFullYear()/getMonth()/getDate()` — fecha local, mismo patrón que OrdenDia.
+- Root cause: toISOString() devuelve fecha UTC, rueda al día siguiente después de 18:00 MST.
+- Fix: getFullYear()/getMonth()/getDate() — fecha local.
 
-**Fix #2 — Chips de lotes duplicados en multi-select de Nueva Orden**
-- Formato ahora es "{apodo} {folioCorto} — {productor}" (ej: "CHEVETO 5 — CASTRO").
-- Aplicado en chips del BottomSheet y en loteName de guardarOrden.
+**Fix #2 — Chips de lotes duplicados en multi-select**
+- Formato ahora "{apodo} {folioCorto} — {productor}" para desambiguar.
 
-**Merge DashboardCampo Phase 2 a main**
-- Commit main: 394cea3. Tag: backup-pre-merge-24abr2026-dashcampo.
-- Validado en producción (agro-charay.vercel.app).
+**Merge DashboardCampo Phase 2 a main** — 394cea3, validado en producción.
 
-**GENERAL-01 Fase 1 — marcada como completada**
-- Las 5 tareas (HYDRATE_FROM_SUPABASE, loader dispatch, init sin localStorage, persist selectivo, loading state) ya estaban implementadas incrementalmente en sesiones anteriores.
-- cosecha removida de PERSIST_KEYS (ya está en Grupo A).
-- Plan actualizado en GENERAL-01-PLAN.md.
+**GENERAL-01 Fase 1** — confirmada completada (5 tareas implementadas incrementalmente).
 
-**Refactor OrdenDia — eliminar GET inline Supabase**
-- Eliminado: SUPA_URL2, SUPA_KEY2, recargarOrdenes(), useEffect de carga, useState cargando, import SkeletonCard.
-- OrdenDia ahora lee exclusivamente de state.ordenesTrabajo (hidratado vía HYDRATE_FROM_SUPABASE + Realtime).
-- Pull-to-refresh preservado como feedback UX (toast), sin fetch extra.
-- -50 líneas netas.
+**Refactor OrdenDia** — eliminado GET inline con SUPA_URL2/SUPA_KEY2 hardcodeados. -50 líneas.
 
-**GENERAL-01 Fase 3.1 — cultivosCatalogo migrado a Supabase**
-- Tabla `cultivos_catalogo` poblada con 6 registros (Maíz, Sorgo, Frijol, Garbanzo, Cártamo, Trigo).
-- Loader: fetch añadido a supabaseLoader.js con mapping a shape del state.
-- Writers: 3 helpers creados (postCultivoCatalogo, patchCultivoCatalogo, deleteCultivoCatalogo).
-- Ciclos.jsx: 3 call sites migrados (crear cultivo, agregar variedad, eliminar variedad) con uuid client-side.
-- DataContext.jsx: initState vaciado, cultivosCatalogo añadido a GRUPO_A whitelist, ADD_CULTIVO_CAT preserva payload.id.
-- App.jsx: cultivosCatalogo removido de PERSIST_KEYS y de IIFE savedState.
+**GENERAL-01 Fase 2** — decisiones: las 5 claves config temporal son datos de negocio → todas a Supabase.
 
-**GENERAL-01 Fase 2 — decisiones config temporal documentadas**
-- Las 5 claves (alertaParams, creditoParams, creditoLimites, paramsCultivo, cultivosCatalogo) → todas a Supabase.
-- Estrategia: singletons en tabla `configuracion` para alertaParams y creditoParams; tablas propias para creditoLimites y paramsCultivo; tabla existente para cultivosCatalogo.
-- Documentado en DECISIONS.md con orden de migración.
+**GENERAL-01 Fase 3.1 — cultivosCatalogo**
+- Tabla poblada con 6 registros (corregidos post-insert para coincidir con initState original).
+- Loader, 3 writers, 3 call sites en Ciclos.jsx migrados. initState vaciado.
+
+**GENERAL-01 Fase 3.2 — alertaParams + creditoParams**
+- Singletons en tabla `configuracion` (key-value jsonb). 2 filas insertadas.
+- Loader con configMap. upsertConfiguracion helper. Call sites en Configuracion.jsx y Credito.jsx.
+
+**GENERAL-01 Fase 3.3 — paramsCultivo**
+- Tabla nueva `params_cultivo` con UNIQUE (ciclo_id, cultivo_id, variedad).
+- Loader reconstruye map compuesto. upsertParamsCultivo helper. Call sites en Costos.jsx y App.jsx.
+
+**GENERAL-01 Fase 3.4 — creditoLimites**
+- Tabla nueva `credito_limites` con UNIQUE (productor_id).
+- Loader reconstruye map por productor. upsertCreditoLimites helper. Call sites en Configuracion.jsx con onBlur.
+
+**Limpieza PERSIST_KEYS**: las 5 claves config temporal eliminadas. Solo quedan Grupo B (UI prefs) + permisos/roles.
 
 ### 🎓 Lecciones aprendidas
 
-1. **toISOString() es peligroso para fechas locales en México**: después de las 18:00 MST, UTC ya es el día siguiente.
-2. **Verificar antes de implementar**: GENERAL-01 Fase 1 ya estaba implementada — Claude Code detectó correctamente y paró en vez de duplicar trabajo.
-3. **uuid client-side con crypto.randomUUID()**: generar el id antes del dispatch para que reducer y Supabase compartan identidad desde el primer momento.
+1. **toISOString() peligroso para fechas locales en México** — usar getFullYear/getMonth/getDate.
+2. **Verificar antes de implementar** — GENERAL-01 Fase 1 ya estaba hecha.
+3. **uuid client-side con crypto.randomUUID()** — reducer y Supabase comparten identidad.
+4. **onBlur para upserts en inputs** — dispatch onChange (UI reactiva) + upsert onBlur (1 escritura).
+5. **UNIQUE constraints antes de on_conflict** — sin constraint el upsert silenciosamente inserta duplicados.
+6. **Verificar datos seed contra initState original** — las variedades de cultivosCatalogo no coincidían.
 
 ### 📋 Pendientes al cierre
-Ver HANDOFF.md — siguiente: GENERAL-01 Fase 3.2 (alertaParams + creditoParams → tabla configuracion).
+Ver HANDOFF.md — smoke test + merge a main, luego bug calculadora diesel.
 
 ## Sesión 23 Abril 2026 (noche)
 
