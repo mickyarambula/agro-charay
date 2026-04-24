@@ -1143,7 +1143,7 @@ export default function App() {
         rolesPersonalizados: parsed.rolesPersonalizados || {},
         creditoParams:   parsed.creditoParams   || {},
         paramsCultivo:   parsed.paramsCultivo   || {},
-        cultivosCatalogo:restore('cultivosCatalogo', initState.cultivosCatalogo || []),
+        // cultivosCatalogo: migrado a Supabase — hidrata vía HYDRATE_FROM_SUPABASE
         // Grupo B (UI local / preferencias)
         cultivoActivo:      parsed.cultivoActivo       || null,
         precioVentaMXN:     parsed.precioVentaMXN      || initState.precioVentaMXN,
@@ -1176,7 +1176,7 @@ export default function App() {
         'usuariosExtra', 'usuariosBaseEdit',
         // Config temporal (pendiente de decisión Fase 2) + pendientes de migrar
         'alertaParams', 'creditoLimites', 'creditoParams', 'paramsCultivo',
-        'cultivosCatalogo',
+        // cultivosCatalogo: migrado a Supabase — ya no persiste localStorage
         // cosecha: migrada a Supabase (5 subtablas) — hidrata vía HYDRATE_FROM_SUPABASE, ya no persiste localStorage
       ];
       const toSave = {};

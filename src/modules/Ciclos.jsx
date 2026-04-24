@@ -23,6 +23,9 @@ import {
   exportarExcel, descargarHTML, exportarExcelProductor, generarHTMLProductor,
   generarHTMLTodos, exportarExcelTodos, navRowProps, FiltroSelect, PanelAlertas
 } from '../shared/helpers.jsx';
+import {
+  postCultivoCatalogo, patchCultivoCatalogo,
+} from '../core/supabaseWriters.js';
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 
 
@@ -186,7 +189,11 @@ export default function CiclosModule({ userRol, puedeEditar }) {
   const crearCultivoCat = () => {
     if (!nuevoCult.trim()) return;
     const ya = cultivosCat.find(c=>c.nombre.toUpperCase()===nuevoCult.trim().toUpperCase());
-    if (!ya) dispatch({ type:"ADD_CULTIVO_CAT", payload:{ nombre:nuevoCult.trim(), variedades:[] }});
+    if (ya) { setNuevoCult(""); return; }
+    const id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `cult-${Date.now()}`;
+    const payload = { id, nombre: nuevoCult.trim(), variedades: [] };
+    dispatch({ type:"ADD_CULTIVO_CAT", payload });
+    postCultivoCatalogo(payload);
     setNuevoCult("");
   };
 
@@ -194,7 +201,9 @@ export default function CiclosModule({ userRol, puedeEditar }) {
     if (!nuevaVar.trim()) return;
     const cult = cultivosCat.find(c=>c.id===cultivoId);
     if (!cult || cult.variedades.includes(nuevaVar.trim())) return;
+    const nuevasVariedades = [...cult.variedades, nuevaVar.trim()];
     dispatch({ type:"ADD_VAR_CAT", payload:{ cultivoId, variedad:nuevaVar.trim() }});
+    patchCultivoCatalogo(cultivoId, { variedades: nuevasVariedades });
     setNuevaVar("");
   };
   const eliminarCiclo = (id) => { dispatch({ type:"DEL_CICLO", payload: id }); setVista("lista"); };
@@ -345,9 +354,11 @@ export default function CiclosModule({ userRol, puedeEditar }) {
                             {puedeEditar&&(
                               <button onClick={()=>{
                                 if(window.confirm(`¿Eliminar variedad "${v}"?`)){
+                                  const nuevasVariedades = cult.variedades.filter((_,j)=>j!==i);
                                   dispatch({type:"UPD_CULTIVO_CAT",payload:{
-                                    ...cult, variedades:cult.variedades.filter((_,j)=>j!==i)
+                                    ...cult, variedades: nuevasVariedades
                                   }});
+                                  patchCultivoCatalogo(cult.id, { variedades: nuevasVariedades });
                                 }
                               }} style={{background:"none",border:"none",cursor:"pointer",color:"#c0392b",fontSize:12,lineHeight:1}}>✕</button>
                             )}

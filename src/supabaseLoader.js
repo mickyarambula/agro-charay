@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows, horasMaqRows, proyeccionRows, cosechaBoletasRows, cosechaCuadrillasRows, cosechaFletesRows, cosechaMaquilaRows, cosechaSecadoRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows, horasMaqRows, proyeccionRows, cosechaBoletasRows, cosechaCuadrillasRows, cosechaFletesRows, cosechaMaquilaRows, cosechaSecadoRows, cultivosCatRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -78,6 +78,7 @@ export async function loadStateFromSupabase() {
       supaFetch('cosecha_fletes').catch(() => []),
       supaFetch('cosecha_maquila').catch(() => []),
       supaFetch('cosecha_secado').catch(() => []),
+      supaFetch('cultivos_catalogo', 'order=legacy_id').catch(() => []),
     ]);
 
     const productores = productoresRows.map(r => ({
@@ -547,6 +548,12 @@ export async function loadStateFromSupabase() {
           };
         }),
       },
+      cultivosCatalogo: (cultivosCatRows || []).map(r => ({
+        id: r.id,
+        legacyId: r.legacy_id,
+        nombre: r.nombre || '',
+        variedades: r.variedades || [],
+      })),
       _supabaseCargado: Date.now(),
     };
 

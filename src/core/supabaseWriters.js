@@ -716,3 +716,66 @@ export async function patchCajaChicaFondo(id, fields) {
     return true;
   } catch (e) { console.warn('[Supabase] caja_chica fondo patch fail:', e); return false; }
 }
+
+// ───── CULTIVOS CATÁLOGO ────────────────────────────────────────
+// Tabla cultivos_catalogo. El id (uuid) se genera client-side con
+// crypto.randomUUID() y se pasa en el body para que reducer y Supabase
+// compartan identificador.
+
+export async function postCultivoCatalogo(record) {
+  try {
+    const body = {
+      nombre: record.nombre || '',
+      variedades: record.variedades || [],
+    };
+    if (record.id) body.id = record.id;
+    if (record.legacyId != null) body.legacy_id = record.legacyId;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cultivos_catalogo`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const t = await res.text(); console.error('postCultivoCatalogo error:', t); return null; }
+    const rows = await res.json();
+    return rows[0] || null;
+  } catch (e) { console.error('postCultivoCatalogo exception:', e); return null; }
+}
+
+export async function patchCultivoCatalogo(id, fields) {
+  if (id == null) { console.error('patchCultivoCatalogo: id nulo'); return false; }
+  try {
+    const body = {};
+    if (fields.nombre != null)     body.nombre = fields.nombre;
+    if (fields.variedades != null) body.variedades = fields.variedades;
+    body.updated_at = new Date().toISOString();
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cultivos_catalogo?id=eq.${encodeURIComponent(String(id))}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const t = await res.text(); console.error('patchCultivoCatalogo error:', t); return false; }
+    return true;
+  } catch (e) { console.error('patchCultivoCatalogo exception:', e); return false; }
+}
+
+export async function deleteCultivoCatalogo(id) {
+  if (id == null) { console.error('deleteCultivoCatalogo: id nulo'); return false; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cultivos_catalogo?id=eq.${encodeURIComponent(String(id))}`, {
+      method: 'DELETE',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (!res.ok) { const t = await res.text(); console.error('deleteCultivoCatalogo error:', t); return false; }
+    return true;
+  } catch (e) { console.error('deleteCultivoCatalogo exception:', e); return false; }
+}
