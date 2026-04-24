@@ -2,10 +2,10 @@
 
 **Última actualización:** 24 Abril 2026 (mañana)
 **Branch activo:** dev
-**Último commit dev:** refactor(ordendia): eliminar GET inline Supabase, leer de state global + Realtime
+**Último commit dev:** feat(cultivos): migrar cultivosCatalogo a Supabase como fuente única (GENERAL-01 Fase 3.1)
 **Último commit main:** 394cea3 (merge: DashboardCampo Phase 2 — órdenes de trabajo + WhatsApp + fix timezone + folioCorto)
 **Tag de respaldo:** backup-pre-merge-24abr2026-dashcampo
-**Estado:** Sesión productiva — 2 bug fixes, merge a main, GENERAL-01 Fase 1 cerrada, refactor OrdenDia.
+**Estado:** Sesión extendida — 2 bug fixes, merge main, GENERAL-01 Fases 1+2 cerradas, Fase 3.1 (cultivosCatalogo) completada, refactor OrdenDia.
 
 ## Estado al cierre
 
@@ -15,6 +15,7 @@
 - GENERAL-01 Fase 1 marcada como completada — las 5 tareas ya estaban implementadas incrementalmente.
 - cosecha removida de PERSIST_KEYS (ya está en Grupo A, hidrata vía Supabase).
 - OrdenDia refactorizado: eliminado GET inline con SUPA_URL2/SUPA_KEY2 hardcodeados, ahora lee de state global + Realtime. -50 líneas.
+- cultivosCatalogo migrado a Supabase: tabla poblada, loader, 3 writers, 3 call sites en Ciclos.jsx, removido de PERSIST_KEYS e initState.
 
 ## Bugs estructurales pendientes
 
@@ -26,13 +27,13 @@
 |---|-----------|-------|--------|-----------|
 | 1 | Media | Capturar teléfonos de 4 operadores sin WhatsApp (Javier, Jesús, Manuel, Ramón) | 10 min | Data |
 | 2 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 3 | Futuro | GENERAL-01 Fase 3: migrar config temporal a Supabase (5 claves, orden: cultivosCatalogo → alertaParams+creditoParams → paramsCultivo → creditoLimites) | 4-5 sesiones | Arquitectura |
+| 3 | Futuro | GENERAL-01 Fase 3: migrar config restante (alertaParams+creditoParams → paramsCultivo → creditoLimites) | 3-4 sesiones | Arquitectura |
 | 4 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
 | 5 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
 
 ## Siguiente sesión — recomendación
 
-**GENERAL-01 Fase 2** (decisiones Grupo C): sesión sin código. Revisar las 5 claves de config temporal que siguen en PERSIST_KEYS (alertaParams, creditoLimites, creditoParams, paramsCultivo, cultivosCatalogo) y decidir si son datos de negocio (→ Supabase) o config local legítima (→ se quedan). Resultado: entrada en DECISIONS.md.
+**GENERAL-01 Fase 3.2**: migrar alertaParams + creditoParams a tabla `configuracion` (key-value existente en Supabase). Insertar 2 filas, añadir al loader, crear helpers upsert, migrar call sites en Configuracion.jsx y Credito.jsx, quitar de PERSIST_KEYS. ~45 min.
 
 ## Reglas de trabajo
 

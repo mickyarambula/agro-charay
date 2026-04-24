@@ -2,6 +2,8 @@
 
 ## Sesión 24 Abril 2026 (mañana)
 
+**Nota: sesión extendida — los siguientes items se completaron en continuación de la misma sesión.**
+
 ### ✅ Completado
 
 **Fix #1 — Órdenes DashboardCampo no visibles en OrdenDia (timezone bug)**
@@ -27,13 +29,27 @@
 - Pull-to-refresh preservado como feedback UX (toast), sin fetch extra.
 - -50 líneas netas.
 
+**GENERAL-01 Fase 3.1 — cultivosCatalogo migrado a Supabase**
+- Tabla `cultivos_catalogo` poblada con 6 registros (Maíz, Sorgo, Frijol, Garbanzo, Cártamo, Trigo).
+- Loader: fetch añadido a supabaseLoader.js con mapping a shape del state.
+- Writers: 3 helpers creados (postCultivoCatalogo, patchCultivoCatalogo, deleteCultivoCatalogo).
+- Ciclos.jsx: 3 call sites migrados (crear cultivo, agregar variedad, eliminar variedad) con uuid client-side.
+- DataContext.jsx: initState vaciado, cultivosCatalogo añadido a GRUPO_A whitelist, ADD_CULTIVO_CAT preserva payload.id.
+- App.jsx: cultivosCatalogo removido de PERSIST_KEYS y de IIFE savedState.
+
+**GENERAL-01 Fase 2 — decisiones config temporal documentadas**
+- Las 5 claves (alertaParams, creditoParams, creditoLimites, paramsCultivo, cultivosCatalogo) → todas a Supabase.
+- Estrategia: singletons en tabla `configuracion` para alertaParams y creditoParams; tablas propias para creditoLimites y paramsCultivo; tabla existente para cultivosCatalogo.
+- Documentado en DECISIONS.md con orden de migración.
+
 ### 🎓 Lecciones aprendidas
 
 1. **toISOString() es peligroso para fechas locales en México**: después de las 18:00 MST, UTC ya es el día siguiente.
 2. **Verificar antes de implementar**: GENERAL-01 Fase 1 ya estaba implementada — Claude Code detectó correctamente y paró en vez de duplicar trabajo.
+3. **uuid client-side con crypto.randomUUID()**: generar el id antes del dispatch para que reducer y Supabase compartan identidad desde el primer momento.
 
 ### 📋 Pendientes al cierre
-Ver HANDOFF.md — siguiente objetivo: GENERAL-01 Fase 2 (decisiones Grupo C, sin código).
+Ver HANDOFF.md — siguiente: GENERAL-01 Fase 3.2 (alertaParams + creditoParams → tabla configuracion).
 
 ## Sesión 23 Abril 2026 (noche)
 

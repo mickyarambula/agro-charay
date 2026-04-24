@@ -99,3 +99,10 @@ Orden sugerido por prioridad de negocio (confirmar al arrancar Fase 3):
 - [x] Fase 1 (completada incrementalmente, sesiones 21-23 abr 2026)
 - [x] Fase 2 (decisiones tomadas 24-abr-2026, documentadas en DECISIONS.md)
 - [ ] Fase 3 (por módulo, ver checklist dinámico en HANDOFF.md)
+
+### Fase 3 — Progreso
+
+- [x] 3.1 cultivosCatalogo (24-abr-2026) — tabla poblada, loader, writers, call sites migrados
+- [ ] 3.2 alertaParams + creditoParams (tabla configuracion)
+- [ ] 3.3 paramsCultivo (tabla nueva)
+- [ ] 3.4 creditoLimites (tabla nueva + FK)
