@@ -29,7 +29,7 @@ export async function loadStateFromSupabase() {
     // (sin red, Supabase caído), el try/catch externo devuelve {error} y la
     // app sigue con lo que ya haya en localStorage.
     console.log('[Supabase] Cargando datos frescos...');
-    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows, horasMaqRows, proyeccionRows, cosechaBoletasRows, cosechaCuadrillasRows, cosechaFletesRows, cosechaMaquilaRows, cosechaSecadoRows, cultivosCatRows, configuracionRows, paramsCultivoRows] = await Promise.all([
+    const [productoresRows, lotesRows, ciclosRows, insumosRows, dispersionesRows, egresosRows, dieselRows, operadoresRows, maquinariaRows, ordenesRows, asignacionesRows, expedientesRows, liquidacionesRows, cajaChicaFondosRows, cajaChicaMovsRows, invItemsRows, invMovsRows, usuariosDBRows, maqConsumosRows, capitalRows, bitacoraRows, recomendacionesRows, notificacionesRows, delegacionesRows, solicitudesCompraRows, ordenesCompraRows, solicitudesGastoRows, activosRows, personalRows, creditosRefRows, rentasRows, tarifaStdRows, asistenciasRows, pagosSemanaRows, horasMaqRows, proyeccionRows, cosechaBoletasRows, cosechaCuadrillasRows, cosechaFletesRows, cosechaMaquilaRows, cosechaSecadoRows, cultivosCatRows, configuracionRows, paramsCultivoRows, creditoLimitesRows] = await Promise.all([
       supaFetch('productores', 'order=legacy_id'),
       supaFetch('lotes', 'order=legacy_id'),
       supaFetch('ciclos', 'order=legacy_id'),
@@ -81,6 +81,7 @@ export async function loadStateFromSupabase() {
       supaFetch('cultivos_catalogo', 'order=legacy_id').catch(() => []),
       supaFetch('configuracion').catch(() => []),
       supaFetch('params_cultivo').catch(() => []),
+      supaFetch('credito_limites').catch(() => []),
     ]);
 
     // Singletons de tabla configuracion (clave-valor jsonb)
@@ -228,7 +229,20 @@ export async function loadStateFromSupabase() {
       // alertaParams + creditoParams: hidratan desde tabla configuracion (Fase 3.2)
       alertaParams:       configMap.alertaParams  || estadoExistente.alertaParams  || {},
       creditoParams:      configMap.creditoParams || estadoExistente.creditoParams || undefined,
-      creditoLimites:     estadoExistente.creditoLimites     || {},
+      // creditoLimites: reconstruido desde tabla credito_limites (Fase 3.4) — key = productor legacy_id
+      creditoLimites:     (() => {
+        const map = {};
+        for (const r of (creditoLimitesRows || [])) {
+          if (r.productor_id == null) continue;
+          map[String(r.productor_id)] = {
+            limitePara: Number(r.limite_para) || 0,
+            limiteDir: Number(r.limite_dir) || 0,
+            limiteTotal: Number(r.limite_total) || 0,
+            notificarCambio: r.notificar_cambio ?? true,
+          };
+        }
+        return Object.keys(map).length > 0 ? map : (estadoExistente.creditoLimites || {});
+      })(),
       // paramsCultivo: reconstruido desde tabla params_cultivo (Fase 3.3) — ver abajo
       paramsCultivo:      (() => {
         const map = {};

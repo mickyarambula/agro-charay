@@ -845,3 +845,33 @@ export async function upsertParamsCultivo(key, data) {
     return true;
   } catch (e) { console.error('upsertParamsCultivo exception:', e); return false; }
 }
+
+// ───── CRÉDITO LÍMITES (por productor) ──────────────────────────
+// Tabla credito_limites: productor_id UNIQUE + limite_para/dir/total + notificar_cambio.
+// Fase 3.4 — última clave de config temporal migrada a Supabase.
+
+export async function upsertCreditoLimites(productorId, data) {
+  if (productorId == null) { console.error('upsertCreditoLimites: productorId nulo'); return false; }
+  try {
+    const body = {
+      productor_id: parseInt(productorId, 10) || productorId,
+      limite_para: data.limitePara != null ? Number(data.limitePara) || 0 : 0,
+      limite_dir: data.limiteDir != null ? Number(data.limiteDir) || 0 : 0,
+      limite_total: data.limiteTotal != null ? Number(data.limiteTotal) || 0 : 0,
+      notificar_cambio: data.notificarCambio ?? true,
+      updated_at: new Date().toISOString(),
+    };
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/credito_limites?on_conflict=productor_id`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const t = await res.text(); console.error('upsertCreditoLimites error:', productorId, t); return false; }
+    return true;
+  } catch (e) { console.error('upsertCreditoLimites exception:', e); return false; }
+}

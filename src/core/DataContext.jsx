@@ -545,6 +545,8 @@ export function reducer(s, a) {
         'alertaParams', 'creditoParams',
         // paramsCultivo: migrado a tabla params_cultivo (Fase 3.3)
         'paramsCultivo',
+        // creditoLimites: migrado a tabla credito_limites (Fase 3.4 — última clave de config temporal)
+        'creditoLimites',
       ];
       const next = { ...s };
       for (const k of GRUPO_A) {

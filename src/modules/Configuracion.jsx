@@ -54,7 +54,7 @@ const TODOS_MODULOS = [
   { id:"reportes",      label:"Reportes del Ciclo",   section:"Financiero" },
 ];
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../core/supabase.js';
-import { upsertConfiguracion } from '../core/supabaseWriters.js';
+import { upsertConfiguracion, upsertCreditoLimites } from '../core/supabaseWriters.js';
 
 
 export default function ConfiguracionModule({ userRol }) {
@@ -734,6 +734,10 @@ export default function ConfiguracionModule({ userRol }) {
                         <input type="number" placeholder={defaultPara?String(Math.round(defaultPara)):"Monto $"}
                           value={lim.limitePara||""}
                           onChange={e=>dispatch({type:"SET_CREDITO_LIMITES",payload:{[p.id]:{...lim,limitePara:parseFloat(e.target.value)||0}}})}
+                          onBlur={e=>{
+                            const nuevoLim={...lim,limitePara:parseFloat(e.target.value)||0};
+                            upsertCreditoLimites(p.id, nuevoLim);
+                          }}
                           style={{width:120,textAlign:"right",fontFamily:"monospace",fontSize:12,
                             border:"1px solid #ddd5c0",borderRadius:6,padding:"3px 8px"}}/>
                       </div>
@@ -742,6 +746,10 @@ export default function ConfiguracionModule({ userRol }) {
                         <input type="number" placeholder="Sin límite"
                           value={lim.limiteTotal||""}
                           onChange={e=>dispatch({type:"SET_CREDITO_LIMITES",payload:{[p.id]:{...lim,limiteTotal:parseFloat(e.target.value)||0}}})}
+                          onBlur={e=>{
+                            const nuevoLim={...lim,limiteTotal:parseFloat(e.target.value)||0};
+                            upsertCreditoLimites(p.id, nuevoLim);
+                          }}
                           style={{width:120,textAlign:"right",fontFamily:"monospace",fontSize:12,
                             border:"1px solid #ddd5c0",borderRadius:6,padding:"3px 8px"}}/>
                       </div>

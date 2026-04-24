@@ -1137,7 +1137,7 @@ export default function App() {
       return {
         // Grupo C (permisos / roles) + config temporal
         // alertaParams: migrado a Supabase (tabla configuracion) — hidrata vía HYDRATE_FROM_SUPABASE
-        creditoLimites:  parsed.creditoLimites  || {},
+        // creditoLimites: migrado a Supabase (tabla credito_limites) — hidrata vía HYDRATE_FROM_SUPABASE
         alertasLeidas:   parsed.alertasLeidas   || [],
         usuariosExtra:   parsed.usuariosExtra   || [],
         usuariosBaseEdit:parsed.usuariosBaseEdit || {},
@@ -1178,8 +1178,7 @@ export default function App() {
         'permisosUsuario', 'permisosGranulares', 'rolesPersonalizados',
         'usuariosExtra', 'usuariosBaseEdit',
         // Config temporal (pendiente de decisión Fase 2) + pendientes de migrar
-        // alertaParams, creditoParams, paramsCultivo, cultivosCatalogo: migrados a Supabase (Fase 3.1-3.3)
-        'creditoLimites',
+        // alertaParams, creditoParams, paramsCultivo, cultivosCatalogo, creditoLimites: migrados a Supabase (Fase 3.1-3.4 — GENERAL-01 completo)
         // cosecha: migrada a Supabase (5 subtablas) — hidrata vía HYDRATE_FROM_SUPABASE, ya no persiste localStorage
       ];
       const toSave = {};
