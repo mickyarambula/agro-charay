@@ -1,5 +1,19 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 24 Abril 2026 (mediodía — sesión 2)
+
+### ✅ Completado
+- **Smoke test GENERAL-01 Fase 3**: probados los 5 módulos afectados (alertas, crédito params, costos/precio, ciclos/cultivos, crédito límites por productor). Los 5 pasaron — datos persisten tras recarga.
+- **Merge GENERAL-01 a main**: tag backup-pre-merge-24abr2026-general01 creado, merge exitoso, producción estable en agro-charay.vercel.app.
+- **Diagnóstico calculadora diesel**: no era bug de código. El fetch directo a maquinaria_consumos funciona correctamente (status 200, datos llegan). El problema es que solo Tractor T-1 tiene consumos configurados — los otros 4 tractores no tienen filas en la tabla. "Sin consumo configurado" es comportamiento correcto, no un bug.
+- **Mejora UI mensaje calculadora**: mensaje ahora muestra nombre del tractor + tipo de labor + indicación clara de configurar en Maquinaria → ⛽. Estilo cambiado de gris neutro a ámbar warning. Commit: fix(diesel): mejorar mensaje calculadora sin consumo configurado.
+
+### 🎓 Lección aprendida
+- **Diagnosticar datos antes de asumir bug de código**: el "bug" de la calculadora diesel resultó ser datos faltantes, no un problema de lógica. La verificación con DevTools Network + query directa a Supabase confirmó que el código funcionaba correctamente. Regla nueva agregada a HANDOFF.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — merge fix diesel a main, configurar consumos para 4 tractores restantes.
+
 ## Sesión 24 Abril 2026 (mañana → mediodía, extendida)
 
 **Sesión maratónica — GENERAL-01 cerrado completo.**
