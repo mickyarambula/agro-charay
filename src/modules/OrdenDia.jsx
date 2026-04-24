@@ -13,7 +13,10 @@ import BottomSheet from '../components/mobile/BottomSheet.jsx';
 import SkeletonCard from '../components/mobile/SkeletonCard.jsx';
 import { showToast } from '../components/mobile/Toast.jsx';
 import { enviarNotifLocal } from '../core/push.js';
-import { postBitacora } from '../core/supabaseWriters.js';
+import {
+  postBitacora,
+  postOrdenTrabajo, patchOrdenTrabajoCompletar, patchOrdenTrabajo,
+} from '../core/supabaseWriters.js';
 
 const TIPOS_TRABAJO = [
   "Barbecho", "Rastreo", "Nivelación", "Surcado", "Siembra", "Fertilización",
@@ -27,93 +30,6 @@ const ESTATUS_COLORES = {
   completado:   { bg: "#dcfce7", color: "#15803d", border: "#2d7a2d", label: "✅ Completado" },
   cancelado:    { bg: "#fee2e2", color: "#991b1b", border: "#c84b4b", label: "🚫 Cancelado" },
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Supabase sync helpers (no dependen de cliente — usan fetch directo)
-// ─────────────────────────────────────────────────────────────────────────────
-const SUPA_URL = 'https://oryixvodfqojunnqbkln.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yeWl4dm9kZnFvanVubnFia2xuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4ODUzMjAsImV4cCI6MjA5MTQ2MTMyMH0.03nXDh5qj7N-RiCqXxGKvhfZSVWDmuV4hFwTOZ66ZCQ';
-
-async function guardarOrdenEnSupabase(orden, operador, lote, maquina) {
-  try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/ordenes_trabajo`, {
-      method: 'POST',
-      headers: {
-        apikey: SUPA_KEY,
-        Authorization: `Bearer ${SUPA_KEY}`,
-        'Content-Type': 'application/json',
-        Prefer: 'return=representation',
-      },
-      body: JSON.stringify({
-        fecha: orden.fecha,
-        tipo: orden.tipoTrabajo,
-        estatus: orden.estatus || 'pendiente',
-        operador_nombre:   operador?.nombre || '',
-        maquinaria_nombre: maquina?.nombre || '',
-        lote_nombre:       lote?.apodo || lote?.nombre || '',
-        insumo_nombre:     orden.insumoNombre || '',
-        hora_inicio:       orden.horaInicio || null,
-        horas_estimadas:   parseFloat(orden.horasEstimadas) || 0,
-        notas:             orden.notas || '',
-        creado_por:        orden.creadoPor || '',
-      }),
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error('[Supabase] orden POST failed:', res.status, errText);
-      throw new Error('status ' + res.status + ': ' + errText);
-    }
-    const rows = await res.json();
-    const row = Array.isArray(rows) ? rows[0] : rows;
-    return row?.id || null;
-  } catch (e) { console.warn('[Supabase] orden save failed:', e.message); return null; }
-}
-
-async function completarOrdenEnSupabase(orden) {
-  try {
-    const wid = orden?.supabaseId || orden?.id;
-    if (!wid) return;
-    await fetch(`${SUPA_URL}/rest/v1/ordenes_trabajo?id=eq.${encodeURIComponent(String(wid))}`, {
-      method: 'PATCH',
-      headers: {
-        apikey: SUPA_KEY,
-        Authorization: `Bearer ${SUPA_KEY}`,
-        'Content-Type': 'application/json',
-        Prefer: 'return=minimal',
-      },
-      body: JSON.stringify({
-        estatus: 'completado',
-        hora_fin: new Date().toISOString().slice(0,19),
-      }),
-    });
-  } catch (e) { console.warn('[Supabase] orden update failed:', e.message); }
-}
-
-async function actualizarOrdenEnSupabase(orden, operador, lote, maquina) {
-  try {
-    const wid = orden?.supabaseId || orden?.id;
-    if (!wid) return;
-    await fetch(`${SUPA_URL}/rest/v1/ordenes_trabajo?id=eq.${encodeURIComponent(String(wid))}`, {
-      method: 'PATCH',
-      headers: {
-        apikey: SUPA_KEY,
-        Authorization: `Bearer ${SUPA_KEY}`,
-        'Content-Type': 'application/json',
-        Prefer: 'return=minimal',
-      },
-      body: JSON.stringify({
-        tipo: orden.tipoTrabajo,
-        operador_nombre:   operador?.nombre || '',
-        maquinaria_nombre: maquina?.nombre || '',
-        lote_nombre:       lote?.apodo || lote?.nombre || '',
-        insumo_nombre:     orden.insumoNombre || '',
-        hora_inicio:       orden.horaInicio || null,
-        horas_estimadas:   parseFloat(orden.horasEstimadas) || 0,
-        notas:             orden.notas || '',
-      }),
-    });
-  } catch (e) { console.warn('[Supabase] orden patch failed:', e.message); }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper — abrir WhatsApp con mensaje pre-armado
@@ -365,7 +281,7 @@ export default function OrdenDia({ userRol, usuario }) {
       };
       dispatch({ type: "UPD_ORDEN_TRABAJO", payload: updated });
       // Sync a Supabase (fire-and-forget)
-      actualizarOrdenEnSupabase(updated, op, lot, maq);
+      patchOrdenTrabajo(updated, op, lot, maq);
       showToast('✅ Orden actualizada', 'success');
       dispatch({ type: "ADD_NOTIF", payload: {
         para: op?.usuario || "campo",
@@ -387,7 +303,7 @@ export default function OrdenDia({ userRol, usuario }) {
       };
       dispatch({ type: "ADD_ORDEN_TRABAJO", payload });
       // Sync a Supabase: captura UUID para futuros PATCH
-      guardarOrdenEnSupabase(payload, op, lot, maq).then(supaId => {
+      postOrdenTrabajo(payload, op, lot, maq).then(supaId => {
         if (supaId) {
           dispatch({ type: "UPD_ORDEN_TRABAJO", payload: { ...payload, supabaseId: supaId } });
           showToast('✅ Orden creada', 'success');
@@ -421,7 +337,7 @@ export default function OrdenDia({ userRol, usuario }) {
       horaFin: new Date().toISOString(),
     }});
     // Sync a Supabase (fire-and-forget)
-    completarOrdenEnSupabase(orden);
+    patchOrdenTrabajoCompletar(orden);
     showToast('✅ Orden completada', 'success');
     enviarNotifLocal(
       '✅ Orden completada',
