@@ -646,13 +646,17 @@ export default function DieselModule({ userRol, usuario }) {
             {/* Calculadora de consumo */}
             {formCarga.maquinariaId && formCarga.tipoLabor && parseFloat(formCarga.hectareas) > 0 && (() => {
               const consumo = maqConsumos.find(c => String(c.maquinariaId) === String(formCarga.maquinariaId) && c.tipoLabor === formCarga.tipoLabor);
-              if (!consumo) return (
-                <div style={{padding:'8px 12px',background:'#f3f4f6',borderRadius:8,fontSize:11,color:'#6b7280'}}>
-                  {loadingConsumos
-                    ? '⏳ Cargando consumos...'
-                    : 'Sin consumo configurado para esta labor — configura en Maquinaria'}
-                </div>
-              );
+              if (!consumo) {
+                const maqSel = (state.maquinaria||[]).find(m => String(m._uuid||m.id) === String(formCarga.maquinariaId));
+                const nombreTractor = maqSel?.nombre || 'Este tractor';
+                return (
+                  <div style={{padding:'8px 12px',background:'#fef3c7',borderRadius:8,fontSize:11,color:'#92400e'}}>
+                    {loadingConsumos
+                      ? '⏳ Cargando consumos...'
+                      : `⚠️ ${nombreTractor} no tiene consumo configurado para ${formCarga.tipoLabor}. Configura en Maquinaria → ⛽`}
+                  </div>
+                );
+              }
               const necesarios = consumo.litrosPorHa * parseFloat(formCarga.hectareas);
               const margen = (parseFloat(formCarga.litros)||0) - necesarios;
               const color = margen >= necesarios*0.1 ? '#166534' : margen >= 0 ? '#92400e' : '#991b1b';
