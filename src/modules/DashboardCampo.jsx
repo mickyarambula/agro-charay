@@ -26,8 +26,9 @@ import {
 import { useIsMobile } from '../components/mobile/useIsMobile.js';
 import AIInsight from '../components/AIInsight.jsx';
 import { solicitarPermisoPush } from '../core/push.js';
-import { postBitacora, postDieselCarga } from '../core/supabaseWriters.js';
+import { postBitacora, postDieselCarga, postOrdenTrabajo } from '../core/supabaseWriters.js';
 import { showToast } from '../components/mobile/Toast.jsx';
+import BottomSheet from '../components/mobile/BottomSheet.jsx';
 
 
 export default function DashboardCampo({ userRol, usuario, onNavigate }) {
@@ -36,7 +37,11 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
   const [notifActivas, setNotifActivas] = useState(
     typeof Notification !== 'undefined' && Notification.permission === 'granted'
   );
-  const hoy = new Date().toISOString().split("T")[0];
+  // Fecha local (NO UTC) para que coincida con el filtro de OrdenDia.jsx — toISOString rueda al día siguiente después de las ~18:00 en México.
+  const hoy = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  })();
 
   const bitacora   = state.bitacora   || [];
   const lotes      = state.lotes      || [];
@@ -116,9 +121,18 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
   const [formD, setFormD] = useState(emptyD);
   const [busqLote, setBusqLote] = useState("");
 
+  // ── Órdenes de trabajo (encargado / admin) ──
+  const puedeCrearOrdenes = userRol === 'encargado' || userRol === 'admin';
+  const emptyO = { operadorId: "", maquinariaId: "", tipoTrabajo: "", loteIds: [], descripcion: "", urgente: false };
+  const [modalOrden, setModalOrden] = useState(false);
+  const [formO, setFormO] = useState(emptyO);
+  const [ordenesRecien, setOrdenesRecien] = useState(null);
+
   const abrirTrabajo = () => { setFormT(emptyT); setBusqLote(""); setModal("trabajo"); };
   const abrirDiesel  = () => { setFormD(emptyD); setBusqLote(""); setModal("diesel"); };
   const cerrarModal  = () => { setModal(null); setBusqLote(""); };
+  const abrirOrden   = () => { setFormO(emptyO); setOrdenesRecien(null); setModalOrden(true); };
+  const cerrarOrden  = () => { setModalOrden(false); setOrdenesRecien(null); setFormO(emptyO); };
 
   const nav = (page) => onNavigate && onNavigate(page);
 
@@ -226,6 +240,110 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
 
     showToast("Diesel registrado ✓", "success");
     cerrarModal();
+  };
+
+  // ── Guardar órdenes de trabajo (una por cada lote seleccionado) ──
+  const guardarOrden = async () => {
+    if (!formO.operadorId || !formO.maquinariaId || !formO.tipoTrabajo || formO.loteIds.length === 0) {
+      alert('Completa operador, tractor, tipo de trabajo y al menos un lote.');
+      return;
+    }
+    const operador = operadores.find(o => String(o.id) === String(formO.operadorId));
+    const maquina  = (state.maquinaria || []).find(m => String(m.id) === String(formO.maquinariaId));
+    const cicloUuid = cicloPred?._uuid || null;
+    const fecha = hoy;
+    const creadoPor = usuario?.usuario || usuario?.nombre || userRol || 'encargado';
+
+    const creadas = [];
+    for (const loteId of formO.loteIds) {
+      const lote = lotes.find(l => String(l.id) === String(loteId));
+      const loteName = (() => {
+        if (!lote) return `Lote ${loteId}`;
+        const apodo = lote.apodo && lote.apodo !== 'NO DEFINIDO' ? lote.apodo : '';
+        const folio = lote.folioCorto || '';
+        return [apodo, folio].filter(Boolean).join(' ') || lote.nombre || `Lote ${loteId}`;
+      })();
+      const id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `orden-${Date.now()}-${loteId}`;
+      const legacyId = Date.now();
+
+      const payloadReducer = {
+        id,
+        supabaseId: id,
+        fecha,
+        tipoTrabajo: formO.tipoTrabajo,
+        descripcion: formO.descripcion || '',
+        estatus: 'pendiente',
+        operadorId: operador?.id || null,
+        operadorNombre: operador?.nombre || '',
+        maquinariaId: maquina?.id || null,
+        maquinariaNombre: maquina?.nombre || '',
+        loteId,
+        loteNombre: loteName,
+        urgente: !!formO.urgente,
+        creadoPor,
+        origen: 'dashboardcampo',
+      };
+      dispatch({ type: 'ADD_ORDEN_TRABAJO', payload: payloadReducer });
+
+      const ordenParaPost = {
+        id,
+        legacy_id: legacyId,
+        ciclo_id: cicloUuid,
+        fecha,
+        tipoTrabajo: formO.tipoTrabajo,
+        descripcion: formO.descripcion || '',
+        estatus: 'pendiente',
+        operador_id: operador?._uuid || null,
+        operador_nombre: operador?.nombre || '',
+        maquinaria_id: maquina?._uuid || null,
+        maquinaria_nombre: maquina?.nombre || '',
+        lote_id: lote?._uuid || null,
+        lote_nombre: loteName,
+        urgente: !!formO.urgente,
+        creadoPor,
+      };
+      postOrdenTrabajo(ordenParaPost, operador, lote, maquina);
+      creadas.push(payloadReducer);
+    }
+
+    showToast(`${creadas.length} orden${creadas.length>1?'es':''} creada${creadas.length>1?'s':''} ✓`, 'success');
+    setOrdenesRecien({
+      operador, maquina, ordenes: creadas,
+      descripcion: formO.descripcion, urgente: formO.urgente,
+      tipoTrabajo: formO.tipoTrabajo,
+    });
+  };
+
+  const construirMensajeOrden = ({ operador, maquina, ordenes, descripcion, urgente, tipoTrabajo }) => {
+    const fechaStr = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: '2-digit', month: 'long' });
+    const lineas = [
+      '🚜 *Orden de Trabajo*',
+      `Fecha: ${fechaStr}`,
+      `Operador: ${operador?.nombre || '—'}`,
+      `Tractor: ${maquina?.nombre || '—'}`,
+      '',
+      ...(ordenes || []).map(o => `📍 ${o.loteNombre} — ${tipoTrabajo}`),
+    ];
+    if (descripcion && descripcion.trim()) lineas.push('', descripcion.trim());
+    if (urgente) lineas.push('', '⚠️ URGENTE');
+    return lineas.join('\n');
+  };
+
+  const enviarWhatsAppOrden = async () => {
+    if (!ordenesRecien) return;
+    const mensaje = construirMensajeOrden(ordenesRecien);
+    let tel = (ordenesRecien.operador?.telefono || '').replace(/\D/g, '');
+    if (tel.length === 10) tel = '52' + tel;
+    if (tel && tel.length >= 12) {
+      window.open(`https://wa.me/${tel}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
+    } else {
+      try {
+        await navigator.clipboard.writeText(mensaje);
+        showToast('📋 Mensaje copiado — operador sin teléfono registrado', 'info');
+      } catch {
+        alert('Mensaje:\n\n' + mensaje);
+      }
+    }
   };
 
   const lotesFiltrados = lotesEnCiclo.filter(l => {
@@ -457,7 +575,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
               </div>
             ) : (
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {ordenesHoy.slice(0, 4).map(orden => {
+                {ordenesHoy.slice(0, 4).map((orden, i) => {
                   const op = operadores.find(o => String(o.id) === String(orden.operadorId));
                   const lot = lotes.find(l => String(l.id) === String(orden.loteId));
                   const nomLote = lot
@@ -466,7 +584,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
                   const nomOperador = op?.nombre || orden.operadorNombre || "Sin asignar";
                   const badge = ESTATUS_BADGE[orden.estatus] || ESTATUS_BADGE.pendiente;
                   return (
-                    <div key={orden.id}
+                    <div key={`${orden.id}-${i}`}
                       onClick={()=>nav("ordenes")}
                       style={{
                         background:"white",borderRadius:10,padding:"12px 14px",
@@ -513,6 +631,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
           { icon:"🛒", label:"Solicitar compra",   color:"#8e44ad", bg:"#f5f0fa", onClick:()=>nav("flujos") },
           { icon:"📍", label:"Ver mis lotes",       color:"#1a6ea8", bg:"#edf4fb", onClick:()=>nav("lotes") },
           { icon:"✅", label:"Asistencia",          color:"#16a085", bg:"#e8f6f3", onClick:()=>nav("operadores"), fullWidth:true },
+          ...(puedeCrearOrdenes ? [{ icon:"🚜", label:"Nueva orden", color:"#c8a84b", bg:"#fef3c7", onClick:abrirOrden, fullWidth:true }] : []),
         ].map(b => (
           <button key={b.label} onClick={b.onClick}
             style={{
@@ -830,6 +949,153 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
           </div>
         </Modal>
       )}
+
+      {/* ═══ BOTTOMSHEET: Nueva orden de trabajo ═══ */}
+      <BottomSheet
+        isOpen={modalOrden}
+        onClose={cerrarOrden}
+        title="🚜 Nueva Orden de Trabajo"
+        footer={ordenesRecien ? (
+          <>
+            <button className="btn btn-secondary" onClick={cerrarOrden} style={{flex:1}}>Cerrar</button>
+            <button className="btn btn-primary" onClick={enviarWhatsAppOrden}
+              style={{flex:1.4, background:'#25d366', color:'white', fontWeight:700}}>
+              📲 Enviar WhatsApp
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="btn btn-secondary" onClick={cerrarOrden} style={{flex:1}}>Cancelar</button>
+            <button className="btn btn-primary" onClick={guardarOrden}
+              disabled={!formO.operadorId || !formO.maquinariaId || !formO.tipoTrabajo || formO.loteIds.length === 0}
+              style={{flex:1.4, fontWeight:700}}>
+              💾 Guardar {formO.loteIds.length > 1 ? `${formO.loteIds.length} órdenes` : 'orden'}
+            </button>
+          </>
+        )}
+      >
+        {ordenesRecien ? (
+          <div style={{display:'flex', flexDirection:'column', gap:12}}>
+            <div style={{padding:'10px 12px', background:'#d4efdf', borderRadius:8,
+              fontSize:13, color:'#117a65', fontWeight:600}}>
+              ✅ {ordenesRecien.ordenes.length} orden{ordenesRecien.ordenes.length>1?'es':''} creada{ordenesRecien.ordenes.length>1?'s':''}.
+            </div>
+            <div style={{padding:12, background:'#faf8f3', borderRadius:8, fontSize:12,
+              whiteSpace:'pre-wrap', color:'#3d3525', fontFamily:'monospace', lineHeight:1.5,
+              maxHeight:280, overflowY:'auto', border:`1px solid ${T.line}`}}>
+              {construirMensajeOrden(ordenesRecien)}
+            </div>
+            {!ordenesRecien.operador?.telefono && (
+              <div style={{fontSize:12, color:'#8a5a1b', padding:'8px 12px',
+                background:'#fef3c7', borderRadius:8}}>
+                ⚠ El operador no tiene teléfono registrado. Al enviar, se copiará al portapapeles.
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{display:'flex', flexDirection:'column', gap:14}}>
+            <div className="form-group">
+              <label className="form-label">Operador *</label>
+              <select className="form-select" value={formO.operadorId}
+                onChange={e=>setFormO(f=>({...f, operadorId: e.target.value}))}
+                style={{fontSize:15, padding:'12px'}}>
+                <option value="">— Seleccionar —</option>
+                {operadores.filter(o=>o.activo!==false).map(o => (
+                  <option key={o.id} value={o.id}>👷 {o.nombre}{o.telefono ? '' : ' (sin tel)'}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Tractor / Equipo *</label>
+              <select className="form-select" value={formO.maquinariaId}
+                onChange={e=>setFormO(f=>({...f, maquinariaId: e.target.value}))}
+                style={{fontSize:15, padding:'12px'}}>
+                <option value="">— Seleccionar —</option>
+                {(state.maquinaria || []).filter(m=>m.estado!=='baja').map(m => (
+                  <option key={m.id} value={m.id}>{m.nombre}{m.tipo ? ` (${m.tipo})` : ''}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Tipo de trabajo *</label>
+              <select className="form-select" value={formO.tipoTrabajo}
+                onChange={e=>setFormO(f=>({...f, tipoTrabajo: e.target.value}))}
+                style={{fontSize:15, padding:'12px'}}>
+                <option value="">— Seleccionar —</option>
+                {TIPOS_TRABAJO.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                Lotes * {formO.loteIds.length > 0 && <span style={{color:'#2d5a1b', fontSize:11}}>({formO.loteIds.length} seleccionado{formO.loteIds.length>1?'s':''})</span>}
+              </label>
+              <div style={{display:'flex', flexWrap:'wrap', gap:6, maxHeight:200, overflowY:'auto',
+                padding:8, border:`1px solid ${T.line}`, borderRadius:8, background:'#fafaf7'}}>
+                {lotesEnCiclo.length === 0 && (
+                  <div style={{fontSize:12, color:T.fog, padding:8}}>
+                    No hay lotes asignados al ciclo activo.
+                  </div>
+                )}
+                {lotesEnCiclo.map(l => {
+                  const sel = formO.loteIds.includes(l.id);
+                  // Combinar apodo + folioCorto para distinguir lotes con mismo apodo
+                  const apodo = l.apodo && l.apodo !== 'NO DEFINIDO' ? l.apodo : '';
+                  const folio = l.folioCorto || '';
+                  const baseName = [apodo, folio].filter(Boolean).join(' ') || l.nombre || `Lote ${l.id}`;
+                  // Resolver productor del lote: primero por campo directo, luego vía asignaciones del ciclo
+                  const prodId = l.productor_id ?? l.productorId ?? asigs.find(a => String(a.loteId) === String(l.id))?.productorId;
+                  const prod = prodId ? (state.productores || []).find(p => String(p.id) === String(prodId)) : null;
+                  const prodLabel = (() => {
+                    if (!prod) return '';
+                    const candidate = prod.apPat || prod.alias || prod.nombres || prod.nombre || '';
+                    return candidate.split(' ')[0].slice(0, 15);
+                  })();
+                  const displayName = prodLabel ? `${baseName} — ${prodLabel}` : baseName;
+                  return (
+                    <button key={l.id} type="button"
+                      onClick={()=>setFormO(f=>({
+                        ...f,
+                        loteIds: sel ? f.loteIds.filter(x=>x!==l.id) : [...f.loteIds, l.id],
+                      }))}
+                      style={{
+                        padding:'7px 12px',
+                        borderRadius:16,
+                        border:`1.5px solid ${sel ? '#2d5a1b' : '#ddd5c0'}`,
+                        background: sel ? '#2d5a1b' : 'white',
+                        color: sel ? 'white' : '#3d3525',
+                        fontSize:12, fontWeight: sel ? 700 : 500,
+                        cursor:'pointer', touchAction:'manipulation',
+                      }}>
+                      {sel ? '✓ ' : ''}{displayName}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Descripción / Instrucciones (opcional)</label>
+              <textarea className="form-input" rows={3} value={formO.descripcion}
+                onChange={e=>setFormO(f=>({...f, descripcion: e.target.value}))}
+                placeholder="Detalles para el operador..."
+                style={{fontSize:14}}/>
+            </div>
+
+            <label style={{display:'flex', alignItems:'center', gap:10,
+              padding:'10px 12px', background:'#fef3c7', borderRadius:8, cursor:'pointer'}}>
+              <input type="checkbox" checked={formO.urgente}
+                onChange={e=>setFormO(f=>({...f, urgente: e.target.checked}))}
+                style={{width:18, height:18, cursor:'pointer'}}/>
+              <span style={{fontSize:14, fontWeight:600, color:'#8a5a1b'}}>
+                ⚠️ Marcar como urgente
+              </span>
+            </label>
+          </div>
+        )}
+      </BottomSheet>
     </div>
   );
 }

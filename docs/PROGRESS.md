@@ -1,5 +1,54 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 24 Abril 2026 (mañana)
+
+### ✅ Completado
+
+**Fix #1 — Órdenes DashboardCampo no visibles en OrdenDia (timezone bug)**
+- Root cause: `new Date().toISOString().split("T")[0]` devuelve fecha UTC. Después de las 18:00 MST (UTC-7), la fecha UTC rueda al día siguiente. DashboardCampo guardaba "2026-04-24" mientras OrdenDia filtraba por "2026-04-23" (fecha local).
+- Fix: reemplazar por `getFullYear()/getMonth()/getDate()` — fecha local, mismo patrón que OrdenDia.
+- Beneficio colateral: guardarTrabajo y guardarDiesel también usaban la misma variable `hoy`, así que quedan corregidos.
+
+**Fix #2 — Chips de lotes duplicados en multi-select de Nueva Orden**
+- Root cause: display mostraba solo "{apodo} — {productor}", pero múltiples lotes comparten apodo (ej: 5 lotes "AVANCE" del mismo productor).
+- Fix: formato ahora es "{apodo} {folioCorto} — {productor}" (ej: "CHEVETO 5 — CASTRO").
+- Aplicado tanto en chips del BottomSheet como en loteName de guardarOrden (para cards y WhatsApp).
+
+Archivo modificado: `src/modules/DashboardCampo.jsx` (único).
+
+### 🎓 Lección aprendida
+
+**toISOString() es peligroso para fechas locales en México**: después de las 18:00 MST, UTC ya es el día siguiente. Usar siempre componentes locales (getFullYear/getMonth/getDate) para fechas que se comparan con filtros de UI local. Regla añadida a HANDOFF.md.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — validación en campo es el siguiente paso antes de merge a main.
+
+## Sesión 23 Abril 2026 (noche)
+
+### ✅ Completado
+- **DashboardCampo Phase 2**: botón "🚜 Nueva orden" para encargado/admin. BottomSheet con form (operador, tractor, tipo, lotes multi-select, descripción, urgente).
+- **Flujo Supabase-first**: `crypto.randomUUID()` antes del dispatch; una orden por cada lote seleccionado. `postOrdenTrabajo` extendido en supabaseWriters.js para aceptar id/legacy_id/ciclo_id/descripcion/operador_id/maquinaria_id/lote_id/urgente como opcionales.
+- **Mensaje WhatsApp post-guardado**: preview en el sheet + botón "📲 Enviar WhatsApp". Si operador tiene teléfono, abre wa.me; si no, copia al portapapeles + Toast de aviso.
+- **Fix productor en chips**: lotes con mismo apodo ahora muestran "{apodo} — {apellido}" para desambiguar.
+- **Fix key warning**: `.map((orden, i) => ...)` con `key={`${orden.id}-${i}`}` en órdenes del día.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — próximo: diagnosticar por qué las órdenes no aparecen en OrdenDia.
+
+### 🐛 Bugs descubiertos
+1. **Órdenes no visibles en OrdenDia**: las órdenes creadas desde DashboardCampo no aparecen en el módulo OrdenDia (dice "Sin órdenes para hoy"). Posible causa: filtro de fecha UTC vs hora local, o OrdenDia filtra por un campo que DashboardCampo no setea.
+2. **Chips lotes aún duplicados**: mostrar productor ayuda pero lotes del mismo productor con mismo apodo siguen idénticos (ej: "AVANCE — CASTRO" x5). Solución: agregar folio_corto al chip display.
+
+## Sesión 24 Abril 2026 (tarde)
+
+### ✅ Completado
+- **Merge cosecha a main**: tag backup-pre-merge-24abr2026-cosecha, commit db29ac7.
+- **Centralizar POST inline**: 10 fetch inline extraídos de OrdenDia (3) y CajaChica (6+1) → 7 helpers nuevos en supabaseWriters.js. ~188 líneas removidas de módulos.
+- **Merge refactor a main**: tag backup-pre-merge-24abr2026-refactor.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — próximo objetivo: DashboardCampo Phase 2.
+
 ## Sesión 24 Abril 2026 (mediodía)
 
 ### ✅ Completado
