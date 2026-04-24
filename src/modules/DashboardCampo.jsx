@@ -37,7 +37,11 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
   const [notifActivas, setNotifActivas] = useState(
     typeof Notification !== 'undefined' && Notification.permission === 'granted'
   );
-  const hoy = new Date().toISOString().split("T")[0];
+  // Fecha local (NO UTC) para que coincida con el filtro de OrdenDia.jsx — toISOString rueda al día siguiente después de las ~18:00 en México.
+  const hoy = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  })();
 
   const bitacora   = state.bitacora   || [];
   const lotes      = state.lotes      || [];
@@ -253,9 +257,12 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
     const creadas = [];
     for (const loteId of formO.loteIds) {
       const lote = lotes.find(l => String(l.id) === String(loteId));
-      const loteName = lote
-        ? (lote.apodo && lote.apodo !== 'NO DEFINIDO' ? lote.apodo : (lote.folioCorto || lote.nombre || `Lote ${loteId}`))
-        : `Lote ${loteId}`;
+      const loteName = (() => {
+        if (!lote) return `Lote ${loteId}`;
+        const apodo = lote.apodo && lote.apodo !== 'NO DEFINIDO' ? lote.apodo : '';
+        const folio = lote.folioCorto || '';
+        return [apodo, folio].filter(Boolean).join(' ') || lote.nombre || `Lote ${loteId}`;
+      })();
       const id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `orden-${Date.now()}-${loteId}`;
       const legacyId = Date.now();
 
@@ -1034,7 +1041,10 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
                 )}
                 {lotesEnCiclo.map(l => {
                   const sel = formO.loteIds.includes(l.id);
-                  const name = l.apodo && l.apodo !== 'NO DEFINIDO' ? l.apodo : (l.folioCorto || l.nombre || `Lote ${l.id}`);
+                  // Combinar apodo + folioCorto para distinguir lotes con mismo apodo
+                  const apodo = l.apodo && l.apodo !== 'NO DEFINIDO' ? l.apodo : '';
+                  const folio = l.folioCorto || '';
+                  const baseName = [apodo, folio].filter(Boolean).join(' ') || l.nombre || `Lote ${l.id}`;
                   // Resolver productor del lote: primero por campo directo, luego vía asignaciones del ciclo
                   const prodId = l.productor_id ?? l.productorId ?? asigs.find(a => String(a.loteId) === String(l.id))?.productorId;
                   const prod = prodId ? (state.productores || []).find(p => String(p.id) === String(prodId)) : null;
@@ -1043,7 +1053,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
                     const candidate = prod.apPat || prod.alias || prod.nombres || prod.nombre || '';
                     return candidate.split(' ')[0].slice(0, 15);
                   })();
-                  const displayName = prodLabel ? `${name} — ${prodLabel}` : name;
+                  const displayName = prodLabel ? `${baseName} — ${prodLabel}` : baseName;
                   return (
                     <button key={l.id} type="button"
                       onClick={()=>setFormO(f=>({
