@@ -1,41 +1,39 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 23 Abril 2026 (noche)
+**Última actualización:** 24 Abril 2026 (mañana)
 **Branch activo:** dev
-**Último commit dev:** 97edc63 (feat(dashboardcampo): crear órdenes de trabajo + WhatsApp desde dashboard encargado)
+**Último commit dev:** fix(dashboardcampo): fecha local en vez de UTC + folioCorto en chips de lotes
 **Último commit main:** e53489c (merge: centralizar POST inline OrdenDia + CajaChica)
 **Tag de respaldo:** backup-pre-merge-24abr2026-refactor
-**Estado:** DashboardCampo Phase 2 implementado en dev. 2 bugs descubiertos en uso real.
+**Estado:** DashboardCampo Phase 2 estable con 2 fixes aplicados. Pendiente validación en campo.
 
 ## Estado al cierre
 
-- DashboardCampo Phase 2: botón "🚜 Nueva orden" visible para encargado/admin, BottomSheet con form (operador, tractor, tipo, lotes multi-select, descripción, urgente), guardado Supabase-first + mensaje WhatsApp post-guardado.
-- Post-guardado: si operador tiene teléfono, abre wa.me; si no, copia al portapapeles + Toast.
-- 2 fixes ya aplicados: productor mostrado en chips de lotes, key único `${id}-${i}` en .map de órdenes del día.
-- 2 bugs nuevos detectados en uso real (ver sección de pendientes).
-- Main al día con refactor POST inline. DashboardCampo pendiente de merge.
+- Fix timezone: DashboardCampo ahora usa fecha local (getFullYear/getMonth/getDate) en vez de UTC (toISOString). Esto corrige que órdenes creadas después de las 18:00 MST aparecían con fecha del día siguiente y no se mostraban en OrdenDia.
+- Fix chips lotes: el multi-select y las órdenes guardadas ahora muestran "{apodo} {folioCorto} — {productor}" (ej: "CHEVETO 5 — CASTRO") para desambiguar lotes con mismo apodo.
+- El fix de fecha también beneficia guardarTrabajo y guardarDiesel en DashboardCampo, que usaban la misma variable `hoy`.
+- Solo se modificó DashboardCampo.jsx. OrdenDia.jsx no requirió cambios.
 
 ## Bugs estructurales pendientes
 
-- **Órdenes creadas desde DashboardCampo no aparecen en OrdenDia** — posible UTC vs local o campo faltante.
-- **Chips de lotes aún duplicados** — varios lotes del mismo productor con mismo apodo.
+- Ninguno nuevo. Los 2 bugs de la sesión anterior (#1 y #2) fueron resueltos.
 
 ## Tabla de pendientes actualizada
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Alta | Fix: órdenes creadas desde DashboardCampo no aparecen en OrdenDia (filtro de fecha UTC vs local, o campo faltante) | 30 min | Bug |
-| 2 | Alta | Fix: chips lotes aún duplicados — agregar folio_corto al display ("CHEVETO 5 — CASTRO" en vez de "CHEVETO — CASTRO") | 15 min | Bug |
-| 3 | Media | Merge DashboardCampo Phase 2 a main (después de validar en campo) | 15 min | Deploy |
-| 4 | Media | Capturar teléfonos de 4 operadores sin WhatsApp (Javier, Jesús, Manuel, Ramón) | 10 min | Data |
-| 5 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
-| 6 | Baja | Limpiar GET inline OrdenDia (SUPA_URL2/SUPA_KEY2) | 15 min | Refactor |
+| 1 | Alta | Validar en campo: crear orden desde DashboardCampo y verificar que aparece en OrdenDia | 10 min | Validación |
+| 2 | Media | Merge DashboardCampo Phase 2 a main (después de validar en campo) | 15 min | Deploy |
+| 3 | Media | Capturar teléfonos de 4 operadores sin WhatsApp (Javier, Jesús, Manuel, Ramón) | 10 min | Data |
+| 4 | Baja | Actualizar supabase-js (warning httpSend) | 15 min | Infra |
+| 5 | Baja | Limpiar GET inline OrdenDia (SUPA_URL2/SUPA_KEY2) | 15 min | Refactor |
+| 6 | Futuro | GENERAL-01 Fase 1: fix ciclo de vida localStorage → Supabase fuente única | 2-3 sesiones | Arquitectura |
 | 7 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
 | 8 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
 
 ## Siguiente sesión — recomendación
 
-**Fix #1 (Órdenes no visibles en OrdenDia)**: diagnóstico primero — comparar el shape del registro que DashboardCampo inserta vs lo que OrdenDia filtra. Probablemente es un mismatch de formato de fecha o un campo que OrdenDia espera (como `fecha` tipo string "YYYY-MM-DD") que DashboardCampo está pasando en otro formato.
+**Validación en campo**: crear una orden real desde DashboardCampo en el celular del encargado, verificar que aparece en OrdenDia tanto en el celular como en desktop admin. Si pasa, merge a main. Si no, diagnosticar con DevTools del celular.
 
 ## Reglas de trabajo
 
@@ -57,5 +55,6 @@
 - Tablas nuevas en Supabase necesitan RLS policy para rol anon
 - Generar id en el caller ANTES del dispatch cuando se necesita legacy_id
 - Al refactorear, pasar componentes declarados en App.jsx como props (no importar — causa circular)
-- Para prompts a Claude Code, dar el objetivo completo y dejar que lea el código y diseñe la solución — no pedir diagnósticos parciales
+- Para prompts a Claude Code, dar el objetivo completo y dejar que lea el código y diseñe la solución
 - Schema mismatch state↔Supabase se resuelve con JSON en columna `notas` para round-trip sin pérdida
+- **NUEVO: Nunca usar toISOString() para fechas locales en México — usar getFullYear/getMonth/getDate para evitar desfase UTC después de las 18:00 MST**

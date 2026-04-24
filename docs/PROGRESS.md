@@ -1,5 +1,28 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 24 Abril 2026 (mañana)
+
+### ✅ Completado
+
+**Fix #1 — Órdenes DashboardCampo no visibles en OrdenDia (timezone bug)**
+- Root cause: `new Date().toISOString().split("T")[0]` devuelve fecha UTC. Después de las 18:00 MST (UTC-7), la fecha UTC rueda al día siguiente. DashboardCampo guardaba "2026-04-24" mientras OrdenDia filtraba por "2026-04-23" (fecha local).
+- Fix: reemplazar por `getFullYear()/getMonth()/getDate()` — fecha local, mismo patrón que OrdenDia.
+- Beneficio colateral: guardarTrabajo y guardarDiesel también usaban la misma variable `hoy`, así que quedan corregidos.
+
+**Fix #2 — Chips de lotes duplicados en multi-select de Nueva Orden**
+- Root cause: display mostraba solo "{apodo} — {productor}", pero múltiples lotes comparten apodo (ej: 5 lotes "AVANCE" del mismo productor).
+- Fix: formato ahora es "{apodo} {folioCorto} — {productor}" (ej: "CHEVETO 5 — CASTRO").
+- Aplicado tanto en chips del BottomSheet como en loteName de guardarOrden (para cards y WhatsApp).
+
+Archivo modificado: `src/modules/DashboardCampo.jsx` (único).
+
+### 🎓 Lección aprendida
+
+**toISOString() es peligroso para fechas locales en México**: después de las 18:00 MST, UTC ya es el día siguiente. Usar siempre componentes locales (getFullYear/getMonth/getDate) para fechas que se comparan con filtros de UI local. Regla añadida a HANDOFF.md.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — validación en campo es el siguiente paso antes de merge a main.
+
 ## Sesión 23 Abril 2026 (noche)
 
 ### ✅ Completado
