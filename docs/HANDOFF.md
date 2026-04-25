@@ -1,44 +1,42 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 24 Abril 2026 (noche, sesión 4)
+**Última actualización:** 25 Abril 2026 (mediodía, sesión 5)
 **Branch activo:** dev
-**Último commit dev:** 09828d6 (fix(diesel): resolver loteId a uuid antes de POST — match con schema Supabase)
-**Último commit main:** 3f9f148 (merge: limpieza dead code + supabase-js 2.104.1 + docs sesión 3)
-**Tag de respaldo:** backup-pre-merge-24abr2026-general01
-**Estado:** Feature auto-fill diesel en dev con bug pendiente. GENERAL-01 + fix diesel + limpieza en producción.
+**Último commit dev:** bc0262d (fix(diesel): autofill lote post-reload — match uuid o legacy_id (DIESEL-AUTOFILL-01))
+**Último commit main:** 8738b93 (merge: fix DIESEL-AUTOFILL-01 — autofill lote post-reload)
+**Tag de respaldo:** backup-pre-merge-25abr2026-autofill
+**Estado:** DIESEL-AUTOFILL-01 resuelto y en producción. Sin bugs estructurales abiertos.
 
 ## Estado al cierre
 
-- GENERAL-01 + fix diesel + limpieza dead code + supabase-js 2.104.1 en producción (main).
-- Feature auto-fill tractor→lote implementado en dev pero NO funciona post-reload.
-- Bug: el auto-fill compara loteId del state (legacy_id numérico) con loteId guardado en Supabase (uuid). Post-reload, los registros diesel hidratan loteId como uuid pero optLotes usa l.id (legacy_id) → no hay match.
-- Fix pendiente: en Diesel.jsx onChange del tractor, la comparación debe considerar ambos formatos, o normalizar en el loader.
-- Columna maquinaria_id agregada a tabla diesel en Supabase. Writer y loader wired.
-- Columna lote_id ya existía en tabla diesel. Writer ahora envía uuid resuelto. Loader mapea loteId.
-- Consumos provisionales para 5 tractores (28 filas insertadas).
-- Carga de prueba de 70L (T-2, CHAYO GARCIA) en Supabase — limpiar después del fix.
+- DIESEL-AUTOFILL-01 resuelto: el auto-fill de lote al seleccionar tractor ahora funciona post-reload. La comparación en Diesel.jsx onChange del tractor matchea contra l.id (legacy_id) o l._uuid, y asigna siempre l.id al state para que el select lo encuentre.
+- Smoke test pasado: 3 escenarios verificados (T-2 con historial → CHAYO GARCIA auto-llenado, T-6 sin historial → vacío sin error, lote elegido manualmente → respeta elección al cambiar tractor).
+- Merge a main con tag de respaldo backup-pre-merge-25abr2026-autofill.
+- Cargas de prueba eliminadas de Supabase (legacy_id 1777095023040 de 70L y 1777078821456 de 95L).
+- GENERAL-01 + fix diesel completo en producción. App estable.
 
 ## Bugs estructurales pendientes
 
-- **DIESEL-AUTOFILL-01**: Auto-fill lote al seleccionar tractor no funciona post-reload. Mismatch legacy_id vs uuid en comparación. Ver descripción arriba.
+- Ninguno abierto.
 
 ## Tabla de pendientes actualizada
 
 | # | Prioridad | Tarea | Tiempo | Categoría |
 |---|-----------|-------|--------|-----------|
-| 1 | Alta | Fix DIESEL-AUTOFILL-01 — normalizar comparación loteId uuid vs legacy_id | 20 min | Bug |
-| 2 | Alta | Merge feature diesel auto-fill a main (después de fix) | 10 min | Deploy |
-| 3 | Media | Encargado: ajustar consumos L/ha reales para T-2, T-4, T-6, Aspersora T-8 | 20 min | Data |
-| 4 | Media | Capturar teléfonos de 4 operadores sin WhatsApp | 10 min | Data |
-| 5 | Media | Limpiar cargas de prueba diesel (95L y 70L) | 5 min | Data |
-| 6 | Futuro | Permisos/roles Grupo C restante → Supabase | 2 hrs | Arquitectura |
-| 7 | Futuro | Panel Daniela: exportación a formatos contables | 2 hrs | Feature |
-| 8 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
-| 9 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
+| 1 | Media | Encargado: ajustar consumos L/ha reales para T-2, T-4, T-6, Aspersora T-8 | 20 min | Data |
+| 2 | Media | Capturar teléfonos de 4 operadores sin WhatsApp | 10 min | Data |
+| 3 | Futuro | Permisos/roles Grupo C restante → Supabase | 2 hrs | Arquitectura |
+| 4 | Futuro | Panel Daniela: exportación a formatos contables | 2 hrs | Feature |
+| 5 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
+| 6 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
+| 7 | Futuro | Bug calculadora diesel: fetch directo a maquinaria_consumos al abrir modal | 30 min | Bug |
+| 8 | Futuro | Modal detalle diesel: edición de registros para admin (litros, notas) | 45 min | Feature |
+| 9 | Futuro | Dashboard histórico entre ciclos | 3 hrs | Feature |
+| 10 | Futuro | Alertas WhatsApp al socio (resumen semanal) | 4 hrs | Feature |
 
 ## Siguiente sesión — recomendación
 
-Fix DIESEL-AUTOFILL-01: en Diesel.jsx, el filter del onChange del tractor compara String(d.loteId) con los lotes de optLotes usando String(l.id). Post-reload, d.loteId es uuid (viene del loader) pero l.id es legacy_id. Solución: comparar también contra l._uuid. Después smoke test, merge a main, limpiar cargas de prueba.
+Decisión abierta: priorizar entre Fase 1 operativa (consumos reales L/ha + teléfonos operadores, ambos rápidos y desbloquean el uso real en campo) o avanzar a Fase 3 finanzas (Panel Daniela exportación). Sin bugs urgentes — la siguiente sesión puede ser planificación de feature o data entry.
 
 ## Reglas de trabajo
 
@@ -68,3 +66,5 @@ Fix DIESEL-AUTOFILL-01: en Diesel.jsx, el filter del onChange del tractor compar
 - Diagnosticar antes de asumir bug de código — verificar datos en Supabase primero
 - Al enviar IDs a Supabase, siempre resolver a uuid (_uuid) — las columnas FK son uuid, no legacy_id
 - Cuando un feature necesita nueva columna en Supabase, completar todo el ciclo: ALTER TABLE + loader + writer + call sites antes de probar
+- Claude web siempre incluye los comandos para correr local (npm run dev, etc.) en cada bloque de instrucciones — el usuario no debe inferirlos
+- Al comparar IDs entre state hidratado y datos en optLotes/optMaquinaria, considerar tanto legacy_id como _uuid — los registros viejos vs nuevos pueden venir en formato distinto post-reload

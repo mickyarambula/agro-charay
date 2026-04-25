@@ -1,5 +1,37 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 25 Abril 2026 (mediodía)
+
+### ✅ Completado
+
+**Fix DIESEL-AUTOFILL-01** — auto-fill de lote al seleccionar tractor ahora funciona post-reload.
+
+Root cause: en el onChange del select de tractor en Diesel.jsx, la comparación `optLotes.some(l => String(l.id) === String(ultimaCarga.loteId))` fallaba post-reload porque `ultimaCarga.loteId` viene del loader como uuid (columna `lote_id` en Supabase), pero `l.id` es el legacy_id numérico. Adicionalmente, aunque hubiera match, asignar el uuid a `nextLoteId` no hacía que el select lo reflejara, porque sus `<option value={l.id}>` usan legacy_id.
+
+Fix: reemplazar `optLotes.some(...)` por `optLotes.find(...)` que matchea contra `l.id` o `l._uuid`, y asignar `String(matchLote.id)` (legacy_id) a `nextLoteId`. Cubre ambos formatos de hidratación y mantiene compatibilidad con el value del select.
+
+Commits:
+- bc0262d (dev): fix(diesel): autofill lote post-reload — match uuid o legacy_id (DIESEL-AUTOFILL-01)
+- 8738b93 (main): merge: fix DIESEL-AUTOFILL-01 — autofill lote post-reload
+- Tag respaldo: backup-pre-merge-25abr2026-autofill
+
+Smoke test pasado:
+- T-2 (con historial) → CHAYO GARCIA auto-llenado ✅
+- T-6 (sin historial) → "Sin especificar", sin error ✅
+- Lote elegido manualmente → respeta elección al cambiar tractor ✅
+
+Limpieza: cargas de prueba eliminadas de Supabase (legacy_id 1777095023040 de 70L y 1777078821456 de 95L).
+
+### 🎓 Lección aprendida
+
+Cuando un feature compara IDs entre el state hidratado y un catálogo (optLotes, optMaquinaria, etc.), considerar SIEMPRE ambos formatos: legacy_id numérico (registros creados en sesión actual, antes del round-trip) y uuid (registros que vienen del loader post-reload). El patrón seguro es `find()` matching `l.id || l._uuid`, y devolver siempre el legacy_id porque los `<option value>` del select lo usan.
+
+Esto generaliza más allá de diesel: cualquier comparación id-a-id post-hidratación tiene el mismo riesgo.
+
+### 📋 Pendientes al cierre
+
+Ver docs/HANDOFF.md.
+
 ## Sesión 24 Abril 2026 (noche — sesión 4)
 
 ### ✅ Completado
