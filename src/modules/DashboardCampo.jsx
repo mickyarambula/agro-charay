@@ -213,6 +213,7 @@ export default function DashboardCampo({ userRol, usuario, onNavigate }) {
       productorId,
       bitacoraLegacyId,
       maquinariaId: maq?._uuid || maq?.id || null,
+      loteId: formD.loteId || null,
       notas: formD.notas || '',
     };
     await postDieselCarga(dieselRecord, { registradoPor: usuario?.usuario || userRol || 'encargado' });

@@ -210,6 +210,7 @@ export default function DieselModule({ userRol, usuario }) {
       productorId,
       bitacoraLegacyId,
       maquinariaId: datos.maquinariaId || null,
+      loteId: datos.loteId || null,
       notas: datos.notas || '',
     }, { registradoPor: usuario?.usuario || userRol || 'desconocido' });
 
