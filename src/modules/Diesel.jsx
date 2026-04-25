@@ -613,8 +613,12 @@ export default function DieselModule({ userRol, usuario }) {
                           d.loteId
                         )
                         .sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')))[0];
-                      if (ultimaCarga?.loteId && optLotes.some(l => String(l.id) === String(ultimaCarga.loteId))) {
-                        nextLoteId = String(ultimaCarga.loteId);
+                      if (ultimaCarga?.loteId) {
+                        const matchLote = optLotes.find(l =>
+                          String(l.id) === String(ultimaCarga.loteId) ||
+                          String(l._uuid) === String(ultimaCarga.loteId)
+                        );
+                        if (matchLote) nextLoteId = String(matchLote.id);
                       }
                     }
                     return { ...f, maquinariaId: newMaqId, loteId: nextLoteId };
