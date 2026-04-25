@@ -174,6 +174,8 @@ export async function loadStateFromSupabase() {
       cancelado: r.cancelado || false,
       tipoMovimiento: r.tipo_movimiento || null,
       bitacoraLegacyId: r.bitacora_legacy_id || null,
+      loteId: r.lote_id || null,
+      maquinariaId: r.maquinaria_id || null,
       notas: r.notas || '',
       _uuid: r.id,
     }));
