@@ -209,6 +209,7 @@ export default function DieselModule({ userRol, usuario }) {
       concepto,
       productorId,
       bitacoraLegacyId,
+      maquinariaId: datos.maquinariaId || null,
       notas: datos.notas || '',
     }, { registradoPor: usuario?.usuario || userRol || 'desconocido' });
 
@@ -598,7 +599,26 @@ export default function DieselModule({ userRol, usuario }) {
             <div>
               <label style={labelStyle}>🚜 Tractor / Equipo *</label>
               <select style={fieldStyle} value={formCarga.maquinariaId}
-                onChange={e=>setFormCarga(f=>({...f,maquinariaId:e.target.value}))}>
+                onChange={e=>{
+                  const newMaqId = e.target.value;
+                  setFormCarga(f => {
+                    // Auto-llenar lote con el último usado por este tractor — solo si el usuario aún no eligió lote
+                    let nextLoteId = f.loteId;
+                    if (newMaqId && !f.loteId) {
+                      const ultimaCarga = (state.diesel || [])
+                        .filter(d =>
+                          (d.tipoMovimiento || d.tipo_movimiento) === 'salida_interna' &&
+                          String(d.maquinariaId) === String(newMaqId) &&
+                          d.loteId
+                        )
+                        .sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')))[0];
+                      if (ultimaCarga?.loteId && optLotes.some(l => String(l.id) === String(ultimaCarga.loteId))) {
+                        nextLoteId = String(ultimaCarga.loteId);
+                      }
+                    }
+                    return { ...f, maquinariaId: newMaqId, loteId: nextLoteId };
+                  });
+                }}>
                 <option value="">— Seleccionar —</option>
                 {(state.maquinaria||[]).map(m=>(
                   <option key={m.id} value={m._uuid||m.id}>{m.nombre}{m.tipo?` (${m.tipo})`:''}</option>

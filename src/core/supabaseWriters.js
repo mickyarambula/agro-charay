@@ -529,6 +529,7 @@ export async function postDieselCarga(record, { registradoPor } = {}) {
     concepto: record.concepto || '',
     productor_legacy_id: record.productorId || null,
     bitacora_legacy_id: record.bitacoraLegacyId || null,
+    maquinaria_id: record.maquinariaId || null,
     registrado_por: registradoPor || 'desconocido',
     notas: record.notas || '',
   };
