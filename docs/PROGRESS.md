@@ -1,5 +1,23 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 24 Abril 2026 (noche — sesión 4)
+
+### ✅ Completado
+- **Merge limpieza + supabase-js a main**: dead code + bump en producción.
+- **OrdenDia**: confirmado que PATCH inline ya estaba migrado — tarea eliminada de pendientes.
+- **Feature auto-fill diesel tractor→lote**: implementado onChange del selector de tractor para pre-llenar último lote usado. Columna maquinaria_id agregada a tabla diesel. Writer y loader wired para maquinaria_id y lote_id. Call sites actualizados (Diesel.jsx + DashboardCampo.jsx). Resolución a uuid en call sites.
+- **Consumos provisionales**: 28 filas insertadas en maquinaria_consumos para T-2, T-4, T-6, Aspersora T-8.
+
+### 🐛 Bug descubierto
+- **DIESEL-AUTOFILL-01**: Auto-fill no funciona post-reload. El loader hidrata loteId como uuid, pero optLotes usa l.id (legacy_id numérico). La comparación en el filter del onChange no matchea. Fix: comparar también contra l._uuid.
+
+### 🎓 Lección aprendida
+- **Completar todo el ciclo antes de probar**: cuando un feature requiere nueva columna en Supabase, hay que completar ALTER TABLE + loader + writer + call sites + resolución de IDs todo de una vez. Hacerlo incremental genera bugs intermedios difíciles de diagnosticar.
+- **uuid vs legacy_id es el mismatch más común**: el state usa legacy_id como `id` y uuid como `_uuid`. Las columnas FK en Supabase son uuid. Siempre resolver a `_uuid` antes de enviar a Supabase.
+
+### 📋 Pendientes al cierre
+Ver HANDOFF.md — fix DIESEL-AUTOFILL-01 como primera prioridad.
+
 ## Sesión 24 Abril 2026 (tarde — sesión 3)
 
 ### ✅ Completado
