@@ -1,5 +1,49 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 27 Abril 2026 (día completo)
+
+Sesión larga con varios bloques de trabajo. Se cerró con app más estable y plan pre-cosecha definido.
+
+### ✅ Completado
+
+**1. Verificación calculadora diesel**
+Diagnóstico exhaustivo del bug "Sin consumo configurado" reportado en DECISIONS.md. Logs confirmaron que ya estaba resuelto. T-1 + Fertilización + 6 ha mostró "Diesel suficiente — necesitas 60L, cargas 90L". No se requirió fix de código. Logs de diagnóstico removidos al final.
+
+**2. Auditoría exhaustiva del backlog**
+Verificación cruzada de los 22 pendientes documentados (HANDOFF + ROADMAP + DECISIONS + GENERAL-01-PLAN) contra código real y Supabase information_schema. Hallazgo: el HANDOFF estaba muy desactualizado — la mayoría de migraciones ya estaban hechas. Realidad: 8 migraciones hechas, 5-7 realmente faltantes (no las "21 candidatos"). 57 tablas existen en Supabase.
+
+**3. Auditoría específica de Cosecha.jsx (1066 LOC)**
+5 tablas wired completamente (cosecha_boletas, cosecha_cuadrillas, cosecha_fletes, cosecha_maquila, cosecha_secado). Liquidaciones funciona end-to-end con fetch inline (deuda técnica cosmética). Veredicto: ✅ Cosecha lista para el ciclo.
+
+**4. Smoke test Cosecha**
+- Test #1 Importación XLSX: ✅ Pasó. Generamos boletas-smoketest.xlsx con 3 boletas (AGROFRAGA, CASTRO, GALAVIZ REMBAO). Parser detectó las 3, fuzzy match funcionó, sumó 71.80 toneladas.
+- Test #2 Persistencia Supabase: ✅ Pasó. 3 filas en cosecha_boletas con productor_id correcto.
+- Test #3 Modal Trilla: ✅ Pasó. Registro de prueba 20ha × $2000 = $40,000 guardado correctamente, después limpiado.
+- Test #4 Liquidación: ⏸️ Pendiente para mañana.
+
+**5. Renombrado UI Cosecha (commit 4491829)**
+Decisión basada en operación real: en maíz mecanizado no hay "cuadrillas" sino "trilla" (cortar+desgranar). "Maquila" es término ambiguo, mejor "criba" (limpieza de impurezas).
+- 🚜 Cuadrillas → 🌾 Trilla
+- ⚙️ Maquila → 🧹 Criba
+- Tablas Supabase NO se renombraron (cosecha_cuadrillas y cosecha_maquila siguen iguales) — solo cambia lo que el usuario ve.
+- Sidebar mantiene "Cosecha y Maquila" para no romper categoría en CATS_PROY.
+- 8 edits en Cosecha.jsx, Babel parse OK, smoke test visual OK.
+
+**6. Plan pre-cosecha definido**
+3 sprints / 3-4 semanas / 8-10 sesiones. Sprint 1 bloqueantes (liquidación, captura individual de boletas, reporte cierre, smoke test por rol). Sprint 2 operación campo + auditoría finanzas. Sprint 3 pulido. Fuera de scope: permisos Grupo C, push remoto, offline, CBOT, JWT, alertas WhatsApp, dashboard histórico, renombrar tablas Supabase.
+
+### 🎓 Lecciones aprendidas
+
+- Los documentos de seguimiento se desactualizan. Antes de planear sprints grandes, hacer auditoría real (grep + information_schema). Cambió la estimación de "muchísimo trabajo" a "casi listo".
+- Auditoría en 3 partes: filesystem (ls modules + grep imports + grep TODO), wiring por feature (grep nombres de tabla en loader/writers/reducer), Supabase (information_schema.tables).
+- Al renombrar terminología en producción durante ciclo activo: cambiar UI/labels pero NO tablas. Funciones técnicas (postX, ADD_X, formX) se quedan con sus nombres internos.
+- Schema mismatch tipo "campo notas como JSON" es patrón válido del proyecto (regla documentada). No es bug.
+- Sesiones largas continuas son válidas — no fragmentar artificialmente con cierres frecuentes.
+
+### 📋 Pendientes al cierre
+
+Ver docs/HANDOFF.md. Mañana: probar modal Liquidación (Sprint 1 #1).
+
 ## Sesión 27 Abril 2026 (tarde)
 
 ### ✅ Completado
