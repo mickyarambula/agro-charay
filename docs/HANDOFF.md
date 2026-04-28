@@ -1,19 +1,18 @@
 # AgroSistema Charay — HANDOFF
 
-**Última actualización:** 25 Abril 2026 (mediodía, sesión 5)
+**Última actualización:** 27 Abril 2026 (tarde, sesión 6)
 **Branch activo:** dev
-**Último commit dev:** bc0262d (fix(diesel): autofill lote post-reload — match uuid o legacy_id (DIESEL-AUTOFILL-01))
+**Último commit dev:** 7130047 (docs: cierre sesión 5 — DIESEL-AUTOFILL-01 resuelto y en producción)
 **Último commit main:** 8738b93 (merge: fix DIESEL-AUTOFILL-01 — autofill lote post-reload)
 **Tag de respaldo:** backup-pre-merge-25abr2026-autofill
-**Estado:** DIESEL-AUTOFILL-01 resuelto y en producción. Sin bugs estructurales abiertos.
+**Estado:** App estable. Bug calculadora diesel ya estaba resuelto (verificado por diagnóstico). Sin bugs urgentes.
 
 ## Estado al cierre
 
-- DIESEL-AUTOFILL-01 resuelto: el auto-fill de lote al seleccionar tractor ahora funciona post-reload. La comparación en Diesel.jsx onChange del tractor matchea contra l.id (legacy_id) o l._uuid, y asigna siempre l.id al state para que el select lo encuentre.
-- Smoke test pasado: 3 escenarios verificados (T-2 con historial → CHAYO GARCIA auto-llenado, T-6 sin historial → vacío sin error, lote elegido manualmente → respeta elección al cambiar tractor).
-- Merge a main con tag de respaldo backup-pre-merge-25abr2026-autofill.
-- Cargas de prueba eliminadas de Supabase (legacy_id 1777095023040 de 70L y 1777078821456 de 95L).
-- GENERAL-01 + fix diesel completo en producción. App estable.
+- Diagnóstico exhaustivo de calculadora diesel: el bug "Sin consumo configurado" reportado en DECISIONS.md ya estaba resuelto. Probablemente como efecto colateral del fetch directo en Diesel.jsx (líneas 44-76) o de fixes previos en el ciclo loader/writer.
+- Smoke test confirmó funcionamiento: T-1 + Fertilización + 6 ha → "✅ Diesel suficiente — necesitas 60L, cargas 90L (30L de margen)".
+- 35 registros en maquinaria_consumos (5 tractores × 7 labores) con UUIDs correctos en Supabase.
+- Sin código modificado en esta sesión — solo verificación.
 
 ## Bugs estructurales pendientes
 
@@ -25,18 +24,19 @@
 |---|-----------|-------|--------|-----------|
 | 1 | Media | Encargado: ajustar consumos L/ha reales para T-2, T-4, T-6, Aspersora T-8 | 20 min | Data |
 | 2 | Media | Capturar teléfonos de 4 operadores sin WhatsApp | 10 min | Data |
-| 3 | Futuro | Permisos/roles Grupo C restante → Supabase | 2 hrs | Arquitectura |
-| 4 | Futuro | Panel Daniela: exportación a formatos contables | 2 hrs | Feature |
-| 5 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
-| 6 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
-| 7 | Futuro | Bug calculadora diesel: fetch directo a maquinaria_consumos al abrir modal | 30 min | Bug |
+| 3 | Media | Actualizar CLAUDE.md — ya no es monolito App.jsx 18.7k líneas, está modularizado en src/modules/, src/core/, src/shared/ | 15 min | Docs |
+| 4 | Futuro | Permisos/roles Grupo C restante → Supabase | 2 hrs | Arquitectura |
+| 5 | Futuro | Panel Daniela: exportación a formatos contables | 2 hrs | Feature |
+| 6 | Futuro | Modo offline (IndexedDB + SW) | 8+ hrs | Feature |
+| 7 | Futuro | Seguridad: quitar passwords de roles.js, JWT real | 2 hrs | Seguridad |
 | 8 | Futuro | Modal detalle diesel: edición de registros para admin (litros, notas) | 45 min | Feature |
 | 9 | Futuro | Dashboard histórico entre ciclos | 3 hrs | Feature |
 | 10 | Futuro | Alertas WhatsApp al socio (resumen semanal) | 4 hrs | Feature |
+| 11 | Futuro | Push notifications remoto (VAPID propio + backend Supabase Edge Function) | 3 hrs | Feature |
 
 ## Siguiente sesión — recomendación
 
-Decisión abierta: priorizar entre Fase 1 operativa (consumos reales L/ha + teléfonos operadores, ambos rápidos y desbloquean el uso real en campo) o avanzar a Fase 3 finanzas (Panel Daniela exportación). Sin bugs urgentes — la siguiente sesión puede ser planificación de feature o data entry.
+Tareas cortas y de valor: actualizar CLAUDE.md (la doc dice monolito pero ya está modularizado) o avanzar Panel Daniela exportación contable. Sin bugs urgentes pendientes.
 
 ## Reglas de trabajo
 
@@ -68,3 +68,5 @@ Decisión abierta: priorizar entre Fase 1 operativa (consumos reales L/ha + tel�
 - Cuando un feature necesita nueva columna en Supabase, completar todo el ciclo: ALTER TABLE + loader + writer + call sites antes de probar
 - Claude web siempre incluye los comandos para correr local (npm run dev, etc.) en cada bloque de instrucciones — el usuario no debe inferirlos
 - Al comparar IDs entre state hidratado y datos en optLotes/optMaquinaria, considerar tanto legacy_id como _uuid — los registros viejos vs nuevos pueden venir en formato distinto post-reload
+- Antes de fixear un bug viejo de la lista de pendientes, hacer diagnóstico fresco — puede haberse resuelto como efecto colateral de cambios posteriores
+- Al hacer diagnóstico con console.log, usar JSON.stringify() para revelar caracteres invisibles en strings; el primer maqConsumos[0] no necesariamente es del tractor buscado — usar filter() para ver los registros relevantes

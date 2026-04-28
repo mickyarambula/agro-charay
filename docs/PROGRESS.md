@@ -1,5 +1,32 @@
 # AgroSistema Charay — Progress Log
 
+## Sesión 27 Abril 2026 (tarde)
+
+### ✅ Completado
+
+**Diagnóstico de calculadora diesel** — el bug "Sin consumo configurado" reportado en DECISIONS.md ya estaba resuelto.
+
+Proceso seguido:
+1. Inspección de Diesel.jsx (líneas 44-76 y 670-685) reveló fetch directo a Supabase + ternario fallback al state global. 3 sospechosos: array vacío, mismatch uuid/legacy_id, mismatch case/acentos en tipoLabor.
+2. console.log de diagnóstico agregados antes del .find().
+3. Reproducción: T-1 + Fertilización + 6 ha → mensaje verde "✅ Diesel suficiente — necesitas 60L, cargas 90L (30L de margen)" apareció en pantalla.
+4. Logs confirmaron: maqConsumos tiene 35 registros, los 7 de T-1 matchean por UUID, el find() encuentra el correcto. La calculadora funciona.
+5. Verificación cruzada con SQL en Supabase: maquinaria_consumos tiene 35 filas correctas (5 tractores × 7 labores) con UUIDs que matchean maquinaria.id.
+
+Conclusión: el bug se resolvió en algún momento como efecto colateral, posiblemente al agregar el fetch directo en líneas 44-76 (que cubre el caso de no tener cache previo en state) o al completar el ciclo loader/writer en sesiones anteriores. No se requirió fix de código.
+
+Logs de diagnóstico removidos al final. Sin commit (no hubo cambios netos).
+
+### 🎓 Lección aprendida
+
+Antes de fixear un bug viejo de la lista de pendientes, repetir el diagnóstico desde cero. El sistema cambia entre sesiones y un bug puede haber sido resuelto incidentalmente. La regla "diagnóstico antes que fix" aplica también a bugs supuestamente conocidos.
+
+Detalle técnico: al hacer console.log de un array para diagnóstico, el primer elemento (maqConsumos[0]) no necesariamente es relevante al caso buscado — hay que filtrar por el id concreto. Usar JSON.stringify() en strings para ver caracteres invisibles que podrían explicar mismatches case-sensitive.
+
+### 📋 Pendientes al cierre
+
+Ver docs/HANDOFF.md.
+
 ## Sesión 25 Abril 2026 (mediodía)
 
 ### ✅ Completado
