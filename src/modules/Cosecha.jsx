@@ -61,9 +61,9 @@ export default function CosechaModule({ userRol, puedeEditar }) {
   const [formCiclo, setFormCiclo] = useState({
     nombre: 'PV 2026', cultivo: 'maiz', fechaInicio: '', fechaFin: '',
   });
-  const emptyCuad    = { fecha:hoy, ha:0, precioHa:0, concepto:"Cuadrilla cosecha", notas:"" };
+  const emptyCuad    = { fecha:hoy, ha:0, precioHa:0, concepto:"Trilla", notas:"" };
   const emptyFlete   = { fecha:hoy, toneladas:0, precioTon:0, concepto:"Flete", notas:"" };
-  const emptyMaquila = { fecha:hoy, ha:0, precioHa:0, concepto:"Maquila", notas:"" };
+  const emptyMaquila = { fecha:hoy, ha:0, precioHa:0, concepto:"Criba", notas:"" };
   const emptySecado  = { fecha:hoy, toneladas:0, costoTon:0, concepto:"Secado/Almacén", notas:"" };
   const [formCuad,    setFormCuad]    = useState(emptyCuad);
   const [formFlete,   setFormFlete]   = useState(emptyFlete);
@@ -321,9 +321,9 @@ export default function CosechaModule({ userRol, puedeEditar }) {
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:0}}>
           {[
-            {label:"🚜 Cuadrillas",  items:cuadrillas, costo:costoCuad,    unit:"ha", onClick:()=>setModalCuad(true),    type:"cuad"},
+            {label:"🌾 Trilla",  items:cuadrillas, costo:costoCuad,    unit:"ha", onClick:()=>setModalCuad(true),    type:"cuad"},
             {label:"🚛 Fletes",      items:fletes,     costo:costoFletes,  unit:"ton",onClick:()=>setModalFlete(true),   type:"flete"},
-            {label:"⚙️ Maquila",    items:maquila,    costo:costoMaquila, unit:"ha", onClick:()=>setModalMaquila(true), type:"maquila"},
+            {label:"🧹 Criba",    items:maquila,    costo:costoMaquila, unit:"ha", onClick:()=>setModalMaquila(true), type:"maquila"},
             {label:"🌡 Secado",      items:secado,     costo:costoSecado,  unit:"ton",onClick:()=>setModalSecado(true),  type:"secado"},
           ].map(({label,items,costo,unit,onClick,type},idx)=>(
             <div key={type} style={{padding:"14px 16px",borderRight:idx%2===0?`1px solid ${T.line}`:"none",
@@ -353,14 +353,14 @@ export default function CosechaModule({ userRol, puedeEditar }) {
       </div>
 
       {/* Modales costos cosecha */}
-      {modalCuad&&<Modal title="🚜 Agregar Cuadrilla" onClose={()=>setModalCuad(false)}
+      {modalCuad&&<Modal title="🌾 Agregar Trilla" onClose={()=>setModalCuad(false)}
         footer={<><button className="btn btn-secondary" onClick={()=>setModalCuad(false)}>Cancelar</button>
           <button className="btn btn-primary" onClick={async ()=>{
             if(!formCuad.ha||!formCuad.precioHa) return;
             const legacyId = Date.now();
             const record = {...formCuad, id: legacyId, ha:parseFloat(formCuad.ha), precioHa:parseFloat(formCuad.precioHa)};
             const ok = await postCosechaCuadrilla(record, cicloPred?._uuid || null);
-            if (!ok) { alert('Error al guardar cuadrilla en Supabase'); return; }
+            if (!ok) { alert('Error al guardar trilla en Supabase'); return; }
             dispatch({type:"ADD_CUADRILLA", payload: record});
             setModalCuad(false); setFormCuad(emptyCuad);
           }}>💾 Guardar</button></>}>
@@ -409,14 +409,14 @@ export default function CosechaModule({ userRol, puedeEditar }) {
         </div>
       </Modal>}
 
-      {modalMaquila&&<Modal title="⚙️ Agregar Maquila" onClose={()=>setModalMaquila(false)}
+      {modalMaquila&&<Modal title="🧹 Agregar Criba" onClose={()=>setModalMaquila(false)}
         footer={<><button className="btn btn-secondary" onClick={()=>setModalMaquila(false)}>Cancelar</button>
           <button className="btn btn-primary" onClick={async ()=>{
             if(!formMaquila.ha||!formMaquila.precioHa) return;
             const legacyId = Date.now();
             const record = {...formMaquila, id: legacyId, ha:parseFloat(formMaquila.ha), precioHa:parseFloat(formMaquila.precioHa)};
             const ok = await postCosechaMaquila(record, cicloPred?._uuid || null);
-            if (!ok) { alert('Error al guardar maquila en Supabase'); return; }
+            if (!ok) { alert('Error al guardar criba en Supabase'); return; }
             dispatch({type:"ADD_MAQUILA", payload: record});
             setModalMaquila(false); setFormMaquila(emptyMaquila);
           }}>💾 Guardar</button></>}>
